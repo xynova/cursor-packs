@@ -1,8 +1,10 @@
-# cursor-go-dspy
+# cursor-packs
 
-Shared Cursor **skills** and short **rules** for Go and dspy-go, reusable across projects via git submodule + relative symlinks.
+Shared Cursor **skills** and short **rules**, reusable across projects via git submodule + relative symlinks.
 
-Repo: https://github.com/xynova/cursor-go-dspy
+Repo: https://github.com/xynova/cursor-packs
+
+Mount path in consumers: `.cursor/packs/shared`
 
 ## What is in the pack
 
@@ -19,6 +21,8 @@ Repo: https://github.com/xynova/cursor-go-dspy
 
 References (`reference.md`, `methodology.md`, …) live **inside** each skill folder; no separate symlink set.
 
+More skills/rules (any stack) can be added here over time; consumers re-run the link script after updating the submodule.
+
 ## What stays in the consuming project
 
 Keep as real files under `.cursor/skills/` / `.cursor/rules/`:
@@ -33,13 +37,13 @@ Keep as real files under `.cursor/skills/` / `.cursor/rules/`:
 From the consumer repo root:
 
 ```bash
-git submodule add https://github.com/xynova/cursor-go-dspy.git .cursor/packs/go-dspy
+git submodule add https://github.com/xynova/cursor-packs.git .cursor/packs/shared
 git submodule update --init --recursive
 
 # If you previously had real copies of shared skills, remove those directories first
 # so the linker can create symlinks (it will not overwrite non-symlink dirs).
 
-.cursor/packs/go-dspy/scripts/link-into-project.sh --project .
+.cursor/packs/shared/scripts/link-into-project.sh --project .
 ```
 
 Commit `.gitmodules`, the submodule pointer, and the new symlinks.
@@ -48,17 +52,17 @@ Commit `.gitmodules`, the submodule pointer, and the new symlinks.
 
 ```bash
 git submodule update --init --recursive
-.cursor/packs/go-dspy/scripts/link-into-project.sh --project .
+.cursor/packs/shared/scripts/link-into-project.sh --project .
 ```
 
 (Re-run the link script if you upgrade the pack and new skill names appear.)
 
 ## Link script behavior
 
-- Creates relative links: `.cursor/skills/golang-quality` → `../packs/go-dspy/skills/golang-quality`
+- Creates relative links: `.cursor/skills/golang-quality` → `../packs/shared/skills/golang-quality`
 - Updates existing symlinks
 - **Skips** paths that already exist as real files/directories (protects local overlays)
 
 ## Sparse checkout
 
-Not used in v1. The pack is Cursor-only. Revisit if this repo later gains large non-Cursor trees.
+Not used in v1. Revisit if this repo later gains large non-Cursor trees.

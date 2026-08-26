@@ -3,7 +3,7 @@ description: DSPy-Go module wiring, prompts, and debugging — load shared dspy 
 alwaysApply: false
 ---
 
-# Shared DSPy rules (cursor-go-dspy)
+# Shared DSPy rules (cursor-packs)
 
 When creating or wiring dspy-go modules / interceptors / Create* XML:
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Link shared cursor-go-dspy skills and rules into a consumer project's .cursor/
+# Link shared cursor-packs skills and rules into a consumer project's .cursor/
 # using relative symlinks next to project-local overlays.
 set -euo pipefail
 
@@ -8,11 +8,11 @@ usage() {
 Usage: link-into-project.sh [--project PATH]
 
   --project PATH   Consumer repo root (default: current directory).
-                   Expects PATH/.cursor/packs/go-dspy (git submodule).
+                   Expects PATH/.cursor/packs/shared (git submodule).
 
 Creates relative symlinks:
-  .cursor/skills/<name>  -> ../packs/go-dspy/skills/<name>
-  .cursor/rules/<file>   -> ../packs/go-dspy/rules/<file>
+  .cursor/skills/<name>  -> ../packs/shared/skills/<name>
+  .cursor/rules/<file>   -> ../packs/shared/rules/<file>
 
 Refuses to overwrite a real (non-symlink) file or directory.
 EOF
@@ -39,12 +39,12 @@ done
 
 PROJECT="$(cd "$PROJECT" && pwd)"
 CURSOR="$PROJECT/.cursor"
-PACK="$CURSOR/packs/go-dspy"
+PACK="$CURSOR/packs/shared"
 
 if [[ ! -d "$PACK" ]]; then
   echo "Missing pack at $PACK" >&2
   echo "Add the submodule first:" >&2
-  echo "  git submodule add https://github.com/xynova/cursor-go-dspy.git .cursor/packs/go-dspy" >&2
+  echo "  git submodule add https://github.com/xynova/cursor-packs.git .cursor/packs/shared" >&2
   exit 1
 fi
 
@@ -97,14 +97,14 @@ mkdir -p "$CURSOR/skills" "$CURSOR/rules"
 for name in "${SKILLS[@]}"; do
   link_one \
     "$CURSOR/skills/$name" \
-    "../packs/go-dspy/skills/$name" \
+    "../packs/shared/skills/$name" \
     "$PACK/skills/$name"
 done
 
 for name in "${RULES[@]}"; do
   link_one \
     "$CURSOR/rules/$name" \
-    "../packs/go-dspy/rules/$name" \
+    "../packs/shared/rules/$name" \
     "$PACK/rules/$name"
 done
 

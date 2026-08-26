@@ -4,7 +4,7 @@ globs: **/*.go
 alwaysApply: false
 ---
 
-# Shared Go rules (cursor-go-dspy)
+# Shared Go rules (cursor-packs)
 
 When generating, completing, or fixing Go:
 
