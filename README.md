@@ -12,6 +12,7 @@ Mount path in consumers: `.cursor/packs/shared`
 |------|---------|
 | `skills/golang-quality/` | Generation/completion constraints + quality gates |
 | `skills/code-review-staged/` | Staged Go review (menu, detect vs consultant) |
+| `skills/setup-goreleaser/` | Scaffold GoReleaser v2 + GitHub Release workflow (gitboard pattern) |
 | `skills/dspy-go-debugging/` | Validation / retry / refinement failures |
 | `skills/dspy-module-patterns/` | Module + interceptor wiring |
 | `skills/dspy-prompt-engineering/` | Signature / instruction / field-description contract |
