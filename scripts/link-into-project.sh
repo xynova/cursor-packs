@@ -55,6 +55,7 @@ SKILLS=(
   dspy-module-patterns
   dspy-prompt-engineering
   review-member-visibility
+  setup-goreleaser
 )
 RULES=(
   golang.mdc
