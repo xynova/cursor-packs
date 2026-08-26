@@ -1,0 +1,22 @@
+---
+description: DSPy-Go module wiring, prompts, and debugging — load shared dspy skills when working on dspy modules, signatures, interceptors, or validation failures
+alwaysApply: false
+---
+
+# Shared DSPy rules (cursor-go-dspy)
+
+When creating or wiring dspy-go modules / interceptors / Create* XML:
+
+- Load `.cursor/skills/dspy-module-patterns/SKILL.md`.
+
+When writing or revising module prompts, signatures, or field descriptions:
+
+- Load `.cursor/skills/dspy-prompt-engineering/SKILL.md`.
+- Also load project `.cursor/rules/rules-for-prompts.mdc` if present.
+
+When validation fails, fields look full in logs but parse empty, retries exhaust, or a refinement loop exits early:
+
+- Load `.cursor/skills/dspy-go-debugging/SKILL.md`.
+- If the project has `.cursor/skills/dspy-xml-structured-output/SKILL.md`, use it for parser/phase details.
+
+Pipeline job layout (JobRunner, per-job clients) stays in the **project** skill if present (e.g. `pipeline-client-module-pattern`). Do not invent a second job pattern.

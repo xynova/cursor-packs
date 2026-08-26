@@ -1,0 +1,20 @@
+---
+description: Go coding workflow — load golang-quality for generation/completion and code-review-staged for reviews
+globs: **/*.go
+alwaysApply: false
+---
+
+# Shared Go rules (cursor-go-dspy)
+
+When generating, completing, or fixing Go:
+
+1. Load `.cursor/skills/golang-quality/SKILL.md` and follow its constraints and quality gates.
+2. Prefer project `make format` / `make lint` / `make vet` / `make test` when those targets exist; otherwise use `gofumpt`/`gofmt`, `golangci-lint`, `go vet`, `go test`.
+
+When the user asks to review, audit, rate quality, check code, or production readiness of Go:
+
+1. Load `.cursor/skills/code-review-staged/SKILL.md` (stage menu; do not dump all checklists first).
+
+For export/visibility audits: `.cursor/skills/review-member-visibility/SKILL.md`.
+
+Project-specific `.cursor/rules/` (architecture, logging, domain) still apply and take precedence for local invariants.
