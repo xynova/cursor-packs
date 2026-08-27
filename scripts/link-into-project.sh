@@ -57,11 +57,13 @@ SKILLS=(
   review-member-visibility
   setup-goreleaser
   edit-cursor-packs
+  agent-smith
 )
 RULES=(
   golang.mdc
   dspy.mdc
   cursor-packs.mdc
+  agent-smith.mdc
 )
 
 link_one() {
