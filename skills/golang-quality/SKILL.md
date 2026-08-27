@@ -53,6 +53,8 @@ Apply these **while writing**, not only at review.
 
 **CONSTRAINT 12 — Focused interfaces.** Interfaces MUST stay ≤ 5–6 methods. Split by caller responsibility.
 
+**CONSTRAINT 13 — Report layouts use templates.** Multi-line operator-facing summaries, ASCII diagrams, and similar human reports MUST use `text/template` (or `html/template` when HTML). MUST NOT assemble those layouts with chained `WriteString` / `Sprintf`. One-line messages and tight loops MAY keep `fmt` / `strings.Builder`. See [reference.md](reference.md#text-templates-for-reports).
+
 Logging: MUST use injected `internal/observability.Logger`. NEVER `fmt.Print*` for logs. Interactive CLI may use pterm (see architecture logging rule).
 
 ---
@@ -114,3 +116,4 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] Interfaces ≤ 6 methods
 - [ ] Only essential symbols exported
 - [ ] All comments end with a period
+- [ ] Multi-line reports/diagrams use `text/template` (not chained `WriteString`)

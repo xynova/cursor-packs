@@ -56,10 +56,12 @@ SKILLS=(
   dspy-prompt-engineering
   review-member-visibility
   setup-goreleaser
+  edit-cursor-packs
 )
 RULES=(
   golang.mdc
   dspy.mdc
+  cursor-packs.mdc
 )
 
 link_one() {
