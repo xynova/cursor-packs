@@ -1,17 +1,17 @@
 ---
 name: dspy-module-patterns
 description: >-
-  dspy-go module wiring: Predict vs ChainOfThought, custom structured-output
+  dspy-go module wiring on strop: Predict vs ChainOfThought, structured-output
   interceptors, EnableStructuredOutput on inner Predict, Create* constructors with
   WithXMLFormatting, and testing parsed maps. Use when creating modules, enabling
   XML structured output, wiring interceptors, or choosing module types.
 ---
 
-# DSPy module patterns (this repo)
+# DSPy module patterns (strop)
 
-Short wiring guide. Full module encyclopedia: `.cursor/rules/rules-for-dspy-go.mdc`. Parser/validation: `.cursor/skills/dspy-xml-structured-output/SKILL.md`. Jobs: `.cursor/skills/pipeline-client-module-pattern/SKILL.md`.
+Short wiring guide. Parser/validation: `.cursor/skills/dspy-xml-structured-output/SKILL.md`. Jobs: `.cursor/skills/strop-pipeline-pattern/SKILL.md`.
 
-Modules are the only supported path to LLM calls (in-process dspy-go).
+Modules are the only supported path to LLM calls (in-process dspy-go via strop).
 
 ---
 
@@ -25,9 +25,9 @@ Creating modules, enabling XML structured output, wiring interceptors, or choosi
 
 1. Always use modules (`NewPredict`, `NewChainOfThought`, …) with a signature.
 2. Signatures define contracts; attach behavior with `.WithInstruction()`.
-3. Configure LLM via factory/config — never hardcode API keys.
+3. Configure LLM via `strop/dspy/factory` — never hardcode API keys.
 4. Structured output on **Predict**. For `ChainOfThought`, configure the **inner** `module.Predict`.
-5. Use `factory.InterceptorSetup.EnableStructuredOutput(cot)` — not stock `WithXMLOutput` alone. This repo's parser needs raw XML passthrough (`enablePredictRawXMLPassthrough`).
+5. Use `factory.InterceptorSetup.EnableStructuredOutput(cot)` — not stock `WithXMLOutput` alone. strop's parser needs raw XML passthrough on Predict.
 
 ---
 
@@ -54,6 +54,8 @@ Typical chain: Format → Parse (custom XML → `map[string]any`) → Validate m
 
 After `Process`, output keys MUST be top-level signature field names. A nested `response` string means interceptors are not active. Do not add nested-`response` fallbacks.
 
+**Code:** `strop/dspy/factory/interceptor_setup.go`.
+
 ---
 
 ## WithXMLFormatting in Create*
@@ -62,11 +64,11 @@ Apply **`WithXMLFormatting`** inside **Create\*** functions, not at call sites:
 
 | Module kind | Where |
 |-------------|--------|
-| Generators | `CreateGeneratorModule` (also appends `GeneratorObjectiveRecitation`) |
+| Generators | `CreateGeneratorModule` (+ `SharedInstructions.GeneratorObjectiveRecitation`) |
 | Chained evaluator | `CreateChainedEvaluatorModule` |
 | Consolidator | `CreateDefaultConsolidatorModule` |
 
-See pipeline-client-module-pattern skill §5.1.
+See `strop-pipeline-pattern` skill §4.
 
 ---
 
@@ -82,4 +84,4 @@ See pipeline-client-module-pattern skill §5.1.
 
 - Mock LLMs and external APIs.
 - Assert **parsed maps** and typed structs, not substrings of raw prompts.
-- Parser changes: table-driven tests in `internal/dspy/structured_output/xml`.
+- Parser changes: table-driven tests in `strop/dspy/structured_output/xml`.

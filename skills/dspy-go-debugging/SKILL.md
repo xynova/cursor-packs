@@ -1,17 +1,17 @@
 ---
 name: dspy-go-debugging
 description: >-
-  Debug dspy-go structured output failures: empty mandatory fields, validation vs
-  parse mismatches, retry exhaustion, interceptor wiring, and refinement-loop
-  exits. Use when a module fails validation, fields appear in raw logs but not in
-  parsed output, or a refinement loop stops unexpectedly.
+  Debug dspy-go structured output failures on strop: empty mandatory fields,
+  validation vs parse mismatches, retry exhaustion, interceptor wiring, and
+  refinement-loop exits. Use when a module fails validation, fields appear in
+  raw logs but not in parsed output, or a refinement loop stops unexpectedly.
 ---
 
-# DSPy-Go debugging
+# DSPy-Go debugging (strop)
 
-Decision tree for runtime failures. Parser and phase details: `.cursor/skills/dspy-xml-structured-output/SKILL.md`. Job/orchestration contracts: `.cursor/skills/pipeline-client-module-pattern/SKILL.md`.
+Decision tree for runtime failures. Parser details: `.cursor/skills/dspy-xml-structured-output/SKILL.md`. Job/orchestration: `.cursor/skills/strop-orchestration/SKILL.md`, `.cursor/skills/strop-pipeline-pattern/SKILL.md`.
 
-**Related:** `.cursor/skills/dspy-module-patterns/SKILL.md` (interceptor wiring).
+**Related:** `.cursor/skills/dspy-module-patterns/SKILL.md`.
 
 ---
 
@@ -41,10 +41,10 @@ Error mentions "empty fields" or mandatory validation?
 Do **not** restate parser tables here. Load `.cursor/skills/dspy-xml-structured-output/SKILL.md` (§2–§5) and:
 
 1. List `available fields` from the error — missing key vs present-but-empty.
-2. Missing key: signature name ≠ XML tag, or phase filter dropped the field.
+2. Missing key: signature name ≠ XML tag, or phase filter dropped the field (app hook).
 3. Present empty: empty tags, whitespace only, or nested children under a **plain string** field.
 4. Check `raw_response_preview` in validation logs.
-5. Add a parser unit test with the failing XML snippet.
+5. Add a parser unit test with the failing XML snippet in `strop/dspy/structured_output/xml`.
 
 **Do not** fix with `strings.Contains` on raw output or `outputs["response"]`.
 
@@ -52,7 +52,7 @@ Do **not** restate parser tables here. Load `.cursor/skills/dspy-xml-structured-
 
 ## 2. Interceptor wiring
 
-- `ChainOfThought` → `EnableStructuredOutput` on the **inner Predict** (`internal/dspy/factory/interceptor_setup.go`).
+- `ChainOfThought` → `EnableStructuredOutput` on the **inner Predict** (`strop/dspy/factory/interceptor_setup.go`).
 - Factory `Setup*` ran at registration.
 - After `Process`, keys MUST be top-level field names. A single `response` string means interceptors are not active.
 
@@ -87,7 +87,7 @@ Validation failure SHOULD trigger `RetryModuleInterceptor` within budget.
 | Partial regen overwrites all | Missing seed copy; merge in `SaveVersion` |
 | Nil version ID on success | Early-exit returned `uuid.Nil` — use selection fallback (pending → approved → any) |
 
-Details: pipeline-client-module-pattern skill (refinement, early-exit, selection fallback).
+Details: `strop-orchestration` skill.
 
 ---
 

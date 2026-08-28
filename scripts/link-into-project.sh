@@ -54,6 +54,11 @@ SKILLS=(
   dspy-go-debugging
   dspy-module-patterns
   dspy-prompt-engineering
+  dspy-xml-structured-output
+  strop-orchestration
+  strop-pipeline-pattern
+  strop-human-review
+  plan-scaffold
   review-member-visibility
   setup-goreleaser
   edit-cursor-packs
@@ -62,6 +67,7 @@ SKILLS=(
 RULES=(
   golang.mdc
   dspy.mdc
+  strop.mdc
   cursor-packs.mdc
   agent-smith.mdc
 )
