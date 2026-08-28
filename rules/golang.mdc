@@ -1,5 +1,5 @@
 ---
-description: Go coding workflow — load golang-quality for generation/completion and code-review-staged for reviews
+description: Go coding workflow — load golang-quality for generation/completion and review-code-staged for reviews
 globs: **/*.go
 alwaysApply: false
 ---
@@ -13,7 +13,7 @@ When generating, completing, or fixing Go:
 
 When the user asks to review, audit, rate quality, check code, or production readiness of Go:
 
-1. Load `.cursor/skills/code-review-staged/SKILL.md` (stage menu; do not dump all checklists first).
+1. Load `.cursor/skills/review-code-staged/SKILL.md` (stage menu; do not dump all checklists first).
 
 For export/visibility audits: `.cursor/skills/review-member-visibility/SKILL.md`.
 

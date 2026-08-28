@@ -13,7 +13,7 @@ Prevention-first Go workflow. Project rules (if present) under `.cursor/rules/` 
 
 **Load patterns:** [reference.md](reference.md) for copy-paste examples.
 
-**Related:** `.cursor/skills/code-review-staged/SKILL.md` for staged review; `.cursor/skills/review-member-visibility/SKILL.md` for export audits.
+**Related:** `.cursor/skills/review-code-staged/SKILL.md` for staged review; `.cursor/skills/review-member-visibility/SKILL.md` for export audits.
 
 ---
 
