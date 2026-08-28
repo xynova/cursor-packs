@@ -1,0 +1,19 @@
+---
+description: >-
+  Loads Agent Smith standards when authoring or reviewing Cursor skills and
+  rules (SKILL.md, .mdc). Trigger terms: Agent Smith, author skill, write rule,
+  meta-authoring, constraint checklist.
+globs:
+  - .cursor/skills/**/SKILL.md
+  - .cursor/skills/**/reference.md
+  - .cursor/rules/**/*.mdc
+  - "**/.cursor/packs/shared/skills/**/SKILL.md"
+  - "**/.cursor/packs/shared/rules/**/*.mdc"
+alwaysApply: false
+---
+
+# Agent Smith (Cursor)
+
+- When creating or reviewing Cursor skills/rules, MUST load `.cursor/skills/agent-smith/SKILL.md` and run its pre-completion verification.
+- MUST NOT paste Copilot League `.agent.md` files into cursor-packs unchanged.
+- If the target is pack-linked, MUST also follow `.cursor/skills/edit-cursor-packs/SKILL.md`.

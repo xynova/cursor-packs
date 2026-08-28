@@ -372,6 +372,45 @@ Pass and return structs with 3+ fields as pointers.
 
 ---
 
+## Text templates for reports
+
+Use `text/template` when the output is a multi-line human layout (poll summary, ASCII diagram, status board). Keep a typed view model; put the diagram shape in one `const` template string.
+
+```go
+type summaryData struct {
+    Configured int
+    Pending    int
+    Repos      []repoRow
+}
+
+const summaryTmpl = `========== summary ==========
+ repos : {{.Configured}}
+ pending: {{.Pending}}
+{{- range .Repos}}
+   {{printf "%-24s %s" .ID .Status}}
+{{- end}}
+==============================
+`
+
+var summaryTemplate = template.Must(template.New("summary").Parse(summaryTmpl))
+
+func formatSummary(data summaryData) (string, error) {
+    var b bytes.Buffer
+    if err := summaryTemplate.Execute(&b, data); err != nil {
+        return "", fmt.Errorf("render summary: %w", err)
+    }
+    return b.String(), nil
+}
+```
+
+- MUST prefer `text/template` for multi-line operator-facing reports.
+- MUST NOT build those layouts with chained `WriteString` / many `Sprintf` calls.
+- MAY use `fmt` / `strings.Builder` for single-line log lines and tight loops.
+- SHOULD parse with `template.Must` at package init when the template is static.
+- Example in-tree: `internal/poll/summary.go`.
+
+---
+
 ## Import organization
 
 ```go

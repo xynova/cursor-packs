@@ -10,6 +10,8 @@ Mount path in consumers: `.cursor/packs/shared`
 
 | Path | Purpose |
 |------|---------|
+| `skills/edit-cursor-packs/` | Branch/commit shared pack edits (not the consumer repo) |
+| `skills/agent-smith/` | Author/review Cursor skills and rules (Agent Smith standards) |
 | `skills/golang-quality/` | Generation/completion constraints + quality gates |
 | `skills/code-review-staged/` | Staged Go review (menu, detect vs consultant) |
 | `skills/setup-goreleaser/` | Scaffold GoReleaser v2 + GitHub Release workflow (gitboard pattern) |
@@ -19,6 +21,8 @@ Mount path in consumers: `.cursor/packs/shared`
 | `skills/review-member-visibility/` | Export-only-what-is-essential audit |
 | `rules/golang.mdc` | `globs: **/*.go` — load golang-quality / staged review |
 | `rules/dspy.mdc` | Agent-decided — load thin dspy skills |
+| `rules/cursor-packs.mdc` | Soft-link ownership — load edit-cursor-packs |
+| `rules/agent-smith.mdc` | Authoring skills/rules — load agent-smith |
 
 References (`reference.md`, `methodology.md`, …) live **inside** each skill folder; no separate symlink set.
 
