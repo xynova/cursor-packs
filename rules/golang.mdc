@@ -9,7 +9,8 @@ alwaysApply: false
 When generating, completing, or fixing Go:
 
 1. Load `.cursor/skills/golang-quality/SKILL.md` and follow its constraints and quality gates.
-2. Prefer project `make format` / `make lint` / `make vet` / `make test` when those targets exist; otherwise use `gofumpt`/`gofmt`, `golangci-lint`, `go vet`, `go test`.
+2. For deep patterns / anti-patterns, load that skill's `reference.md` (compact examples: `reference-patterns.md`).
+3. Prefer project `make format` / `make lint` / `make vet` / `make test` when those targets exist; otherwise use `gofumpt`/`gofmt`, `golangci-lint`, `go vet`, `go test`.
 
 When the user asks to review, audit, rate quality, check code, or production readiness of Go:
 

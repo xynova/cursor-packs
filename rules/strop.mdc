@@ -12,16 +12,16 @@ When bootstrapping strop, choosing composition/refinement APIs, or debugging loo
 When adding a pipeline job, clients, modules, evaluators, or aligning to JobRunner:
 
 - Load `.cursor/skills/strop-pipeline-pattern/SKILL.md`.
-- If the project has a local overlay (e.g. `pipeline-client-module-pattern`), load it **after** the pack skill for product-specific paths.
+- If the project has a local overlay (e.g. `pipelines-x-pipeline-pattern`), load it **after** the pack skill for product-specific paths.
 
 When implementing human review, Gate, reject-and-regenerate, or reviewflow ports:
 
 - Load `.cursor/skills/strop-human-review/SKILL.md`.
-- If the project has a local overlay (e.g. `human-review-flow`), load it for product CLI/classroom details.
+- If the project has a local overlay (e.g. `pipelines-x-human-review`), load it for product CLI/classroom details.
 
 When working on XML structured output or parser alignment:
 
 - Load `.cursor/skills/dspy-xml-structured-output/SKILL.md`.
-- If the project has phased-composition hooks, load its local XML overlay if present.
+- If the project has phased-composition hooks, load its `pipelines-x-*` XML overlay if present.
 
 Module wiring and prompts: see `.cursor/rules/dspy.mdc`.

@@ -12,13 +12,13 @@ Mount path in consumers: `.cursor/packs/shared`
 |------|---------|
 | `skills/edit-cursor-packs/` | Branch/commit shared pack edits (not the consumer repo) |
 | `skills/agent-smith/` | Author/review Cursor skills and rules (Agent Smith standards) |
-| `skills/golang-quality/` | Generation/completion constraints + quality gates |
+| `skills/golang-quality/` | Generation/completion constraints + quality gates; `reference.md` encyclopedia |
 | `skills/review-code-staged/` | Staged Go review (menu, detect vs consultant) |
 | `skills/setup-goreleaser/` | Scaffold GoReleaser v2 + GitHub Release workflow |
 | `skills/dspy-xml-structured-output/` | Generic XML parser + mandatory-field validation (strop paths) |
 | `skills/dspy-go-debugging/` | Validation / retry / refinement failures |
-| `skills/dspy-module-patterns/` | Module + interceptor wiring |
-| `skills/dspy-prompt-engineering/` | Signature / instruction / field-description contract |
+| `skills/dspy-module-patterns/` | Module + interceptor wiring; `reference.md` dspy-go encyclopedia |
+| `skills/dspy-prompt-engineering/` | Compact prompt contract; `reference.md` bias/CoT/templates |
 | `skills/strop-orchestration/` | Refinement loops, composition walks, regenerate policy |
 | `skills/strop-pipeline-pattern/` | JobRunner, clients, modules, evaluators, one table per job |
 | `skills/strop-human-review/` | Gate, reviewflow engine, ports, reject-and-regen |
@@ -36,8 +36,8 @@ References (`reference.md`, `methodology.md`, …) live **inside** each skill fo
 
 Keep as real files under `.cursor/skills/` / `.cursor/rules/`:
 
-- **Product overlays** that extend pack skills (e.g. YouTube-specific pipeline notes, phased PostGenerator hooks, sayings review classroom paths)
-- Fat invariant rules (architecture, golang encyclopedia, prompts, secrets, chat style)
+- **Product overlays** prefixed for the consumer (e.g. `pipelines-x-*` in content-pipelines): YouTube notes, PostGenerator hooks, classroom paths
+- Thin always-rules for architecture / secrets / chat style (not encyclopedias — those live in pack `reference.md`)
 - Project commands under `.cursor/commands/`
 
 The link script **skips** existing real directories — overlays are safe next to pack symlinks.

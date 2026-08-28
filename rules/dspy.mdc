@@ -11,8 +11,8 @@ When creating or wiring dspy-go modules / interceptors / Create* XML:
 
 When writing or revising module prompts, signatures, or field descriptions:
 
-- Load `.cursor/skills/dspy-prompt-engineering/SKILL.md`.
-- Also load project `.cursor/rules/rules-for-prompts.mdc` if present.
+- Load `.cursor/skills/dspy-prompt-engineering/SKILL.md` and its `reference.md` when depth is needed.
+- Also load project `pipelines-x-*` prompt overlays if present.
 
 When validation fails, fields look full in logs but parse empty, retries exhaust, or a refinement loop exits early:
 

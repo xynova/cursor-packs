@@ -9,9 +9,9 @@ description: >-
 
 # DSPy prompt engineering (strop)
 
-Compact contract. Parser alignment: `.cursor/skills/dspy-xml-structured-output/SKILL.md`. Job layout: `.cursor/skills/strop-pipeline-pattern/SKILL.md`.
+Compact contract. **Deep reference:** [reference.md](reference.md) (bias, CoT, templates). Parser alignment: `.cursor/skills/dspy-xml-structured-output/SKILL.md`. Job layout: `.cursor/skills/strop-pipeline-pattern/SKILL.md`.
 
-If the project has `.cursor/rules/rules-for-prompts.mdc`, load it after this skill for bias mitigation, CoT, and longer templates.
+Product-specific prompt invariants (if any) live in the consumer under a project prefix such as `pipelines-x-*` — load those after this skill.
 
 ---
 
@@ -89,4 +89,4 @@ Score keys MUST match `ChainedEvaluatorConfig.CriterionIDs`. Empty `feedback` wh
 - Lists: multiple `<item>` siblings under one parent field tag.
 - Phased output: only tags valid for that phase.
 
-Then load project `rules-for-prompts.mdc` if present.
+Then load project `pipelines-x-*` prompt overlays if present.
