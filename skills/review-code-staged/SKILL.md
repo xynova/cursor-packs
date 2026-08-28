@@ -1,5 +1,5 @@
 ---
-name: code-review-staged
+name: review-code-staged
 description: >-
   Staged Go code review with a stage menu, detect vs consultant modes, Makefile
   tool slots, and a tmp/review plan file. Use when the user asks to review, audit,

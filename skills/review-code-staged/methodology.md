@@ -1,6 +1,6 @@
 # Staged Review Methodology (Go)
 
-LOAD-WHEN: `code-review-staged` skill is active.
+LOAD-WHEN: `review-code-staged` skill is active.
 
 ---
 

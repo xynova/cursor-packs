@@ -50,7 +50,7 @@ fi
 
 SKILLS=(
   golang-quality
-  code-review-staged
+  review-code-staged
   dspy-go-debugging
   dspy-module-patterns
   dspy-prompt-engineering
