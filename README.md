@@ -25,7 +25,7 @@ Mount path in consumers: `.cursor/packs/shared`
 | `skills/plan-scaffold/` | Implementation plan meta-framework |
 | `skills/review-member-visibility/` | Export-only-what-is-essential audit |
 | `skills/review-code-smells/` | Code smell / maintainability review protocol |
-| `skills/perplexity-browser-research/` | Perplexity Pro via Browser MCP; default `reference/` persona + `packs/` templates |
+| `skills/perplexity-browser-research/` | Perplexity Pro via Browser MCP; default persona + packs. Project overlay: `.cursor/perplexity/` (not inside the skill symlink) |
 | `rules/golang.mdc` | `globs: **/*.go` — load golang-quality / staged review |
 | `rules/dspy.mdc` | Agent-decided — load thin dspy skills |
 | `rules/strop.mdc` | Agent-decided — load strop orchestration / pipeline / review skills |
@@ -45,6 +45,7 @@ Keep as real files under `.cursor/skills/` / `.cursor/rules/`:
 - **Product overlays** prefixed for the consumer (e.g. `pipelines-x-*` in content-pipelines): YouTube notes, PostGenerator hooks, classroom paths
 - Thin always-rules for architecture / secrets / product skill names (not encyclopedias — those live in pack `reference.md`)
 - Model-behavior and chat kernels (`always-rules-0`, `always-rules-01` + personas) are pack-owned. Keep a thin overlay for restyle exceptions, `content/` spelling, and named workflows.
+- Perplexity project persona and prompt packs: **`.cursor/perplexity/`** (real files). MUST NOT put overlays under `.cursor/skills/perplexity-browser-research/`.
 
 The link script **skips** existing real directories — overlays are safe next to pack symlinks.
 
@@ -84,3 +85,4 @@ Load order for a new pipeline job:
 - Creates relative links: `.cursor/skills/golang-quality` → `../packs/shared/skills/golang-quality`, and the same pattern for rules and personas
 - Updates existing symlinks
 - **Skips** paths that already exist as real files/directories (protects local overlays)
+- Allow-lists are `SKILLS`, `RULES`, `PERSONAS` only. **Never** links or overwrites `.cursor/perplexity/`

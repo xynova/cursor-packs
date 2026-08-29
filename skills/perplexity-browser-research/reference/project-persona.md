@@ -1,6 +1,6 @@
 # Project Perplexity persona (default)
 
-Copy this file into a **consumer overlay** (for example `.cursor/skills/<product>-perplexity-research/reference/project-persona.md`) and fill the brackets. The pack skill MUST Read the overlay when present; otherwise use this default as the voice and risk frame when building prompts.
+Copy this file to **`.cursor/perplexity/project-persona.md`** in the consumer repo and fill the brackets. Do **not** copy it into `.cursor/skills/perplexity-browser-research/` (pack symlink). The pack skill MUST Read `.cursor/perplexity/project-persona.md` when present; otherwise use this default.
 
 ## Who we are
 
@@ -30,9 +30,9 @@ Copy this file into a **consumer overlay** (for example `.cursor/skills/<product
 
 ## Pack choice
 
-| Need | Default pack | Mode |
-|------|--------------|------|
-| Facts, sources, grounding | `.cursor/skills/perplexity-browser-research/packs/deep-research.md` | deep |
-| Human voice, AI artifacts | `.cursor/skills/perplexity-browser-research/packs/prose-review.md` | search |
+| Need | Pack | Mode |
+|------|------|------|
+| Facts, sources, grounding | `.cursor/perplexity/packs/deep-research.md` if present, else this skill's `packs/deep-research.md` | deep |
+| Human voice, AI artifacts | `.cursor/perplexity/packs/prose-review.md` if present, else this skill's `packs/prose-review.md` | search |
 
-Consumer overlays MAY add more packs (email, doctrine, claims-only). Prefer overlay packs when they exist for this workflow.
+Consumers MAY add extra files under `.cursor/perplexity/packs/` (email, doctrine, claims-only). Prefer those when they exist for this workflow.

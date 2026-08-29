@@ -19,16 +19,30 @@ description: >-
 
 | Path | Role |
 |------|------|
-| `reference/project-persona.md` | How this project uses Perplexity (audience, risk, validate-before-write). Consumers SHOULD copy and fill an overlay. |
+| `reference/project-persona.md` | Fallback voice and risk frame when the consumer has no overlay |
 | `packs/deep-research.md` | Default fact / grounding prompt template (`mode=deep`) |
 | `packs/prose-review.md` | Default human-voice / AI-artifact cold-read (`mode=search`) |
 
+**Project overlay (consumer-owned, never inside this skill folder):**
+
+```
+.cursor/perplexity/
+  project-persona.md
+  packs/
+    deep-research.md
+    prose-review.md
+    <optional extra packs>
+```
+
+**MUST NOT** write overlay files under `.cursor/skills/perplexity-browser-research/` (that path is a pack symlink; edits land in cursor-packs and pack bumps overwrite them).
+
 **Load order for persona and packs:**
 
-1. Consumer overlay when present (for example `.cursor/skills/site-perplexity-research/` or a product `*-perplexity-*` skill with its own `reference/` and `packs/`).
-2. Else these pack defaults under `.cursor/skills/perplexity-browser-research/`.
+1. If `.cursor/perplexity/project-persona.md` exists, Read it; else Read this skill's `reference/project-persona.md`.
+2. If `.cursor/perplexity/packs/<name>.md` exists for the chosen workflow, fill that; else fill this skill's `packs/<name>.md`.
+3. One pack per run.
 
-**MUST** Read the chosen persona (overlay or default) before filling a pack. **MUST** pick one pack per run.
+**MUST** Read the chosen persona before filling a pack.
 
 ## When to invoke
 
@@ -51,8 +65,8 @@ Discover schemas with `GetDynamicTools` (or the host's MCP schema tool) on `user
 
 ### 1. Prepare prompt
 
-- Read `reference/project-persona.md` (overlay or pack default).
-- Fill **one** pack: `packs/deep-research.md` or `packs/prose-review.md` (overlay packs win when present for that workflow).
+- Read `.cursor/perplexity/project-persona.md` if it exists; else this skill's `reference/project-persona.md`.
+- Fill **one** pack: `.cursor/perplexity/packs/<name>.md` if it exists; else this skill's `packs/<name>.md` (`deep-research` or `prose-review`).
 - **No sensitive identifiers in `title_hint`** (employer brand, real names, client labels). Facts in the prompt body are the user's risk choice.
 - Keep the prompt path in chat so the user can re-open it.
 
@@ -162,6 +176,5 @@ For non-trivial research, create a discuss note (project path; for example `docs
 ## Related
 
 - Defaults live in this skill's `reference/` and `packs/`
-- Product overlays MAY add more packs and a filled `project-persona.md`
-- Site Hugo overlay: `.cursor/skills/site-perplexity-research/SKILL.md` when present
+- Project extensions live in `.cursor/perplexity/` (real files in the consumer repo)
 - MCP server: `user-perplexity-browser`

@@ -6,7 +6,7 @@ Workflow: `perplexity-browser-research`. Mode: **search** (default). Use **deep*
 
 Fill every `[bracket]` before submit. Copy the **whole** block into `perplexity_research` `prompt`.
 
-Read **`.cursor/skills/perplexity-browser-research/reference/project-persona.md`** (or the consumer overlay persona) first.
+Read **`.cursor/perplexity/project-persona.md`** if it exists; else **`.cursor/skills/perplexity-browser-research/reference/project-persona.md`**.
 
 ---
 

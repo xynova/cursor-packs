@@ -4,7 +4,7 @@ Workflow: `perplexity-browser-research`. Mode: **deep** (use `search` only for a
 
 Fill every `[bracket]` from repo files before submit. Copy the **whole** block into `perplexity_research` `prompt`.
 
-Read **`.cursor/skills/perplexity-browser-research/reference/project-persona.md`** (or the consumer overlay persona) first and align voice and risk with it.
+Read **`.cursor/perplexity/project-persona.md`** if it exists; else **`.cursor/skills/perplexity-browser-research/reference/project-persona.md`**. Align voice and risk with it.
 
 ---
 
