@@ -15,6 +15,21 @@ description: >-
 
 **Not a source of truth.** Export is research input. Fact-check against primary sources and the project's own doctrine or content rules before writing repo files.
 
+## Defaults in this skill
+
+| Path | Role |
+|------|------|
+| `reference/project-persona.md` | How this project uses Perplexity (audience, risk, validate-before-write). Consumers SHOULD copy and fill an overlay. |
+| `packs/deep-research.md` | Default fact / grounding prompt template (`mode=deep`) |
+| `packs/prose-review.md` | Default human-voice / AI-artifact cold-read (`mode=search`) |
+
+**Load order for persona and packs:**
+
+1. Consumer overlay when present (for example `.cursor/skills/site-perplexity-research/` or a product `*-perplexity-*` skill with its own `reference/` and `packs/`).
+2. Else these pack defaults under `.cursor/skills/perplexity-browser-research/`.
+
+**MUST** Read the chosen persona (overlay or default) before filling a pack. **MUST** pick one pack per run.
+
 ## When to invoke
 
 **Natural triggers:** "Let's open this in Perplexity", "Research mode", `perplexity export <topic>`.
@@ -36,7 +51,8 @@ Discover schemas with `GetDynamicTools` (or the host's MCP schema tool) on `user
 
 ### 1. Prepare prompt
 
-- Prefer a project pack file when one exists (for example a product overlay `perplexity-pack.md`, or site packs under `.cursor/skills/site-perplexity-research/packs/`).
+- Read `reference/project-persona.md` (overlay or pack default).
+- Fill **one** pack: `packs/deep-research.md` or `packs/prose-review.md` (overlay packs win when present for that workflow).
 - **No sensitive identifiers in `title_hint`** (employer brand, real names, client labels). Facts in the prompt body are the user's risk choice.
 - Keep the prompt path in chat so the user can re-open it.
 
@@ -76,7 +92,7 @@ perplexity_research
 | 3 | Choose **Deep Research** (telescope); click **Use** if the detail pane shows it |
 | 4 | Paste/submit the prepared prompt |
 
-`mode=search` leaves the default Search compose (no `/` Deep Research arming). Prefer `mode=deep` for doctrine and long research.
+`mode=search` leaves the default Search compose (no `/` Deep Research arming). Prefer `mode=deep` for doctrine and long research; prefer `mode=search` for the prose-review pack.
 
 If automation reports `ui_changed` on mode select, the user can arm Deep Research manually with `/` then tell the assistant to retry submit (or use paste pack).
 
@@ -112,6 +128,7 @@ Export order:
 
 ### 6. After import
 
+- Follow the persona's validate-before-write rules
 - Validate against primary sources and project doctrine or the target post
 - Reject blog-only citations presented as binding authority
 - **MUST NOT** paste Perplexity prose into ship paths without the project's normal review or drafting skill
@@ -144,6 +161,7 @@ For non-trivial research, create a discuss note (project path; for example `docs
 
 ## Related
 
-- Product overlays MAY add pack libraries and post-import gates (keep those in the consumer)
+- Defaults live in this skill's `reference/` and `packs/`
+- Product overlays MAY add more packs and a filled `project-persona.md`
 - Site Hugo overlay: `.cursor/skills/site-perplexity-research/SKILL.md` when present
 - MCP server: `user-perplexity-browser`
