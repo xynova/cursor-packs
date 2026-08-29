@@ -257,6 +257,15 @@ Next: Stage N+1 — <Name>. Continue?
 - MUST NOT paste full code blocks in chat — those go in the plan file.
 - MUST wait for reply before the next stage.
 - Severity: critical = architecture / security / resource leaks; medium = missing handling / robustness / testability; low = naming / clarity.
+- MUST record Low findings in the plan file the same way as Medium/High. Severity is priority order, not a license to skip.
+
+**CONSTRAINT:** MUST NOT bypass Low concerns when they are fixable.
+- Enforcement: Every Low finding has a recommendation; Fix option A includes all recorded findings (Low included). Chat MUST NOT say Low can be ignored or left for later solely because they are Low.
+- Violation: Restore the Low finding; include it in the fix set unless the user explicitly declines that item.
+
+CORRECT: Lint S1017 / godot / unused close listed as Low and included when the user picks "Fix all findings".
+PROHIBITED: "Only Medium+ matter; skip Low naming/clarity."
+PROHIBITED: Omitting a tool-reported Low from the plan because it is "nitpicky."
 
 ### Plan file finding
 
@@ -305,10 +314,12 @@ Next: Stage N+1 — <Name>. Continue?
 - Stage N: ...
 
 Fix options:
-  A) Fix all findings (open questions excluded)
-  B) Fix here — one finding at a time, highest severity first
+  A) Fix all findings including Low (open questions excluded)
+  B) Fix here — one finding at a time, highest severity first, then fixable Low
   C) Stop — review only; plan file stays in tmp/
 ```
 
 - MUST present all three options and wait.
 - Open questions are NEVER auto-fixed.
+- MUST NOT drop Low findings from option A. Prefer fixing fixable Low concerns with the rest.
+- When the user picks A or B, MUST treat Low the same as other findings for inclusion; B only orders by severity.
