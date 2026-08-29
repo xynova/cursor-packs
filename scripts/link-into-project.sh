@@ -72,6 +72,7 @@ RULES=(
   strop.mdc
   cursor-packs.mdc
   agent-smith.mdc
+  always-rules-0-ai.mdc
   always-rules-01-human-interaction.mdc
 )
 PERSONAS=(
