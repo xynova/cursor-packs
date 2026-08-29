@@ -65,6 +65,7 @@ SKILLS=(
   setup-goreleaser
   edit-cursor-packs
   agent-smith
+  perplexity-browser-research
 )
 RULES=(
   golang.mdc

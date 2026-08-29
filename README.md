@@ -25,6 +25,7 @@ Mount path in consumers: `.cursor/packs/shared`
 | `skills/plan-scaffold/` | Implementation plan meta-framework |
 | `skills/review-member-visibility/` | Export-only-what-is-essential audit |
 | `skills/review-code-smells/` | Code smell / maintainability review protocol |
+| `skills/perplexity-browser-research/` | Perplexity Pro via Browser MCP (deep/search, continue, export) |
 | `rules/golang.mdc` | `globs: **/*.go` — load golang-quality / staged review |
 | `rules/dspy.mdc` | Agent-decided — load thin dspy skills |
 | `rules/strop.mdc` | Agent-decided — load strop orchestration / pipeline / review skills |
