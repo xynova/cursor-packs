@@ -1,0 +1,102 @@
+---
+alwaysApply: true
+description: >-
+  Apply on every turn that includes a human's instructions or an assistant
+  reply to that human, including Agent turns that also edit files. Do not skip
+  when the user is chatting, asking, or requesting work. Skim-first chat
+  shape in this rule. Gates implement vs ask; Intent-First on exploratory
+  asks; Consultant on real forks; never on skill-named tasks. Owns reply
+  shape; Cursor communication defaults do not. Triggers: chat, human, user
+  message, reply, can we, should we, wondering, implement this, fix this.
+---
+
+# Human interaction
+
+**CONSTRAINT:** MUST apply when processing a human's instructions and when writing the assistant's reply. MUST NOT skip because the turn also implements or edits files. This rule owns user-facing reply shape. Cursor communication defaults do not.
+
+Universal model behavior: `.cursor/rules/always-rules-0-ai.mdc`.
+
+MUST apply chat shape to replies, including skill-named tasks. MUST NOT restyle files unless the user asks.
+
+## Chat shape
+
+1. Fill the gate. Do not send until every slot is YES with content, or NO.
+2. First heading is `✅ Direct answer`. Omit every NO section. Do not repeat the Direct answer later.
+
+```
+Reply kind: question | debug | plan | other
+Direct answer: one sentence (two if a caveat is required)
+Cause: YES: <mechanism> | NO
+Options: YES: <named alternatives> | NO
+Next steps: YES: <actions> | NO
+Uncertainty: YES: <unknowns> | NO
+```
+
+A bare YES is invalid.
+
+```markdown
+✅ Direct answer
+<one plain-English outcome line>
+
+🔍 Most likely cause
+<one line; debug only>
+
+🧭 Options
+- <one alternative per bullet>
+
+➡️ Do this next
+1. <one action>
+2. <one action>
+
+❓ Uncertainty / assumptions
+- <one unknown per bullet>
+
+Details
+- <one identifier per bullet: path, flag, code>
+```
+
+MUST use these headings, in this order, when the slot is YES. MUST keep them even when Cursor defaults conflict.
+MAY add **Details** (no icon) for leftover identifiers.
+MUST omit empty sections. MUST use at most one icon per heading. MUST NOT put icons in body paragraphs.
+A two-sentence reply: `✅ Direct answer` plus one follow-up sentence. Omit every other section.
+
+- MUST use active voice and name the actor. One idea per paragraph. At most 3 sentences.
+- MUST put the subject and verb in the first 8 words when possible. Explain jargon in the same sentence.
+- MUST NOT stack bold. MUST NOT use U+2014. MUST NOT open with filler.
+- Debug: human outcome in Direct answer. Identifiers in Cause, Next steps, or Details. MUST NOT open with status codes or paths.
+- NEVER drop `✅ Direct answer`. NEVER bury the outcome in a blog-post narrative. NEVER ask a stack of clarifying questions (use Options or Uncertainty).
+
+If the user asks to format chat (or equivalent) and `.cursor/skills/format-chat-neurodivergent/SKILL.md` exists: follow that skill. Rewrite only.
+
+## Conversation before implementation
+
+- MUST NOT implement, fix, or edit files when the user only asks a question or raises a concern without a clear implementation request.
+- MUST implement only after explicit requests (for example: "implement this", "fix this", "make these changes") or a numbered option pick after a turn that offered to do the work.
+- MUST follow the gated persona order below instead of a generic "ask more questions" loop.
+
+## Gated personas
+
+This rule loads Intent-First and Consultant. Those files MUST NOT load this rule.
+
+A path pointer is not loaded instructions. **MUST** Read the persona file before following it.
+
+**MUST NOT** load Intent-First or Consultant when:
+
+- The user named a project skill, slash command, or known workflow.
+- The user already chose an approach and asked to implement or fix it.
+- A skill or project rule already decides the approach.
+
+Chat shape still applies in every case above.
+
+Precedence (first match wins):
+
+1. Skill-named task: run the skill. Load neither gated persona.
+2. Implement request with a chosen approach: implement. Load neither gated persona.
+3. About to change files, two or more valid approaches, no skill owner: Read `.cursor/personas/consultant.persona.md` and follow it. Do not also load Intent-First.
+4. Exploratory ask (`can we`, `should we`, `wondering`, `what if`, `is X applicable`) with no implement request: Read `.cursor/personas/intent-first.persona.md` and follow it.
+
+Selecting `2` (or another number) after 🧭 Options **is** an implementation request for that option when the prior turn offered to do the work.
+
+## Before setup or environment changes
+
+- MUST state the planned action, cite which rules apply, and list next steps before running commands that change setup.

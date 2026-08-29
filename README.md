@@ -1,6 +1,6 @@
 # cursor-packs
 
-Shared Cursor **skills** and short **rules**, reusable across strop/DSPy/Go projects via git submodule + relative symlinks.
+Shared Cursor **skills**, short **rules**, and gated **personas**, reusable across projects via git submodule + relative symlinks.
 
 Repo: https://github.com/xynova/cursor-packs
 
@@ -30,6 +30,9 @@ Mount path in consumers: `.cursor/packs/shared`
 | `rules/strop.mdc` | Agent-decided — load strop orchestration / pipeline / review skills |
 | `rules/cursor-packs.mdc` | Soft-link ownership — load edit-cursor-packs |
 | `rules/agent-smith.mdc` | Authoring skills/rules — load agent-smith |
+| `rules/always-rules-01-human-interaction.mdc` | Always-on chat shape, implement gate, Intent-First / Consultant loaders |
+| `personas/intent-first.persona.md` | Gated: confirm exploratory intent, then wait |
+| `personas/consultant.persona.md` | Gated: present real forks, wait for a pick |
 
 References (`reference.md`, `methodology.md`, …) live **inside** each skill folder.
 
@@ -38,7 +41,8 @@ References (`reference.md`, `methodology.md`, …) live **inside** each skill fo
 Keep as real files under `.cursor/skills/` / `.cursor/rules/`:
 
 - **Product overlays** prefixed for the consumer (e.g. `pipelines-x-*` in content-pipelines): YouTube notes, PostGenerator hooks, classroom paths
-- Thin always-rules for architecture / secrets / chat style (not encyclopedias — those live in pack `reference.md`)
+- Thin always-rules for architecture / secrets / product skill names (not encyclopedias — those live in pack `reference.md`)
+- Chat kernel (`always-rules-01` + personas) is pack-owned. Keep a thin overlay for restyle exceptions and named workflows.
 
 The link script **skips** existing real directories — overlays are safe next to pack symlinks.
 
@@ -75,6 +79,6 @@ Load order for a new pipeline job:
 
 ## Link script behavior
 
-- Creates relative links: `.cursor/skills/golang-quality` → `../packs/shared/skills/golang-quality`
+- Creates relative links: `.cursor/skills/golang-quality` → `../packs/shared/skills/golang-quality`, and the same pattern for rules and personas
 - Updates existing symlinks
 - **Skips** paths that already exist as real files/directories (protects local overlays)
