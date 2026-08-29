@@ -1,0 +1,30 @@
+---
+alwaysApply: true
+description: >-
+  Universal model behavior on every turn: English identifiers, US spelling,
+  no em dash, tmp/ for upstream clones. Applies to chat, files, docs, and
+  tmp. Triggers: English, US spelling, em dash, identifiers, tmp clone,
+  model behavior.
+---
+
+# Model behavior
+
+**CONSTRAINT:** These rules are universal. MUST apply on every turn that produces written output or uses the filesystem. MUST NOT skip chat replies or file edits.
+
+Human interaction: `.cursor/rules/always-rules-01-human-interaction.mdc`.
+
+## Language (code and docs)
+
+- MUST use English only for code, identifiers, comments, strings, paths, and documentation.
+- MUST use **US English** spelling in generated prose and in chat when not quoting the author.
+- MUST use simple words, short sentences, and one consistent English term per concept.
+- MUST NOT use non-English text in the codebase.
+- Example: use `userName` and `getData()`; do not use mixed-language identifiers or comments.
+
+## Punctuation (all written output)
+
+- MUST NOT use the em dash character (U+2014) in any written output: chat responses, generated files, `tmp/`, social posts, or docs. Use comma, semicolon, colon, or parentheses instead.
+
+## Library source for debugging
+
+- MAY clone upstream into `tmp/<library-name>` to read or debug. MUST NOT modify or commit to upstream repos. MUST keep clones out of unrelated paths.

@@ -1070,7 +1070,7 @@ go run ./cmd --help
 
 ### **🚨 ANTI-CHEATING PROTOCOLS**
 
-> **Note**: For global code quality and anti-cheating rules that apply to all code, see `always-rules-2-quality.mdc`. This section focuses on verification protocols specific to Go code completion.
+> **Note**: No separate always-on quality rule. Apply this skill's constraints and quality gates for Go; do not ship stubs or silent failures.
 
 #### **What Constitutes Incomplete Work:**
 - [ ] **Claiming completion without deep search verification**

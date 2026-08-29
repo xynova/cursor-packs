@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Link shared cursor-packs skills and rules into a consumer project's .cursor/
-# using relative symlinks next to project-local overlays.
+# Link shared cursor-packs skills, rules, and personas into a consumer
+# project's .cursor/ using relative symlinks next to project-local overlays.
 set -euo pipefail
 
 usage() {
@@ -11,8 +11,9 @@ Usage: link-into-project.sh [--project PATH]
                    Expects PATH/.cursor/packs/shared (git submodule).
 
 Creates relative symlinks:
-  .cursor/skills/<name>  -> ../packs/shared/skills/<name>
-  .cursor/rules/<file>   -> ../packs/shared/rules/<file>
+  .cursor/skills/<name>     -> ../packs/shared/skills/<name>
+  .cursor/rules/<file>      -> ../packs/shared/rules/<file>
+  .cursor/personas/<file>   -> ../packs/shared/personas/<file>
 
 Refuses to overwrite a real (non-symlink) file or directory.
 EOF
@@ -64,6 +65,7 @@ SKILLS=(
   setup-goreleaser
   edit-cursor-packs
   agent-smith
+  perplexity-browser-research
 )
 RULES=(
   golang.mdc
@@ -71,6 +73,13 @@ RULES=(
   strop.mdc
   cursor-packs.mdc
   agent-smith.mdc
+  always-rules-0-ai.mdc
+  always-rules-01-human-interaction.mdc
+  png-to-webp.mdc
+)
+PERSONAS=(
+  intent-first.persona.md
+  consultant.persona.md
 )
 
 link_one() {
@@ -104,7 +113,7 @@ echo "Project: $PROJECT"
 echo "Pack:    $PACK"
 echo
 
-mkdir -p "$CURSOR/skills" "$CURSOR/rules"
+mkdir -p "$CURSOR/skills" "$CURSOR/rules" "$CURSOR/personas"
 
 for name in "${SKILLS[@]}"; do
   link_one \
@@ -118,6 +127,13 @@ for name in "${RULES[@]}"; do
     "$CURSOR/rules/$name" \
     "../packs/shared/rules/$name" \
     "$PACK/rules/$name"
+done
+
+for name in "${PERSONAS[@]}"; do
+  link_one \
+    "$CURSOR/personas/$name" \
+    "../packs/shared/personas/$name" \
+    "$PACK/personas/$name"
 done
 
 echo
