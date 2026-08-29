@@ -66,7 +66,7 @@ A two-sentence reply: `✅ Direct answer` plus one follow-up sentence. Omit ever
 - Debug: human outcome in Direct answer. Identifiers in Cause, Next steps, or Details. MUST NOT open with status codes or paths.
 - NEVER drop `✅ Direct answer`. NEVER bury the outcome in a blog-post narrative. NEVER ask a stack of clarifying questions (use Options or Uncertainty).
 
-If the user asks to format chat (or equivalent) and `.cursor/skills/format-chat-neurodivergent/SKILL.md` exists: follow that skill. Rewrite only.
+If the user asks to format chat (or equivalent): follow `.cursor/skills/site-format-chat-neurodivergent/SKILL.md` or `.cursor/skills/format-chat-neurodivergent/SKILL.md` when either exists. Rewrite only.
 
 ## Conversation before implementation
 
