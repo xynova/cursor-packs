@@ -97,7 +97,7 @@ Also load [appendix.md](appendix.md) for this stage.
 - "This package imports [N] internals. Expected for its role?"
 - "The CLI calls [client/repo] directly. Why is the service skipped?"
 
-For a full architecture pass, point at `.cursor/commands/review-architecture.md` instead of duplicating it.
+For a full architecture pass, point at project `pipelines-x-review-architecture` (if present) instead of duplicating it.
 
 ---
 

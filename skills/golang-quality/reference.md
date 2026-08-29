@@ -11,7 +11,7 @@ Project architecture / logging / domain rules (if present) still apply and take 
 
 # Go Coding Rules and Best Practices
 
-**Rules vs skills:** This file states Go **invariants** (resource management, error handling, nil safety, formatting). For generation/completion workflow and Makefile gates, use `.cursor/skills/golang-quality/SKILL.md` (patterns in that skill's `reference.md`). For staged review (stage menu, detect vs consultant), use `.cursor/skills/review-code-staged/SKILL.md` via `.cursor/commands/review-code.md`.
+**Rules vs skills:** This file states Go **invariants** (resource management, error handling, nil safety, formatting). For generation/completion workflow and Makefile gates, use `.cursor/skills/golang-quality/SKILL.md` (patterns in that skill's `reference.md`). For staged review (stage menu, detect vs consultant), use `.cursor/skills/review-code-staged/SKILL.md` .
 
 ## Table of Contents
 
@@ -950,7 +950,7 @@ func TestService_ProcessData(t *testing.T) {
 - [ ] **Context usage**: All long-running operations use context.Context
 - [ ] **Visibility compliance**: Only essential symbols are exported; use review-member-visibility skill to audit/fix
 - [ ] **No internal details exported**: All internal structs, interfaces, and methods are private
-- [ ] **Code review completed**: Systematic review performed using `.cursor/commands/code-review.md` checklist
+- [ ] **Code review completed**: Systematic review performed using `.cursor/skills/review-code-staged/SKILL.md` checklist
 
 ## 🔍 **MANDATORY CODE REVIEW PROTOCOL**
 
@@ -959,7 +959,7 @@ func TestService_ProcessData(t *testing.T) {
 Before claiming completion, you MUST:
 
 #### **1. Read Code Review Protocol**
-- [ ] **Read `.cursor/commands/code-review.md`** - Review the complete checklist
+- [ ] **Read `.cursor/skills/review-code-staged/SKILL.md`** - Review the complete checklist
 - [ ] **Understand all review steps** - Know what to check for
 
 #### **2. Execution Flow Tracing** ⚡

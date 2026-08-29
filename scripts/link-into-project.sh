@@ -60,6 +60,7 @@ SKILLS=(
   strop-human-review
   plan-scaffold
   review-member-visibility
+  review-code-smells
   setup-goreleaser
   edit-cursor-packs
   agent-smith

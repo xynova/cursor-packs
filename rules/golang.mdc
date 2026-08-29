@@ -21,3 +21,7 @@ For export/visibility audits: `.cursor/skills/review-member-visibility/SKILL.md`
 When adding GoReleaser, GitHub Releases, or tag-based Go binary publishing: `.cursor/skills/setup-goreleaser/SKILL.md`.
 
 Project-specific `.cursor/rules/` (architecture, logging, domain) still apply and take precedence for local invariants.
+
+When the user asks for code smells, technical debt, or maintainability review:
+
+1. Load `.cursor/skills/review-code-smells/SKILL.md`.

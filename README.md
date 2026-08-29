@@ -24,6 +24,7 @@ Mount path in consumers: `.cursor/packs/shared`
 | `skills/strop-human-review/` | Gate, reviewflow engine, ports, reject-and-regen |
 | `skills/plan-scaffold/` | Implementation plan meta-framework |
 | `skills/review-member-visibility/` | Export-only-what-is-essential audit |
+| `skills/review-code-smells/` | Code smell / maintainability review protocol |
 | `rules/golang.mdc` | `globs: **/*.go` — load golang-quality / staged review |
 | `rules/dspy.mdc` | Agent-decided — load thin dspy skills |
 | `rules/strop.mdc` | Agent-decided — load strop orchestration / pipeline / review skills |
@@ -38,7 +39,6 @@ Keep as real files under `.cursor/skills/` / `.cursor/rules/`:
 
 - **Product overlays** prefixed for the consumer (e.g. `pipelines-x-*` in content-pipelines): YouTube notes, PostGenerator hooks, classroom paths
 - Thin always-rules for architecture / secrets / chat style (not encyclopedias — those live in pack `reference.md`)
-- Project commands under `.cursor/commands/`
 
 The link script **skips** existing real directories — overlays are safe next to pack symlinks.
 
