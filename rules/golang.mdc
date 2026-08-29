@@ -9,7 +9,8 @@ alwaysApply: false
 When generating, completing, or fixing Go:
 
 1. Load `.cursor/skills/golang-quality/SKILL.md` and follow its constraints and quality gates.
-2. Prefer project `make format` / `make lint` / `make vet` / `make test` when those targets exist; otherwise use `gofumpt`/`gofmt`, `golangci-lint`, `go vet`, `go test`.
+2. For deep patterns / anti-patterns, load that skill's `reference.md` (compact examples: `reference-patterns.md`).
+3. Prefer project `make format` / `make lint` / `make vet` / `make test` when those targets exist; otherwise use `gofumpt`/`gofmt`, `golangci-lint`, `go vet`, `go test`.
 
 When the user asks to review, audit, rate quality, check code, or production readiness of Go:
 
@@ -20,3 +21,7 @@ For export/visibility audits: `.cursor/skills/review-member-visibility/SKILL.md`
 When adding GoReleaser, GitHub Releases, or tag-based Go binary publishing: `.cursor/skills/setup-goreleaser/SKILL.md`.
 
 Project-specific `.cursor/rules/` (architecture, logging, domain) still apply and take precedence for local invariants.
+
+When the user asks for code smells, technical debt, or maintainability review:
+
+1. Load `.cursor/skills/review-code-smells/SKILL.md`.

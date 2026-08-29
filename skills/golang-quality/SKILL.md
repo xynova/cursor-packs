@@ -9,9 +9,9 @@ description: >-
 
 # Go Quality
 
-Prevention-first Go workflow. Project rules (if present) under `.cursor/rules/` still apply — e.g. `rules-for-golang-coding.mdc`, architecture rules. This skill is the **procedure**.
+Prevention-first Go workflow. This skill is the **procedure**. Project architecture / domain rules (if present) still apply.
 
-**Load patterns:** [reference.md](reference.md) for copy-paste examples.
+**Deep reference:** [reference.md](reference.md) (full encyclopedia). **Compact patterns:** [reference-patterns.md](reference-patterns.md).
 
 **Related:** `.cursor/skills/review-code-staged/SKILL.md` for staged review; `.cursor/skills/review-member-visibility/SKILL.md` for export audits.
 

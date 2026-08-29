@@ -11,12 +11,12 @@ When creating or wiring dspy-go modules / interceptors / Create* XML:
 
 When writing or revising module prompts, signatures, or field descriptions:
 
-- Load `.cursor/skills/dspy-prompt-engineering/SKILL.md`.
-- Also load project `.cursor/rules/rules-for-prompts.mdc` if present.
+- Load `.cursor/skills/dspy-prompt-engineering/SKILL.md` and its `reference.md` when depth is needed.
+- Also load project `pipelines-x-*` prompt overlays if present.
 
 When validation fails, fields look full in logs but parse empty, retries exhaust, or a refinement loop exits early:
 
 - Load `.cursor/skills/dspy-go-debugging/SKILL.md`.
-- If the project has `.cursor/skills/dspy-xml-structured-output/SKILL.md`, use it for parser/phase details.
+- Load `.cursor/skills/dspy-xml-structured-output/SKILL.md` for parser details.
 
-Pipeline job layout (JobRunner, per-job clients) stays in the **project** skill if present (e.g. `pipeline-client-module-pattern`). Do not invent a second job pattern.
+Pipeline job layout (JobRunner, per-job clients): load `.cursor/skills/strop-pipeline-pattern/SKILL.md` and `.cursor/rules/strop.mdc` when orchestration or review is involved. Project overlays (if any) extend — do not replace — the pack pattern.
