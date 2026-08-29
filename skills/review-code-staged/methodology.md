@@ -152,24 +152,48 @@ For a full architecture pass, point at project `pipelines-x-review-architecture`
 
 For each concern:
 
-1. State what you observed (factual, no verdict).
-2. Ask one focused question.
-3. Wait.
+1. Inspect and write the question in the **same loop** (same agent, same turn). Do not split “find” and “ask” across a subagent.
+2. State what you observed (factual, no verdict).
+3. Ask one focused question, then a short **Why this matters**.
+4. Wait.
 
 | User reply | Action |
 |------------|--------|
 | Confirms it is a problem | Finding in plan file (severity + code pair) |
 | Explains it is intentional | Non-issue; write rationale |
 | Unsure / "move on" | Open question; continue |
+| `explain` / “what do people normally do” | Expand in the **same turn**: usual practice, trade-offs, tables. MUST NOT start the next stage or the next concern. |
 
 - MUST ask one question at a time.
 - MUST NOT block the stage on an unanswered question.
+- MUST keep inspect + question + Why this matters in the same loop.
+- MUST NOT launch a subagent only to explain a concern. Subagents do not display text to the user; the parent still has to relay it.
+- MUST add **Why this matters** after the question (2-5 lines: consequence of A vs B, not a lecture).
+- MAY launch a research subagent only when the fork depends on an upstream or library fact that is not in this repo (for example provider docs). That is research, not display.
+
+**CONSTRAINT:** Consultant questions MUST include Why this matters in the same turn as the question.
+- Enforcement: Chat turn that asks a stage 4–6 question also contains a Why this matters block of 2-5 lines.
+- Violation: Add the block before waiting; do not start the next concern.
+
+CORRECT:
+```
+I noticed Handler has 15 methods at internal/gateway/server.go:85.
+This could mean a God type, or it could be intentional if one facade is the product boundary.
+Why this matters: Split handlers are easier to test; one type grows every new route.
+Is keeping all of those on one Handler intentional, or should capabilities split?
+(If you're not sure, say so and I'll log it as an open question.)
+```
+
+PROHIBITED: Compact question only, with no Why this matters, then waiting.
+PROHIBITED: `Task` / subagent whose only job is to write the explanation.
+PROHIBITED: Starting Stage N+1 because the user said `explain`.
 
 Question shape:
 
 ```
 I noticed [observation at file:line].
 This could mean [consequence A] or it could be intentional if [condition B].
+Why this matters: [2-5 lines]
 Is [specific question]?
 (If you're not sure, say so and I'll log it as an open question.)
 ```

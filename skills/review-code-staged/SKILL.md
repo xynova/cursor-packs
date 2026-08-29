@@ -28,7 +28,7 @@ User asks to "review", "audit", "rate quality", "check code", or "production rea
 2. **Present the menu** (from methodology) and wait. MUST NOT start a stage until the user picks numbers, a range, or `all`.
 3. **Create** `tmp/review-<slug>-<YYYY-MM-DD>.md` before stage 1 (`tmp/` is gitignored). If it does not exist, create it.
 4. **Run one stage at a time.** After each stage: write findings into the plan file, print the per-stage chat summary, ask "Continue?".
-5. **Consultant stages (4–6):** ask one question at a time. Do not verdict before the user replies. Unanswered → open question, move on.
+5. **Consultant stages (4–6):** ask one question at a time, with a short Why this matters in the same turn (see methodology consultant protocol). Do not verdict before the user replies. User says `explain` → expand in the same agent; do not spawn an explain subagent. Unanswered → open question, move on.
 6. **When all selected stages are done:** completion handoff (fix with agent / fix here / stop). Wait for the user. Open questions are NEVER auto-fixed.
 
 Resume: if the user says "continue" / "resume" / "next stage" without context, list `tmp/review-*.md`, pick the file, run the first unchecked stage after confirmation.
