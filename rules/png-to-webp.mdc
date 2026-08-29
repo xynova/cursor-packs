@@ -1,0 +1,28 @@
+---
+description: >-
+  Convert shipping PNG rasters to WebP with cwebp, update references, and remove
+  duplicate PNGs. Apply when adding or editing .png files (or references to them).
+  Triggers: PNG, webp, cwebp, raster, image convert.
+globs: "**/*.png"
+alwaysApply: false
+---
+
+# PNG to WebP
+
+## Scope
+
+- MUST apply when the agent adds or updates a **shipping** `.png`, or leaves a shipping path pointing at `.png`.
+- MUST NOT auto-convert under `tmp/`, `node_modules/`, `.git/`, `vendor/`, or other clearly vendored / scratch trees unless the user points at a file there.
+- MUST NOT treat intermediate build scratch (for example a temp PNG before encode) as a shipping asset.
+
+## When a shipping PNG appears
+
+- MUST convert each in-scope `.png` to `.webp` before finishing the task, unless the user explicitly asks to keep PNG.
+- MUST use **`cwebp`** from libwebp, for example `cwebp -q 85 in.png -o out.webp`. If `cwebp` is missing, MUST report that and stop or ask for an approved alternative; MUST NOT silently skip.
+- MUST update every reference to the old `.png` path in the files touched for that change (markdown, HTML, CSS, config, code strings, and sibling locale copies when present).
+- SHOULD remove the original `.png` after a successful convert and reference update, unless the user asks to keep it.
+- MAY leave `.jpg`, `.jpeg`, and existing `.webp` unchanged unless the user asks to recompress or convert those too.
+
+## Verify
+
+- MUST run the project's documented build or check (for example `make build`, `hugo`, or the nearest test that loads the asset) after path changes so broken references surface immediately.

@@ -75,6 +75,7 @@ RULES=(
   agent-smith.mdc
   always-rules-0-ai.mdc
   always-rules-01-human-interaction.mdc
+  png-to-webp.mdc
 )
 PERSONAS=(
   intent-first.persona.md
