@@ -2,9 +2,10 @@
 alwaysApply: true
 description: >-
   Universal model behavior on every turn: English identifiers, US spelling,
-  no em dash, tmp/ for upstream clones. Applies to chat, files, docs, and
-  tmp. Triggers: English, US spelling, em dash, identifiers, tmp clone,
-  model behavior.
+  no em dash, tmp/ for upstream clones, feature branch before edits on
+  default git branches. Applies to chat, files, docs, and tmp. Triggers:
+  English, US spelling, em dash, identifiers, tmp clone, model behavior,
+  main, master, develop, trunk, feature branch, git branch.
 ---
 
 # Model behavior
@@ -28,3 +29,28 @@ Human interaction: `.cursor/rules/always-rules-01-human-interaction.mdc`.
 ## Library source for debugging
 
 - MAY clone upstream into `tmp/<library-name>` to read or debug. MUST NOT modify or commit to upstream repos. MUST keep clones out of unrelated paths.
+
+## Git branch before file changes
+
+**CONSTRAINT:** Before creating work that changes files in a git repository, MUST check the current branch. If HEAD is a default branch, MUST create and switch to a short descriptive feature branch first. MUST NOT edit project files while on a default branch.
+
+- Default branch names: `main`, `master`, `develop`, `trunk`
+- If already on a non-default branch: proceed on that branch
+- If detached HEAD: leave as-is; create a feature branch only when HEAD names a default branch
+- Branch name: short descriptive kebab-case with a `feat/` or `fix/` prefix (example: `feat/timeout-guard`)
+
+Enforcement: run `git rev-parse --abbrev-ref HEAD` (or equivalent) before the first file edit in a turn that will change files
+Violation: STOP, create/switch to a feature branch, then continue
+
+CORRECT:
+```text
+HEAD is main; task will edit files
+→ git checkout -b feat/add-branch-guard
+→ then edit files
+```
+
+PROHIBITED:
+```text
+HEAD is main, master, develop, or trunk
+→ edit files on that branch
+```
