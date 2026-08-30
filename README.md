@@ -71,6 +71,24 @@ git submodule update --init --recursive
 
 (Re-run the link script when upgrading the pack and new skill names appear.)
 
+## Versioning
+
+Every merge to `main` creates the next patch tag (`v0.1.0`, then `v0.1.1`, …) and a GitHub Release with auto-generated notes.
+
+Pin or upgrade a consumer submodule to a release:
+
+```bash
+cd .cursor/packs/shared
+git fetch --tags origin
+git checkout v0.1.0   # or latest: git checkout "$(git tag -l 'v*' --sort=-v:refname | head -n1)"
+cd ../../..
+git add .cursor/packs/shared
+.cursor/packs/shared/scripts/link-into-project.sh --project .
+git commit -m "Bump cursor-packs to v0.1.0"
+```
+
+Git still records a commit SHA under the hood; tags are the human-facing pin.
+
 ## strop consumers
 
 This pack assumes runtime lives in `github.com/behaviorengineering/strop`. App repos map config/logger at the boundary and keep product prompts, job packs, and DB adapters local.
