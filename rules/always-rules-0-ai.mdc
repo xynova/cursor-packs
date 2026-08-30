@@ -36,7 +36,7 @@ Human interaction: `.cursor/rules/always-rules-01-human-interaction.mdc`.
 
 - Default branch names: `main`, `master`, `develop`, `trunk`
 - If already on a non-default branch: proceed on that branch
-- If detached HEAD: create and switch to a named feature branch before edits
+- If detached HEAD: leave as-is; create a feature branch only when HEAD names a default branch
 - Branch name: short descriptive kebab-case with a `feat/` or `fix/` prefix (example: `feat/timeout-guard`)
 
 Enforcement: run `git rev-parse --abbrev-ref HEAD` (or equivalent) before the first file edit in a turn that will change files
