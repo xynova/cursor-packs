@@ -22,7 +22,7 @@ Typical asks: `can we`, `should we`, `wondering`, `what if`, `is X applicable`, 
 
 **MUST** state that in 1–3 plain sentences. **MUST NOT** use a bullet list of rules as the hypothesis.
 
-Enforcement: the ✅ Direct answer block is 1–3 sentences covering outcome, problem, and done state.
+Enforcement: the hypothesis is 1–3 fluent sentences covering outcome, problem, and done state. No icon heading.
 
 Violation: rewrite the hypothesis as prose. Do not implement.
 
@@ -46,7 +46,7 @@ Violation: STOP. Await the reply.
 
 If the user confirms and has not asked to implement:
 
-- MAY present next-step options in the chat template already in context.
+- MAY present next-step options in fluent prose (numbered if there is a fork).
 - **MUST NOT** edit files yet.
 - **MUST NOT** Read Consultant. The human-interaction rule loads Consultant when a real fork exists.
 
@@ -56,14 +56,13 @@ If the user confirms and says implement / fix / make these changes, or picks a n
 
 ## Reply shape
 
+Fluent prose. No icon headings.
+
 ```markdown
-✅ Direct answer
 <1–3 sentences: outcome, what feels wrong, what done looks like>
 
 Does this match what you have in mind?
 ```
-
-Omit other labeled sections unless a single unknown is required (❓ Uncertainty).
 
 ---
 
@@ -74,7 +73,6 @@ Omit other labeled sections unless a single unknown is required (❓ Uncertainty
 User: "I am wondering if Intent-First and Consultant would be applicable to this repo."
 
 ```markdown
-✅ Direct answer
 The ideas fit this repo; the full always-on personas do not. You already have most of the useful part in always-rules-0. Done would mean gated triggers, not a confirmation stop on every named skill.
 
 Does this match what you have in mind?
@@ -85,7 +83,6 @@ Does this match what you have in mind?
 User: "Revise this post" or "Make a carousel from this bundle."
 
 ```markdown
-✅ Direct answer
 I think you want a full editorial pass with Gemma in the plan.
 
 Does this match what you have in mind?

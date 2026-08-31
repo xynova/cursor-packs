@@ -71,25 +71,29 @@ defer file.Close()
 
 ## Error handling
 
-### Wrap with operation context
+### Typed domain error at each hop
 
-```go
-resp, err := client.doRequest(ctx, "GET", "/v1/agents", nil)
-if err != nil {
-    return fmt.Errorf("failed to list agents: %w", err)
-}
-```
-
-Services SHOULD use domain errors when the package already does:
+MUST wrap the incoming cause in a typed domain error (stable code, layer `op`, message, optional fields, `Unwrap`). Go has no Java-style stack on error values; the Unwrap chain plus fields is the breadcrumb.
 
 ```go
 if err != nil {
-    return errors.NewDomainError(errors.ErrEvaluationFailed, "Failed to list agents", err)
+    return errors.Wrap(err, errors.CodeUnavailable, "cloudflare.Synthesize", "post /run").
+        With("backend", backendID)
 }
 ```
 
-- MUST wrap — NEVER return `err` bare from an external call.
-- Message MUST name the operation that failed.
+`NewDomainError(code, message, cause)` is the same wrap when `op` is empty.
+
+- MUST wrap at every layer that can fail (client → plugin/service → gateway).
+- MUST NOT return `err` bare.
+- MUST NOT stringify with `err.Error()` and drop `errors.Is` / `As`.
+- `fmt.Errorf("%w")` MAY wrap a stdlib cause at the leaf, then MUST convert to a domain error before leaving the package.
+
+PROHIBITED:
+```go
+return err
+return fmt.Errorf("post /run: %s", err.Error())
+```
 
 ### Persistence errors MUST be returned
 

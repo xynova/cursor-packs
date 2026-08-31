@@ -14,7 +14,7 @@ Seven stages in two modes. MUST present as a numbered menu and ask which stages 
 |---|-------|----------------|
 | 1 | Automated Tools | `make vet`, `make lint`, format check; capture exit codes and raw output |
 | 2 | Type Safety | `any` / `interface{}`, type assertions, nil before dereference |
-| 3 | Error Handling | wrapping, `_ =`, log-without-return, persistence, DB fallback |
+| 3 | Error Handling | typed wrap-chain, `_ =`, log-without-return, persistence, DB fallback |
 | 7 | Code Clarity | naming, godot periods, logs, over-export |
 
 AI finds issues, reports them with code pairs in the plan file. No user input required mid-stage.
@@ -23,8 +23,8 @@ AI finds issues, reports them with code pairs in the plan file. No user input re
 
 | # | Stage | What it covers |
 |---|-------|----------------|
-| 4 | Architecture | SRP, layering, coupling, ISP, CLI→service→client |
-| 5 | Robustness | timeouts, resource cleanup, edge cases, LLM-in-transaction |
+| 4 | Architecture | SRP, layering, coupling, ISP, CLI→service→client, typed error wrap-chain |
+| 5 | Robustness | timeouts, missing-deadline fail-closed, resource cleanup, edge cases, LLM-in-transaction |
 | 6 | Testability | DI seams, mocks, constructor hooks, mixed concerns |
 
 AI surfaces **concerns as questions**. User answers → finding or non-issue. "I don't know" → open question, move on.
@@ -68,7 +68,9 @@ Do not fail pre-flight for missing `gocyclo` or `.gosec.yaml`.
 ## Stage 3: Error Handling — Detect
 
 - [ ] No `_ =` except defer cleanup
-- [ ] External errors wrapped (`%w` or `errors.NewDomainError`)
+- [ ] Each hop returns a typed domain error (code, op, optional fields, `Unwrap`); not a bare `err`
+- [ ] Cause is wrapped (`Wrap` / `NewDomainError` / `fmt.Errorf("%w")` only at a stdlib leaf, then converted)
+- [ ] No `err.Error()` stringify that drops `errors.Is` / `As`
 - [ ] No log-without-return on error paths
 - [ ] Persistence / session-refresh errors returned (see [appendix.md](appendix.md))
 - [ ] No DB-query fallback inside transactions (architecture §6.7)
@@ -90,12 +92,14 @@ Also load [appendix.md](appendix.md) for this stage.
 - Interface with 10+ methods → ISP / god interface
 - Domain models mixed with infrastructure DTOs
 - Direct `NewClient` / `logrus.New` inside a service
+- Request-path package that returns only `fmt.Errorf` / bare `error` with no layer-typed error
 
 **Then ask (one at a time):**
 
 - "This type has [N] methods across [A] and [B]. Intentional, or split?"
 - "This package imports [N] internals. Expected for its role?"
 - "The CLI calls [client/repo] directly. Why is the service skipped?"
+- "[hop] returns fmt.Errorf only. Wrap in a layer domain error with a code, or is a string error enough here?"
 
 For a full architecture pass, point at project `pipelines-x-review-architecture` (if present) instead of duplicating it.
 
@@ -106,6 +110,7 @@ For a full architecture pass, point at project `pipelines-x-review-architecture`
 **Inspect first:**
 
 - HTTP client with no timeout
+- Outbound hop (HTTP, plugin, proxy) with no `ctx.Deadline()` that invents a fallback duration instead of failing closed
 - Missing `defer` close/cancel/rollback
 - Hardcoded URLs, ports, or secrets (must be config/env; see no-secrets rule)
 - LLM or external HTTP **inside** a DB transaction (see appendix)
@@ -115,7 +120,31 @@ For a full architecture pass, point at project `pipelines-x-review-architecture`
 **Then ask:**
 
 - "No timeout on [client]. Is a hung downstream acceptable?"
+- "[hop] has no ctx deadline and falls back to [duration]. Fail closed before the call, or is a fallback timeout acceptable?"
 - "LLM call sits inside `WithTransaction`. Intentional, or should I/O move outside?"
+
+**CONSTRAINT:** Outbound hops that require a caller-supplied bound MUST fail closed when `ctx` has no deadline: return an error and NEVER call the downstream. MUST NOT invent a fallback timeout. Caller/gateway still MUST set the deadline on normal traffic.
+- Enforcement: Stage 5 inspect lists this hop; the consultant asks the question above in the same turn as Why this matters.
+- Violation: Record a finding (or an open question if the user is unsure). Do not treat a fallback duration as an implicit bound.
+
+CORRECT:
+```go
+if _, ok := ctx.Deadline(); !ok {
+    return errors.New(errors.CodeFailedPrecondition, hop, "missing deadline")
+}
+// then call downstream with ctx
+```
+
+PROHIBITED:
+```go
+timeout := 300 * time.Second
+if d, ok := ctx.Deadline(); ok {
+    timeout = time.Until(d)
+}
+// still calls downstream when deadline is missing
+```
+
+MUST NOT flag tests, `context.Background()` at process start, or in-process work with no outbound I/O.
 
 ---
 

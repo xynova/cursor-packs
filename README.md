@@ -32,7 +32,7 @@ Mount path in consumers: `.cursor/packs/shared`
 | `rules/cursor-packs.mdc` | Soft-link ownership — load edit-cursor-packs |
 | `rules/agent-smith.mdc` | Authoring skills/rules — load agent-smith |
 | `rules/always-rules-0-ai.mdc` | Always-on model behavior: English identifiers, US spelling, no em dash, tmp clones |
-| `rules/always-rules-01-human-interaction.mdc` | Always-on chat shape, implement gate, Intent-First / Consultant loaders |
+| `rules/always-rules-01-human-interaction.mdc` | Always-on fluent consultant + light tutor voice, implement gate, Intent-First / Consultant loaders |
 | `rules/png-to-webp.mdc` | `globs: **/*.png` — convert shipping PNGs with cwebp, update refs, drop duplicates |
 | `personas/intent-first.persona.md` | Gated: confirm exploratory intent, then wait |
 | `personas/consultant.persona.md` | Gated: present real forks, wait for a pick |

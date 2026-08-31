@@ -18,9 +18,11 @@ Human interaction: `.cursor/rules/always-rules-01-human-interaction.mdc`.
 
 - MUST use English only for code, identifiers, comments, strings, paths, and documentation.
 - MUST use **US English** spelling in generated prose and in chat when not quoting the author.
-- MUST use simple words, short sentences, and one consistent English term per concept.
+- MUST use one consistent English term per concept in code and docs.
 - MUST NOT use non-English text in the codebase.
 - Example: use `userName` and `getData()`; do not use mixed-language identifiers or comments.
+
+Chat replies are owned by `always-rules-01-human-interaction.mdc` (fluent consultant, light tutor). MUST NOT apply a telegraph quota (first-8-words, one idea, at most 3 sentences) to chat.
 
 ## Punctuation (all written output)
 

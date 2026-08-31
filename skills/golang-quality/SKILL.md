@@ -37,7 +37,21 @@ Apply these **while writing**, not only at review.
 
 **CONSTRAINT 4 — Errors handled.** NEVER discard with `_ =` except inside defer cleanup. NEVER log an error without returning it (except defer where return is impossible).
 
-**CONSTRAINT 5 — Wrap external errors.** MUST wrap with `fmt.Errorf("…: %w", err)` or `errors.NewDomainError(...)`. Message MUST name the failed operation.
+**CONSTRAINT 5 — Typed domain errors.** MUST return a typed domain error with a stable code, layer `op`, message, optional fields, and `Unwrap`. MUST wrap the incoming cause at each hop (client → plugin/service → gateway). MUST NOT return a bare `err`. MUST NOT stringify a cause with `err.Error()` and drop the chain. `fmt.Errorf("%w")` MAY wrap a stdlib cause at the leaf, then MUST convert to a domain error before leaving the package.
+- Enforcement: Every new or changed error return is a typed wrap; `errors.Is`/`As` still reach the cause.
+- Violation: STOP, wrap with the package `internal/errors` (or project equivalent) and re-check.
+
+CORRECT:
+```go
+return derrors.Wrap(err, derrors.CodeUnavailable, "cloudflare.Synthesize", "post /run").
+    With("backend", b.ID)
+```
+
+PROHIBITED:
+```go
+return err
+return fmt.Errorf("post /run: %s", err.Error())
+```
 
 **CONSTRAINT 6 — Persistence errors returned.** State-save failures MUST be returned. Log first, then return. Silent continue causes inconsistent state and loops.
 
@@ -62,7 +76,7 @@ Logging: MUST use injected `internal/observability.Logger`. NEVER `fmt.Print*` f
 ## Steps
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
-2. **Implement** — Apply all 12 constraints during generation. First param on I/O functions: `ctx context.Context`.
+2. **Implement** — Apply all 13 constraints during generation. First param on I/O functions: `ctx context.Context`.
 3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? PASS or fix.
 4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
 
@@ -104,7 +118,7 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 ### Errors and safety
 
 - [ ] No `_ =` except defer cleanup
-- [ ] External errors wrapped; persistence errors returned
+- [ ] Typed domain error at each layer (code, op, Unwrap); persistence errors returned
 - [ ] Constructor nil panics; pointer params nil-checked
 - [ ] No `context.Background()` inside a function that already has `ctx`
 - [ ] No HTTP outside client packages; no `logrus.New()` / `database.NewClient()` inside business logic
