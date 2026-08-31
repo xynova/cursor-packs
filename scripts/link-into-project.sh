@@ -63,6 +63,7 @@ SKILLS=(
   review-member-visibility
   review-code-smells
   setup-goreleaser
+  manage-go-releases
   edit-cursor-packs
   agent-smith
   perplexity-browser-research
@@ -71,6 +72,7 @@ RULES=(
   golang.mdc
   dspy.mdc
   strop.mdc
+  go-releases.mdc
   cursor-packs.mdc
   agent-smith.mdc
   always-rules-0-ai.mdc

@@ -15,6 +15,7 @@ Mount path in consumers: `.cursor/packs/shared`
 | `skills/golang-quality/` | Generation/completion constraints + quality gates; `reference.md` encyclopedia |
 | `skills/review-code-staged/` | Staged Go review (menu, detect vs consultant) |
 | `skills/setup-goreleaser/` | Scaffold GoReleaser v2 + GitHub Release workflow |
+| `skills/manage-go-releases/` | Auto-patch / skip docs-chore / pin consumers to `v*` (agent release practice) |
 | `skills/dspy-xml-structured-output/` | Generic XML parser + mandatory-field validation (strop paths) |
 | `skills/dspy-go-debugging/` | Validation / retry / refinement failures |
 | `skills/dspy-module-patterns/` | Module + interceptor wiring; `reference.md` dspy-go encyclopedia |
@@ -29,6 +30,7 @@ Mount path in consumers: `.cursor/packs/shared`
 | `rules/golang.mdc` | `globs: **/*.go` — load golang-quality / staged review |
 | `rules/dspy.mdc` | Agent-decided — load thin dspy skills |
 | `rules/strop.mdc` | Agent-decided — load strop orchestration / pipeline / review skills |
+| `rules/go-releases.mdc` | Agent-decided — load manage-go-releases for tags and consumer pins |
 | `rules/cursor-packs.mdc` | Soft-link ownership — load edit-cursor-packs |
 | `rules/agent-smith.mdc` | Authoring skills/rules — load agent-smith |
 | `rules/always-rules-0-ai.mdc` | Always-on model behavior: English identifiers, US spelling, no em dash, tmp clones |

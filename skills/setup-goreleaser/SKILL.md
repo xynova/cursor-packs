@@ -13,7 +13,7 @@ Wire a Go CLI for tag-triggered GitHub Releases the same way as gitboard: GoRele
 
 **Templates:** [reference.md](reference.md)
 
-**Related (after setup):** project-local release skill (e.g. `release-<binary>`) for cut-a-tag procedure; see [reference.md](reference.md#project-release-skill).
+**Related (after setup):** `.cursor/skills/manage-go-releases/SKILL.md` for auto-patch / skip / consumer pin policy; optional project-local cut-a-tag skill (e.g. `release-<binary>`) — see [reference.md](reference.md#project-release-skill).
 
 ---
 

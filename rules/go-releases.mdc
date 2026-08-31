@@ -1,0 +1,13 @@
+---
+description: Go module release and consumer pin practice for agents — load manage-go-releases when tagging, auto-patching, or bumping dependency versions
+alwaysApply: false
+---
+
+# Go releases (cursor-packs)
+
+When releasing, tagging, auto-patching, or pinning a Go module / submodule dependency:
+
+1. Load `.cursor/skills/manage-go-releases/SKILL.md` and follow its constraints.
+2. For first-time GoReleaser scaffolding (especially CLIs), load `.cursor/skills/setup-goreleaser/SKILL.md` first, then manage-go-releases for ongoing policy.
+
+Project overlays may name concrete paths (for example `providers/strop`); the shared skill owns the version policy.
