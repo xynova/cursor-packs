@@ -106,3 +106,11 @@ Every successful `Do` / `doRequest` MUST `defer resp.Body.Close()` immediately a
 ## 12. Tracing technique (short)
 
 For each changed function: entry point → call chain (CLI → service → client/repo) → every variable created and consumed → every error returned or wrapped → every resource deferred. Disconnects are bugs.
+
+---
+
+## 13. Stringify drops the wrap chain
+
+WRONG: `return fmt.Errorf("hop: %s", err.Error())` or copy only a message string and drop `Unwrap`.
+
+RIGHT: `errors.Wrap(err, code, op, msg)` (optional `.With(k, v)`). When crossing Bifrost, set `ErrorField.Error` to the domain error so `errors.Is` still works.

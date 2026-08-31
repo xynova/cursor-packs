@@ -133,12 +133,13 @@ return tx.Commit(ctx)  // Commit cancels the defer rollback
 
 ### **🚨 CRITICAL: Error Handling (MANDATORY)**
 
-- **ALWAYS** wrap errors with `errors.NewDomainError()` - never return raw errors from external calls
+- **ALWAYS** wrap with a typed domain error (`errors.Wrap` / `errors.NewDomainError`). NEVER return raw errors from a layer.
 - **NEVER** ignore errors with `_ =` - **THIS IS BAD PRACTICE AND CAUSES BUGS**
 - **NEVER** log errors without returning them - logging is not error handling
 - **NEVER** silently ignore errors in state persistence operations - this causes data inconsistency and infinite loops
 - **ALWAYS** return errors when state persistence fails - even if the operation itself succeeded
-- **ALWAYS** preserve underlying errors using `fmt.Errorf("message: %w", err)`
+- **ALWAYS** preserve the cause via `Unwrap` (do not stringify with `err.Error()`)
+- **ALWAYS** set a stable code, layer `op`, and optional fields for human troubleshooting
 - **Pattern**:
 ```go
 // ❌ FORBIDDEN: Raw error, ignored error, logged but not returned, silent state persistence failure
@@ -169,28 +170,22 @@ if err == nil && updatedContext != nil {
 // ✅ MANDATORY: Wrap with domain error, handle all errors, return state persistence failures
 resp, err := client.doRequest(ctx, "GET", "/v1/agents", nil)
 if err != nil {
-    return errors.NewDomainError(
-        errors.ErrExternalAPI,
-        "Failed to list agents",
-        err,
-    )
+    return errors.Wrap(err, errors.CodeUnavailable, "agents.List", "GET /v1/agents")
 }
 
 if err := client.DeleteAgent(ctx, agentID); err != nil {
-    return errors.NewDomainError(
-        errors.ErrAgentDeletionFailed,
-        fmt.Sprintf("Failed to delete agent %s", agentID),
-        err,
-    )
+    return errors.Wrap(err, errors.CodeUnavailable, "agents.Delete", "delete agent").
+        With("agent_id", agentID)
 }
 
 // ✅ MANDATORY: Return errors when state persistence fails
 if err := contextService.AddTranslationVersion(ctx, evalContext, version, translation, ...); err != nil {
     logger.WithError(err).Error("Failed to persist evaluation results to shared context")
-    return errors.NewDomainError(
-        errors.ErrExternalAPI,
-        "Evaluation succeeded but failed to persist results - context state is inconsistent",
+    return errors.Wrap(
         err,
+        errors.CodeInternal,
+        "context.AddTranslationVersion",
+        "Evaluation succeeded but failed to persist results - context state is inconsistent",
     )
 }
 
@@ -198,18 +193,15 @@ if err := contextService.AddTranslationVersion(ctx, evalContext, version, transl
 updatedContext, err := contextService.GetEvaluationContext(ctx, sayingID)
 if err != nil {
     logger.WithError(err).Error("Failed to refresh session state - session may have stale data")
-    return errors.NewDomainError(
-        errors.ErrExternalAPI,
-        "Failed to refresh session state - session state is stale and unreliable",
+    return errors.Wrap(
         err,
+        errors.CodeInternal,
+        "context.GetEvaluationContext",
+        "Failed to refresh session state - session state is stale and unreliable",
     )
 }
 if updatedContext == nil {
-    return errors.NewDomainError(
-        errors.ErrExternalAPI,
-        "Session refresh returned nil - session state is unreliable",
-        nil,
-    )
+    return errors.New(errors.CodeInternal, "context.GetEvaluationContext", "Session refresh returned nil - session state is unreliable")
 }
 // Update session with fresh data...
 ```
@@ -252,33 +244,22 @@ if err := persistState(); err != nil {
 
 // ✅ MANDATORY: Always handle errors explicitly
 if err := client.DeleteAgent(ctx, agentID); err != nil {
-    return errors.NewDomainError(
-        errors.ErrAgentDeletionFailed,
-        fmt.Sprintf("Failed to delete agent %s", agentID),
-        err,
-    )
+    return errors.Wrap(err, errors.CodeUnavailable, "agents.Delete", "delete agent").
+        With("agent_id", agentID)
 }
 
 if err := file.Close(); err != nil {
-    return fmt.Errorf("failed to close file: %w", err)
+    return errors.Wrap(err, errors.CodeInternal, "file.Close", "close")
 }
 
 if err := tx.Commit(ctx); err != nil {
-    return errors.NewDomainError(
-        errors.ErrTransactionFailed,
-        "Failed to commit transaction",
-        err,
-    )
+    return errors.Wrap(err, errors.CodeInternal, "tx.Commit", "commit")
 }
 
 // ✅ MANDATORY: Return errors from state persistence
 if err := persistState(); err != nil {
     logger.WithError(err).Error("Failed to persist state - state is inconsistent")
-    return errors.NewDomainError(
-        errors.ErrStatePersistenceFailed,
-        "Failed to persist state - state is now inconsistent",
-        err,
-    )
+    return errors.Wrap(err, errors.CodeInternal, "persistState", "state is now inconsistent")
 }
 ```
 
@@ -777,41 +758,21 @@ func GetService[T any]() T {
 
 ### **Error Handling Standards:**
 ```go
-// ✅ GOOD: Custom error types with context
-type ServiceError struct {
-    Type    string
-    Message string
-    Cause   error
-    Context map[string]interface{}
-}
-
-func (e *ServiceError) Error() string {
-    return fmt.Sprintf("%s: %s", e.Type, e.Message)
-}
-
-func (e *ServiceError) Unwrap() error {
-    return e.Cause
-}
-
-// ✅ GOOD: Error handling with structured logging
+// ✅ GOOD: Typed domain error per hop (code, op, fields, Unwrap)
 func (s *Service) ProcessData(ctx context.Context, data []byte) error {
     if err := s.validateData(data); err != nil {
         s.logger.WithFields(logrus.Fields{
             "error": err.Error(),
             "data_size": len(data),
         }).Error("Data validation failed")
-        return &ServiceError{
-            Type:    "ValidationError",
-            Message: "Invalid data provided",
-            Cause:   err,
-            Context: map[string]interface{}{
-                "data_size": len(data),
-            },
-        }
+        return errors.Wrap(err, errors.CodeInvalid, "service.ProcessData", "validate").
+            With("data_size", fmt.Sprintf("%d", len(data)))
     }
     return nil
 }
 ```
+
+Log `%+v` of the domain error at the handler to print code, op, fields, and the cause chain. Go does not attach a stack to `error` unless you add one; the wrap chain is the breadcrumb.
 
 ### **Resource Management:**
 ```go
@@ -975,7 +936,7 @@ Before claiming completion, you MUST:
 - [ ] **Files/Resources**: All closeable resources use `defer close()`
 
 #### **4. Error Handling Review** 🛡️
-- [ ] **Error Wrapping**: All errors wrapped with `errors.NewDomainError()`, never raw errors
+- [ ] **Error Wrapping**: All layer returns are typed domain errors (code, op, Unwrap); never raw or stringified causes
 - [ ] **Error Handling**: No ignored errors (`_ =`), no logged-but-not-returned errors
 - [ ] **State Persistence Errors**: All state persistence errors are returned, never silently ignored
 - [ ] **Session Refresh Errors**: All session/context refresh errors are returned, never silently ignored
