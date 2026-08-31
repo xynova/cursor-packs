@@ -20,7 +20,7 @@ Shared policy for Go libraries and toolkits consumed by agents (for example stro
 - User asks to release, tag, auto-patch, or bump a Go module
 - After merging to an upstream `main` that publishes tags
 - Pinning a submodule under `providers/` or `.cursor/packs/` plus `go.mod`
-- Adding or changing `auto-patch-release` style workflows
+- Adding or changing `auto-patch-release` style workflows (GitHub Actions or GitLab CI)
 
 ---
 
@@ -62,15 +62,17 @@ go get github.com/behaviorengineering/strop@latest
 
 When the repo is a Go **library** (source releases / `builds.skip: true` is OK):
 
-1. Keep tag-triggered GoReleaser (`.github/workflows/release.yml`) for human-pushed `v*` tags.
-2. Add a `main` push workflow that:
+1. Keep tag-triggered GoReleaser (`.github/workflows/release.yml` or GitLab `.gitlab/ci/goreleaser-release.yml`) for human-pushed `v*` tags.
+2. Add a default-branch push workflow/job that:
    - Skips docs/chore/ci-only ranges and `[skip release]`
    - Creates annotated `vX.Y.(Z+1)`
-   - Runs GoReleaser in the **same job** (GITHUB_TOKEN tag pushes do not trigger other workflows)
-   - Offers `workflow_dispatch` with `bump: patch|minor|major`
+   - Runs GoReleaser in the **same job** (CI job-token tag pushes do not reliably trigger other pipelines)
+   - Offers manual bump (`workflow_dispatch` bump input on GitHub; `RELEASE_BUMP` on GitLab web pipelines)
 3. Document the policy in the upstream README under a short **Releases (for agents)** section.
 
-Reference implementation: `behaviorengineering/strop` workflow `auto-patch-release.yml`.
+**GitHub reference:** `behaviorengineering/strop` workflow `auto-patch-release.yml`.
+
+**GitLab reference:** `.gitlab/ci/auto-patch-release.yml` (same skip/bump rules; job `auto_patch_release`). Enable job-token write to the repository so the job can push tags.
 
 ---
 
