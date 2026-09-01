@@ -2,9 +2,10 @@
 name: dspy-prompt-engineering
 description: >-
   Compact dspy-go prompt contract: signature vs instruction vs field descriptions,
-  list/map wording for the XML parser, generator rationale helpers, and evaluator
-  envelope. Use when writing or revising module prompts, generator/evaluator
-  signatures, or XML examples in *_modules.go.
+  list/map wording for the XML parser, DirectivesCoT directives_ack, generator
+  task-field rationale helpers, and chained evaluator envelope (feedback +
+  directives_ack, not evaluator rationale). Use when writing or revising module
+  prompts, generator/evaluator signatures, or XML examples in *_modules.go.
 ---
 
 # DSPy prompt engineering (strop)
@@ -43,22 +44,25 @@ signature := core.NewSignature(inputs, outputs).
 | Scalar text | Plain description; text goes directly in the tag |
 | List | **"list of"** or **"array"**; show `<item>` children in XML examples |
 | Key-value map | **"map"** or **"dictionary"** — NEVER **"object"** for maps |
-| Rationale | Shared helpers (below) |
+| Generator task-field rationale | Shared helpers (below). Evaluator XML MUST NOT add a rationale field. |
 
 Descriptions MUST match XML examples in `{job}_modules.go`.
 
 ---
 
-## Generator rationale contract
+## Generator DirectivesCoT vs task-field rationale
 
-1. **Objective recitation first:** `VOICE:`, `MUST:`, `ANTI_PATTERN:` (persona/objectives).
-2. **Then action-chain:** short bullets of what was done (cap ~5 lines unless the job defines a longer plan).
-3. **Plain text only** inside rationale — no XML/JSON nested in that field.
-4. Fix drift in **output fields**, not by rewriting rationale to match weak prose.
+DirectivesCoT (`strop/dspy/modules/directives_protocol.go`) prepends `directives_ack`. VOICE / MUST / ANTI_PATTERN for **that step** live there, not in a stock ChainOfThought `rationale`. `CreateGeneratorModule` MUST NOT append the old rationale-first recitation block.
+
+A generator MAY still declare a **task-field** `rationale` when the signature includes it (helpers below). That field is job output, not evaluator XML.
+
+1. Task-field rationale (only if the generator signature declares it): objective recitation first (`VOICE:`, `MUST:`, `ANTI_PATTERN:`), then a short action-chain (cap ~5 lines unless the job defines a longer plan).
+2. Plain text only inside that field — no XML/JSON nested in it.
+3. Fix drift in **task output fields**, not by rewriting rationale or `directives_ack` to match weak prose.
 
 Helpers (`strop/dspy`): `RationaleDescriptionWithContext(taskFocus)`, `RationaleDescriptionWithExtra(taskFocus, extraConstraints)`.
 
-`SharedInstructions.GeneratorObjectiveRecitation` is appended by `CreateGeneratorModule`. Evaluators use `DefaultChainedEvaluatorSignature()` and do **not** get generator recitation.
+Evaluators MUST use `CreateChainedEvaluatorModule` / `DefaultChainedEvaluatorSignature()`. They MUST NOT get generator recitation and MUST NOT copy generator `<rationale>` examples into Feedback Analysis prompts.
 
 ---
 
@@ -72,10 +76,29 @@ Helpers (`strop/dspy`): `RationaleDescriptionWithContext(taskFocus)`, `Rationale
 
 ## Evaluator prompts (chained)
 
-Envelope (`DefaultChainedEvaluatorSignature`):
+**Source of truth:** `strop/dspy/chained_evaluator.go` (`DefaultChainedEvaluatorSignature`, `CreateChainedEvaluatorModule`) and `strop/dspy/modules/directives_protocol.go`.
 
-- Inputs: `generator_input`, `generator_output` (maps — inner keys are job-specific).
-- Outputs: `criterion_scores`, `feedback`, `rationale`.
+Combined workflow outputs: `criterion_scores`, `feedback`, `directives_ack`. NEVER `rationale`.
+Inputs: `generator_input`, `generator_output` (maps; inner keys are job-specific).
+
+Feedback analysis submodule: task output is `feedback` only. DirectivesCoT prepends `directives_ack` (instructions → VOICE/MUST/ANTI_PATTERN → plan → attention check). Score generation submodule: `criterion_scores` (+ `directives_ack`). Downstream score generation reads `feedback` only.
+
+**CONSTRAINT:** Feedback Analysis job prompts MUST name the **feedback field** (checklist in `<feedback>`). MUST NOT tell FA to emit `<rationale>` or “always output feedback and rationale.”
+- Enforcement: FA `CreateChainedEvaluatorModule` signature has no rationale field; `dspymodules.New` drops one if present
+- Violation: STOP, rewrite FA copy to feedback-field language; leave generator `<rationale>` on the generator module only
+
+CORRECT:
+```text
+Provide checklist-based feedback. Always output at least one line in the feedback field. Never leave feedback empty.
+```
+
+PROHIBITED:
+```text
+Always output both feedback and rationale.
+REQUIRED XML OUTPUT:
+<feedback>...</feedback>
+<rationale>...</rationale>
+```
 
 Score keys MUST match `ChainedEvaluatorConfig.CriterionIDs`. Empty `feedback` when issues exist is a contract violation.
 
