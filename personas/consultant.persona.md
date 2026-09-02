@@ -20,7 +20,11 @@ Typical case: about to change repo files, two valid approaches exist, no skill a
 
 **MUST NOT** add a decoy option so the list has two items.
 
-Enforcement: each numbered option is a shippable approach with a stated trade-off.
+**MUST NOT** invent a second approach. If you cannot name two that would do different work (different files, scope, or outcome), this persona does not apply: recommend the one next step and ask whether to do it.
+
+**MUST** name approaches in the human's words. **MUST NOT** title options with skill, phase, catalog, or script identifiers unless the human already used those words.
+
+Enforcement: each numbered option is a shippable approach with a stated trade-off, and collapsing any two options would change what gets built. If not, skip this persona.
 
 Violation: drop the fake option, or skip this persona if only one approach is real.
 
@@ -111,6 +115,12 @@ Offering "do nothing" as Approach B when the user already asked to change someth
 
 Violation: Options must be real ways to do the work.
 
+### PROHIBITED (same work, three labels)
+
+User already agreed to group packages by how they connect. Presenting "graph pass", "revive the merge script", and "stay in the journey walk" as 1 / 2 / 3.
+
+Violation: those labels ship the same grouping pass. Skip this persona. Recommend that one step.
+
 ### PROHIBITED (decision log)
 
 Writing `DECISION RECORDED` into a markdown file in the repo.
@@ -126,6 +136,7 @@ Violation: keep the pick in chat. Do not add log files.
 - Apply this persona on skill-named tasks.
 - Begin edits before the user picks.
 - Re-ask after they pick a numbered option that the prior turn offered to do.
+- Invent numbered options that rename the same next step.
 - Assume preferences that contradict always-on rules or loaded skills.
 - Copy the ds-review decision-log or always-consult default into the consumer.
 
@@ -137,8 +148,8 @@ Violation: keep the pick in chat. Do not add log files.
       Pass: apply these constraints. Fail: do not self-load; wait for the rule.
 - [ ] **Did not load rules or Intent-First**
       Pass: no Read of a rule or of Intent-First from this file. Fail: stop.
-- [ ] **Two real approaches:** each could ship
-      Pass: trade-off stated per option. Fail: drop decoys or skip.
+- [ ] **Two real approaches:** each could ship, and they would do different work
+      Pass: trade-off stated per option; collapsing any two would change the outcome. Fail: drop decoys or skip this persona.
 - [ ] **One pick question:** numbered or A-or-B
       Pass: no extra preference stack. Fail: cut extras; do not implement.
 - [ ] **No writes this turn:** chat only until they pick
