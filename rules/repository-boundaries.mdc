@@ -1,0 +1,111 @@
+---
+alwaysApply: true
+description: >-
+  Prevent consumer-specific spill into related libraries, git submodules, and
+  nested repositories. Apply when creating or editing files under providers/,
+  packs, vendored trees, or any path that resolves to another git repo.
+  Triggers: submodule, related library, nested repository, portable module,
+  product spill, generalize, repository boundary, providers/, packs/shared.
+---
+
+# Repository boundaries
+
+**Moral:** A related library or submodule serves many consumers. Keep product layout, brand, workflows, and fixtures out of it. Put that specificity in the consumer adapter or docs.
+
+Pack-owned soft-links: also follow `.cursor/rules/cursor-packs.mdc` and `.cursor/skills/edit-cursor-packs/SKILL.md`.
+
+## Detect ownership before writing
+
+**CONSTRAINT:** Before creating or editing a file, MUST resolve which git repository owns the path. Nested checkouts, submodules, and soft-linked pack trees are separate repositories.
+
+- MUST: treat a path as a related library when it is a git submodule, a nested `.git` checkout, or a symlink into another repository (for example `providers/*`, `.cursor/packs/shared`)
+- MUST NOT: treat a nested repository path as ordinary consumer-owned files
+
+Enforcement: `git -C <path> rev-parse --show-toplevel` (or equivalent) before the first write in that tree
+Violation: STOP, resolve ownership, then continue under the correct boundary
+
+CORRECT:
+```text
+Edit providers/typology/skills/docs/SKILL.md
+→ git -C providers/typology rev-parse --show-toplevel
+→ owner is typology; apply generalization rules
+```
+
+PROHIBITED:
+```text
+Edit providers/typology/... as if it were the consumer monorepo
+→ commit consumer brand, paths, or fixtures into the library
+```
+
+## No product spill
+
+**CONSTRAINT:** When the target repository is not the consumer product repo, MUST keep changes portable for any host that depends on that library.
+
+- MUST: use product-neutral names, APIs, docs, examples, fixtures, and tests
+- MUST: put product-specific wiring, paths, brand, skills, and docs in the consumer (adapter, integration package, or consumer `docs/`)
+- MUST NOT: write consumer brand names, case layout (`pii/`, instance trees), product-only skills, or host workflows into the related library
+- MUST NOT: add fixtures or examples that only make sense for one consumer product
+
+Enforcement: review the planned diff for consumer brand, host-only paths, and product workflow references
+Violation: STOP, generalize the library change, move spill to the consumer, re-verify
+
+CORRECT:
+```text
+Library docs: "host revise skill owns pitch prose"
+Consumer docs: "Consilium revise-flow owns pitch prose"
+```
+
+PROHIBITED:
+```text
+Library comment: "Consilium Contract().Subprograms map here"
+Library example path: "pii/.pipeline/concepts/"
+```
+
+## Requests that breach the boundary
+
+**CONSTRAINT:** If the user asks for work that would put consumer-specific behavior into a related library, MUST refuse the spill. MUST propose a generalized library change plus consumer-side adapter or docs instead.
+
+- MUST: state that the path belongs to another repository and that the library must stay portable
+- MUST: offer the split: portable API or docs in the library; product behavior in the consumer
+- MUST NOT: "just this once" write product spill into the related library because the request asked for it
+- MUST NOT: invent a consumer-only flag, path, or fixture inside the library to satisfy a product request
+
+Enforcement: if the requested file content names a single consumer product or its private layout, refuse and split the change
+Violation: STOP, refuse the spill, rewrite as portable library + consumer adapter
+
+CORRECT:
+```text
+User: "Document Consilium pii/ paths inside providers/typology skills"
+→ Refuse spill
+→ Add portable wording in typology
+→ Document Consilium paths under consumer docs/run or adapter only
+```
+
+PROHIBITED:
+```text
+User asks for Consilium-only docs inside the typology submodule
+→ Write them into providers/typology because "the user asked"
+```
+
+## Commit ownership
+
+**CONSTRAINT:** Changes inside a related library MUST be committed in that library's repository (branch, commit, PR there). The consumer only bumps the submodule pointer or dependency pin after the library change lands.
+
+- MUST: branch and commit inside the nested repository when editing it
+- MUST NOT: stage nested-repo file bytes as ordinary files of the consumer commit
+- MUST NOT: leave the library dirty and only commit the consumer pointer as if the content lived in the consumer
+
+Enforcement: `git status` in both the nested repo and the consumer before claiming done
+Violation: STOP, commit in the owning repository first, then bump the consumer pin
+
+CORRECT:
+```text
+1) commit in providers/typology (or packs/shared)
+2) bump submodule SHA in the consumer
+```
+
+PROHIBITED:
+```text
+git add providers/typology/skills/... from the consumer root
+→ commit library bytes as consumer files
+```

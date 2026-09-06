@@ -78,6 +78,7 @@ RULES=(
   always-rules-0-ai.mdc
   always-rules-01-human-interaction.mdc
   png-to-webp.mdc
+  repository-boundaries.mdc
 )
 PERSONAS=(
   intent-first.persona.md
