@@ -10,9 +10,9 @@ description: >-
 
 Menu-driven review. Do **not** dump every checklist into chat before the user picks stages.
 
-**Load:** [methodology.md](methodology.md) for stage checklists, plan file, and report format. Load [appendix.md](appendix.md) for this repo's unique bug patterns (LLM-in-transaction, silent persistence, named-return shadowing).
+**Load:** [methodology.md](methodology.md) for stage checklists, plan file, and report format. Load [appendix.md](appendix.md) for this repo's unique bug patterns (LLM-in-transaction, silent persistence, named-return shadowing, gateway-only LLM tracing).
 
-**Related:** `.cursor/skills/golang-quality/SKILL.md` (generation gates). Exports: `.cursor/skills/review-member-visibility/SKILL.md`. If the project has them: architecture reviews via project `pipelines-x-review-architecture` (if present); smells via `.cursor/skills/review-code-smells/SKILL.md`.
+**Related:** `.cursor/skills/golang-quality/SKILL.md` (generation gates, including structured logging and OTEL). Exports: `.cursor/skills/review-member-visibility/SKILL.md`. If the project has them: architecture reviews via project `pipelines-x-review-architecture` (if present); smells via `.cursor/skills/review-code-smells/SKILL.md`.
 
 ---
 

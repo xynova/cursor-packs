@@ -114,3 +114,17 @@ For each changed function: entry point → call chain (CLI → service → clien
 WRONG: `return fmt.Errorf("hop: %s", err.Error())` or copy only a message string and drop `Unwrap`.
 
 RIGHT: `errors.Wrap(err, code, op, msg)` (optional `.With(k, v)`). When crossing Bifrost, set `ErrorField.Error` to the domain error so `errors.Is` still works.
+
+---
+
+## 14. Gateway-only LLM tracing (missing client OTEL)
+
+AI gateways (Polypus, Bifrost, provider proxies) export HTTP timing and status. That does **not** cover hangs or errors inside the calling libraries after the response (XML parse, evaluate loops, retry wiring).
+
+WRONG: Ship an LLM CLI/worker with no process `observability.Init`, no OpenInference (or project) spans on generate/evaluate, and treat the gateway UI as sufficient.
+
+RIGHT: Init the tracer at the entrypoint; export OTLP when the project's endpoint env is set; span generate/evaluate/parse so Phoenix/Arize shows client failures even when the gateway returned HTTP 200.
+
+Detect: LLM call sites with no span start; `ResolveConfig` / `Init` never called from the command path; docs that say "debug in the gateway" with no client exporter.
+
+Related: golang-quality CONSTRAINT 15; Stage 4/5 consultant questions on observability.

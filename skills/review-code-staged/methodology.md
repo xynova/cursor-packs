@@ -15,7 +15,7 @@ Seven stages in two modes. MUST present as a numbered menu and ask which stages 
 | 1 | Automated Tools | `make vet`, `make lint`, format check; capture exit codes and raw output |
 | 2 | Type Safety | `any` / `interface{}`, type assertions, nil before dereference |
 | 3 | Error Handling | typed wrap-chain, `_ =`, log-without-return, persistence, DB fallback |
-| 7 | Code Clarity | naming, godot periods, logs, over-export |
+| 7 | Code Clarity | naming, godot periods, structured logs, over-export |
 
 AI finds issues, reports them with code pairs in the plan file. No user input required mid-stage.
 
@@ -23,8 +23,8 @@ AI finds issues, reports them with code pairs in the plan file. No user input re
 
 | # | Stage | What it covers |
 |---|-------|----------------|
-| 4 | Architecture | SRP, layering, coupling, ISP, CLI→service→client, typed error wrap-chain |
-| 5 | Robustness | timeouts, missing-deadline fail-closed, resource cleanup, edge cases, LLM-in-transaction |
+| 4 | Architecture | SRP, layering, coupling, ISP, CLI→service→client, typed error wrap-chain, observability init seams |
+| 5 | Robustness | timeouts, missing-deadline fail-closed, resource cleanup, edge cases, LLM-in-transaction, client OTEL vs gateway-only |
 | 6 | Testability | DI seams, mocks, constructor hooks, mixed concerns |
 
 AI surfaces **concerns as questions**. User answers → finding or non-issue. "I don't know" → open question, move on.
@@ -93,6 +93,8 @@ Also load [appendix.md](appendix.md) for this stage.
 - Domain models mixed with infrastructure DTOs
 - Direct `NewClient` / `logrus.New` inside a service
 - Request-path package that returns only `fmt.Errorf` / bare `error` with no layer-typed error
+- LLM/inference CLI or worker entrypoint with no `observability.Init` (or project OTEL bootstrap)
+- Generate/evaluate path with no client OpenInference (or project) spans; only an AI gateway is expected to show traces
 
 **Then ask (one at a time):**
 
@@ -100,6 +102,7 @@ Also load [appendix.md](appendix.md) for this stage.
 - "This package imports [N] internals. Expected for its role?"
 - "The CLI calls [client/repo] directly. Why is the service skipped?"
 - "[hop] returns fmt.Errorf only. Wrap in a layer domain error with a code, or is a string error enough here?"
+- "This LLM entrypoint has no OTEL init / no client spans. Rely on the gateway alone, or wire process tracing?"
 
 For a full architecture pass, point at project `pipelines-x-review-architecture` (if present) instead of duplicating it.
 
@@ -116,16 +119,24 @@ For a full architecture pass, point at project `pipelines-x-review-architecture`
 - LLM or external HTTP **inside** a DB transaction (see appendix)
 - No `ctx.Done()` check before expensive work
 - Config/env missing → raw panic or empty continue instead of fail-fast
+- LLM path with gateway HTTP traces only (no client OpenInference/OTLP spans) so post-response hangs are invisible (see appendix §14)
+- OTLP endpoint documented for the project but process never exports when that env is set
+- Named `err` shadowed before `EndSpanWithStatus` / span defer (see appendix §5)
 
 **Then ask:**
 
 - "No timeout on [client]. Is a hung downstream acceptable?"
 - "[hop] has no ctx deadline and falls back to [duration]. Fail closed before the call, or is a fallback timeout acceptable?"
 - "LLM call sits inside `WithTransaction`. Intentional, or should I/O move outside?"
+- "LLM work is only visible in the AI gateway. Is a client-side hang after HTTP 200 acceptable without a Phoenix/OTLP span?"
 
 **CONSTRAINT:** Outbound hops that require a caller-supplied bound MUST fail closed when `ctx` has no deadline: return an error and NEVER call the downstream. MUST NOT invent a fallback timeout. Caller/gateway still MUST set the deadline on normal traffic.
 - Enforcement: Stage 5 inspect lists this hop; the consultant asks the question above in the same turn as Why this matters.
 - Violation: Record a finding (or an open question if the user is unsure). Do not treat a fallback duration as an implicit bound.
+
+**CONSTRAINT:** LLM generate/evaluate (and equivalent inference hops) MUST be observable from the calling process via OpenTelemetry / OpenInference spans exported when an OTLP endpoint is configured. MUST NOT treat AI-gateway HTTP traces as the sole observability plan for client parse, evaluate, or hang failures after the response.
+- Enforcement: Stage 5 inspect lists gateway-only or missing-init cases; consultant asks the Phoenix/OTLP question above with Why this matters.
+- Violation: Record a finding (or open question). Do not clear as non-issue solely because the gateway shows HTTP 200.
 
 CORRECT:
 ```go
@@ -169,7 +180,8 @@ MUST NOT flag tests, `context.Background()` at process start, or in-process work
 
 - [ ] Comments end with a period (`godot`)
 - [ ] No `fmt.Print*` for logs (pterm OK for interactive CLI)
-- [ ] Log lines include discriminator fields (IDs, job names)
+- [ ] Logging uses injected `*observability.Logger` (or project equivalent); no ad-hoc `logrus.New()` in services
+- [ ] Log lines include discriminator fields (IDs, job/task names)
 - [ ] Names are specific (not `process` / `handle` / `do` unless the package already uses them)
 - [ ] Only essential symbols exported — if unsure, run `.cursor/skills/review-member-visibility/SKILL.md`
 - [ ] No TODO/FIXME without explanation
