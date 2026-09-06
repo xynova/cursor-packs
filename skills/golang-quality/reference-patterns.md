@@ -416,6 +416,62 @@ func formatSummary(data summaryData) (string, error) {
 
 ---
 
+## Observability (OTEL and logging)
+
+### Structured logger injection
+
+```go
+func NewService(client ClientInterface, logger *observability.Logger) *Service {
+    if client == nil {
+        panic("client cannot be nil")
+    }
+    if logger == nil {
+        panic("logger cannot be nil")
+    }
+    return &Service{client: client, logger: logger}
+}
+```
+
+- MUST inject `*observability.Logger` (or project equivalent). NEVER `fmt.Print*` or `logrus.New()` in services.
+- Log error paths with discriminator fields, then return the error.
+
+### Process tracer init and OTLP export
+
+```go
+otelCfg := observability.ResolveConfig(outputDir)
+if _, err := observability.Init(otelCfg); err != nil {
+    return fmt.Errorf("otel init: %w", err)
+}
+```
+
+- Process entrypoints that call LLMs MUST initialize the tracer provider.
+- When `MAJORDOMO_OTEL_ENDPOINT` / `OTEL_EXPORTER_OTLP_ENDPOINT` (or project equivalent) is set, MUST export via OTLP so Phoenix/Arize receives client spans.
+- Local failure dumps without OTLP MAY still run; they do not replace OTLP when operators expect Phoenix.
+
+### Client spans on LLM hops (not gateway-only)
+
+- Generate, evaluate, and parse paths MUST create OpenInference (or project-standard) spans around library work.
+- An AI gateway's HTTP spans (request size, status, model) are NOT sufficient observability for client hangs after the response.
+- When `defer` ends a span from named `(err error)`, assign with `err =` so status records the failure.
+
+CORRECT:
+```go
+func (r *Runtime) Generate(ctx context.Context, task string, fields map[string]interface{}, version int) (out map[string]interface{}, err error) {
+    ctx, span := observability.StartSpan(ctx, "judge.Generate")
+    defer observability.EndSpanWithStatus(span, &err)
+    out, err = r.runner.Generate(ctx, task, fields, version)
+    return out, err
+}
+```
+
+PROHIBITED:
+```go
+// Call Polypus/OpenAI with no process tracer and no client span.
+// Treat gateway UI timing as proof the client path is healthy.
+```
+
+---
+
 ## Import organization
 
 ```go
