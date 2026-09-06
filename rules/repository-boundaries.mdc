@@ -51,13 +51,13 @@ Violation: STOP, generalize the library change, move spill to the host, re-verif
 
 CORRECT:
 ```text
-Library docs: "the host revise skill owns pitch prose"
-Host docs: "ProductA revise-flow owns pitch prose"
+Library docs: "the host style skill owns pitch prose"
+Host docs: "ProductA style-guide owns pitch prose"
 ```
 
 PROHIBITED:
 ```text
-Library comment: "ProductA Contract().Jobs map here"
+Library comment: "ProductA JobRegistry maps here"
 Library example path: "host-private/data/pipeline/jobs/"
 ```
 
