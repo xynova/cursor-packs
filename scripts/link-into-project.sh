@@ -64,6 +64,7 @@ SKILLS=(
   review-code-smells
   setup-goreleaser
   manage-go-releases
+  prepare-go-forge
   edit-cursor-packs
   agent-smith
   perplexity-browser-research

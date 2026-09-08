@@ -11,7 +11,7 @@ description: >-
 
 Shared policy for Go libraries and toolkits consumed by agents (for example strop, cursor-packs consumers). Humans rarely browse Releases; agents need a resolvable `v*` after every releasable merge.
 
-**Scaffold binaries first:** `.cursor/skills/setup-goreleaser/SKILL.md` (CLI builds). This skill owns **ongoing version policy** and **consumer pins**.
+**Scaffold binaries first:** `.cursor/skills/setup-goreleaser/SKILL.md` (CLI builds). **Host settings:** `.cursor/skills/prepare-go-forge/SKILL.md` when publish fails with package/job-token 403 or forge gates are missing. This skill owns **ongoing version policy** and **consumer pins**.
 
 ---
 
@@ -72,7 +72,7 @@ When the repo is a Go **library** (source releases / `builds.skip: true` is OK):
 
 **GitHub reference:** `behaviorengineering/strop` workflow `auto-patch-release.yml`.
 
-**GitLab reference:** `.gitlab/ci/auto-patch-release.yml` (same skip/bump rules; job `auto_patch_release`). Enable job-token write to the repository so the job can push tags.
+**GitLab reference:** `.gitlab/ci/auto-patch-release.yml` (same skip/bump rules; job `auto_patch_release`). Run `prepare-go-forge` so job-token can push tags (`ci_push_repository_for_job_token_allowed`) and upload packages (`ADMIN_PACKAGES`).
 
 ---
 
@@ -95,3 +95,4 @@ Binary TRUE/FALSE:
 - [ ] Docs/chore/ci-only and `[skip release]` do not get tags
 - [ ] Consumer pin updated submodule (or path) **and** `go.mod` when applicable
 - [ ] No force-push of tags unless the user explicitly requests it
+- [ ] If publish 403'd on packages / `admin_packages`, `prepare-go-forge` was run (or deferred with reason)

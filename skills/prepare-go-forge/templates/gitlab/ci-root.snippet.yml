@@ -1,0 +1,29 @@
+# Snippet for .gitlab-ci.yml (merge into an existing root file; do not overwrite blindly).
+# Requires local: .gitlab/ci/golang-quality.yml from templates/gitlab/golang-quality.yml
+# Add goreleaser / auto-patch includes separately (setup-goreleaser / manage-go-releases).
+
+stages:
+  - quality
+  - test
+  - secret-detection
+  - release
+
+variables:
+  GO_VERSION: "1.25"
+  SECRET_DETECTION_ENABLED: "true"
+
+default:
+  interruptible: true
+
+include:
+  - local: .gitlab/ci/golang-quality.yml
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
+
+sast:
+  stage: test
+
+secret_detection:
+  stage: secret-detection
+  # Do not download SAST report artifacts (they dirty the tree for GoReleaser).
+  dependencies: []
