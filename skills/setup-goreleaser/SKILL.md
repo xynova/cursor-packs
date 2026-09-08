@@ -13,7 +13,7 @@ Wire a Go CLI for tag-triggered GitHub Releases the same way as gitboard: GoRele
 
 **Templates:** [reference.md](reference.md)
 
-**Related (after setup):** `.cursor/skills/manage-go-releases/SKILL.md` for auto-patch / skip / consumer pin policy; optional project-local cut-a-tag skill (e.g. `release-<binary>`) — see [reference.md](reference.md#project-release-skill).
+**Related (after setup):** `.cursor/skills/prepare-go-forge/SKILL.md` for host CLI settings (protected `main`, job-token packages/releases, quality + secret CI); `.cursor/skills/manage-go-releases/SKILL.md` for auto-patch / skip / consumer pin policy; optional project-local cut-a-tag skill (e.g. `release-<binary>`) - see [reference.md](reference.md#project-release-skill).
 
 ---
 
@@ -62,10 +62,10 @@ Defaults: `project_name` = binary name; `main` = `./cmd/<binary>`; `binary` = `<
 
 ## Steps
 
-1. **Discover** — binary name, `./cmd/...` path, existing release files, version var.
+1. **Discover** - binary name, `./cmd/...` path, existing release files, version var.
 2. **Write** `.goreleaser.yaml` from [reference.md](reference.md) (substitute project/binary/main).
 3. **Write** `.github/workflows/release.yml` from [reference.md](reference.md).
-4. **Wire version** — in the build main package:
+4. **Wire version** - in the build main package:
 
 ```go
 // version is set by GoReleaser / make build via -ldflags -X main.version=...
@@ -74,7 +74,7 @@ var version = "dev"
 
 Expose it (e.g. `<binary> version` printing `"<binary> %s\n", version`).
 
-5. **Makefile** (if present) — keep local builds consistent:
+5. **Makefile** (if present) - keep local builds consistent:
 
 ```make
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
@@ -82,9 +82,10 @@ LDFLAGS := -X main.version=$(VERSION)
 # build: go build -ldflags "$(LDFLAGS)" -o $(BINARY) ./cmd/<binary>
 ```
 
-6. **Validate** — `goreleaser check` when available.
-7. **Document briefly** — README install note: download Release assets for the tag; contributors use `make` / `go run`.
-8. **Optional** — add a project skill `release-<binary>` (cut annotated `v*` tag from green `main`); template in [reference.md](reference.md#project-release-skill).
+6. **Validate** - `goreleaser check` when available.
+7. **Prepare forge** - run `.cursor/skills/prepare-go-forge/SKILL.md` (host CLI: protected `main`, packages, job-token policies, quality + secret CI) before the first publish.
+8. **Document briefly** - README install note: download Release assets for the tag; contributors use `make` / `go run`.
+9. **Optional** - add a project skill `release-<binary>` (cut annotated `v*` tag from green `main`); template in [reference.md](reference.md#project-release-skill).
 
 ---
 
@@ -95,4 +96,5 @@ LDFLAGS := -X main.version=$(VERSION)
 - [ ] `main.version` default `"dev"` + user-visible version command
 - [ ] Makefile ldflags aligned (if Makefile exists)
 - [ ] `goreleaser check` OK (or noted if binary missing)
+- [ ] Forge prepared (`prepare-go-forge`) or explicitly deferred
 - [ ] No Homebrew/Docker unless requested
