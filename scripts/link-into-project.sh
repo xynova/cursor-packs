@@ -65,6 +65,7 @@ SKILLS=(
   setup-goreleaser
   manage-go-releases
   prepare-go-forge
+  resolve-pr-merge-conflicts
   edit-cursor-packs
   agent-smith
   perplexity-browser-research
@@ -74,6 +75,7 @@ RULES=(
   dspy.mdc
   strop.mdc
   go-releases.mdc
+  pr-merge-conflicts.mdc
   cursor-packs.mdc
   agent-smith.mdc
   always-rules-0-ai.mdc
