@@ -66,6 +66,7 @@ SKILLS=(
   manage-go-releases
   prepare-go-forge
   resolve-pr-merge-conflicts
+  sync-submodules-after-merge
   edit-cursor-packs
   agent-smith
   perplexity-browser-research
@@ -76,6 +77,7 @@ RULES=(
   strop.mdc
   go-releases.mdc
   pr-merge-conflicts.mdc
+  sync-submodules.mdc
   cursor-packs.mdc
   agent-smith.mdc
   always-rules-0-ai.mdc
