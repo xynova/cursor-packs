@@ -1,0 +1,15 @@
+---
+description: >-
+  Recursive git submodule sync after PR merge or pin bump — load
+  sync-submodules-after-merge when submodule gitlinks changed and checkouts
+  still show modified (new commits) dirt
+alwaysApply: false
+---
+
+# Sync submodules after merge (cursor-packs)
+
+When a PR that touches submodule gitlinks merges, after checkout of that tip, or when pin bumps leave `(new commits)` dirt:
+
+1. Load `.cursor/skills/sync-submodules-after-merge/SKILL.md` and follow its constraints.
+2. Run recursive `git submodule update --init` at the parent and inside nests that have their own `.gitmodules`.
+3. Do not commit drifted gitlinks just to clear the dirt; do not delete untracked nest content unless the user asks.
