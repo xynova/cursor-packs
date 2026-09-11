@@ -6,7 +6,7 @@ LOAD-WHEN: `review-code-staged` skill is active.
 
 ## Review stage catalogue
 
-Seven stages in two modes. MUST present as a numbered menu and ask which stages to run before executing any stage.
+Eight stages in two modes. MUST present as a numbered menu and ask which stages to run before executing any stage. Run selected stages in **ascending number order**.
 
 ### Detect stages — objective, no dialogue mid-stage
 
@@ -16,8 +16,11 @@ Seven stages in two modes. MUST present as a numbered menu and ask which stages 
 | 2 | Type Safety | `any` / `interface{}`, type assertions, nil before dereference |
 | 3 | Error Handling | typed wrap-chain, `_ =`, log-without-return, persistence, DB fallback |
 | 7 | Code Clarity | naming, godot periods, structured logs, over-export |
+| 8 | Generation Gates | `golang-quality` constraints 1–15 (templates, OTEL, resources, layering); `go-structured-strings` for report builders |
 
 AI finds issues, reports them with code pairs in the plan file. No user input required mid-stage.
+
+For a full write-time quality story without consultant dialogue, prefer Detect stages `1, 2, 3, 7, 8` (or `all` if consultant stages are wanted too).
 
 ### Consultant stages — ask, do not verdict
 
@@ -29,13 +32,14 @@ AI finds issues, reports them with code pairs in the plan file. No user input re
 
 AI surfaces **concerns as questions**. User answers → finding or non-issue. "I don't know" → open question, move on.
 
-**"All"** runs stages 1–7 in order.
+**"All"** runs stages 1–8 in ascending order (consultant stages 4–6 still ask mid-pass when selected).
 
 **Rules:**
 
 - MUST present this menu before executing anything.
 - MUST ask "Which stages? (numbers, ranges, or 'all')" and wait.
 - MUST NOT begin stage execution without explicit stage selection.
+- MUST run the user's selection in ascending stage number order.
 
 ---
 
@@ -187,6 +191,38 @@ MUST NOT flag tests, `context.Background()` at process start, or in-process work
 - [ ] No TODO/FIXME without explanation
 - [ ] String literals used 3+ times extracted as constants (`goconst`)
 
+Clarity only. Templates, resource defers, CLI→service→client layering, and process/LLM OTEL gates belong in **Stage 8**, not here. If Stage 8 is not selected, note that generation gates were skipped rather than re-checking them under clarity.
+
+---
+
+## Stage 8: Generation Gates — Detect
+
+Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality/SKILL.md` **Core constraints** (1–15) and apply them as a checklist against the review target. For multi-section markdown, reports, TOC, or similar human layout builders, also Read and apply `.cursor/rules/go-structured-strings.mdc`.
+
+### Ownership vs Stage 3
+
+- **Stage 3** keeps error-handling depth (typed wrap-chain, `_ =`, log-without-return, persistence, named returns, DB fallback).
+- **Stage 8** owns generation-specific gates Stage 3 does not cover: C1–3 (HTTP/cancel/txn defers), C7–15 (nil, ctx, unused/N+1, layering, format/godot overlap, interfaces, templates, structured logging, OTEL).
+- Apply **C4** and **C6** in Stage 8 **only when Stage 3 was not selected** for this review. If Stage 3 already ran, do not duplicate those findings under Stage 8.
+
+### Checklist (map to golang-quality)
+
+- [ ] C1: every `resp.Body` has `defer Close()` after the error check
+- [ ] C2: every `WithTimeout` / `WithCancel` / `WithDeadline` has `defer cancel()` on the next line
+- [ ] C3: every `Begin` has `defer tx.Rollback` after the error check
+- [ ] C4 / C6 (only if Stage 3 not selected): no `_ =` except defer cleanup; no log-without-return; persistence errors returned
+- [ ] C7: constructor nil panics; public pointer params nil-checked
+- [ ] C8: no replacing received `ctx` with `context.Background()`; `ctx.Done()` before expensive work
+- [ ] C9: no unused work; no N+1 when a batch exists
+- [ ] C10: HTTP / external API only in client packages; CLI has no business logic
+- [ ] C11: comments end with period; format/lint gates known for the project (Stage 1 already ran tools when selected)
+- [ ] C12: interfaces ≤ 5–6 methods
+- [ ] C13: multi-line operator reports / diagrams use `text/template` (or `html/template`); not chained `WriteString` / `Sprintf` spaghetti — see `go-structured-strings.mdc`
+- [ ] C14: injected structured logger; no `fmt.Print*` / ad-hoc `logrus.New()` in services
+- [ ] C15: LLM/inference entrypoints init OTEL; OTLP when endpoint env is set; client spans on generate/evaluate (not gateway-only); named-return span defers use `err =`
+
+Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope.
+
 ---
 
 ## Consultant stage protocol
@@ -251,23 +287,21 @@ Is [specific question]?
 # Review Plan: <slug>
 **Date:** <YYYY-MM-DD>
 **Target:** <file or directory>
-**Selected Stages:** <e.g. "1, 2, 5, 6">
+**Selected Stages:** <e.g. "1, 2, 3, 7, 8">
 
 ## Stages
 - [ ] 1. Automated Tools
 - [ ] 2. Type Safety
-- [ ] 5. Robustness
-- [ ] 6. Testability
+- [ ] 3. Error Handling
+- [ ] 7. Code Clarity
+- [ ] 8. Generation Gates
 
 ## Findings
 
 ### Stage 1: Automated Tools
 
 ## Open Questions
-
-### Stage 5: Robustness
 ```
-
 - MUST create the plan file before stage 1.
 - MUST tick `[x]` only after findings are appended.
 - MUST NOT delete previous stage findings.
