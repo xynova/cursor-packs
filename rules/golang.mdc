@@ -16,6 +16,7 @@ When generating, completing, or fixing Go:
 When the user asks to review, audit, rate quality, check code, or production readiness of Go:
 
 1. Load `.cursor/skills/review-code-staged/SKILL.md` (stage menu; do not dump all checklists first).
+2. Staged review **includes** generation-gate detect as **Stage 8** (same `golang-quality` constraints used while writing, plus `go-structured-strings` for report builders). Prefer including stage 8 when the user wants detect-only full quality.
 
 For export/visibility audits: `.cursor/skills/review-member-visibility/SKILL.md`.
 

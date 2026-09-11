@@ -97,4 +97,4 @@ Violation: STOP, move logic into Go, pass plain data
 
 ## Pointer
 
-Full Go generation workflow: `.cursor/skills/golang-quality/SKILL.md`.
+Full Go generation workflow: `.cursor/skills/golang-quality/SKILL.md` (CONSTRAINT 13). Staged review checks the same rule under **Stage 8 (Generation Gates)**.

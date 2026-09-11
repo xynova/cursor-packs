@@ -1,8 +1,8 @@
 # Project-specific review patterns
 
-LOAD-WHEN: staged review stages 3, 4, or 5 (or when tracing a Go change in this repo).
+LOAD-WHEN: staged review stages 3, 4, 5, or 8 (or when tracing a Go change in this repo).
 
-These are bugs this codebase actually hits. Full architecture anti-patterns: `.cursor/rules/always-rules-2-architecture.mdc`. Generation workflow: `.cursor/skills/golang-quality/SKILL.md`.
+These are bugs this codebase actually hits. Full architecture anti-patterns: `.cursor/rules/always-rules-2-architecture.mdc`. Generation workflow: `.cursor/skills/golang-quality/SKILL.md` (also checked by staged review **Stage 8**).
 
 ---
 
@@ -127,4 +127,4 @@ RIGHT: Init the tracer at the entrypoint; export OTLP when the project's endpoin
 
 Detect: LLM call sites with no span start; `ResolveConfig` / `Init` never called from the command path; docs that say "debug in the gateway" with no client exporter.
 
-Related: golang-quality CONSTRAINT 15; Stage 4/5 consultant questions on observability.
+Related: golang-quality CONSTRAINT 15; Stage 8 Generation Gates checklist (C15); Stage 4/5 consultant questions on observability.

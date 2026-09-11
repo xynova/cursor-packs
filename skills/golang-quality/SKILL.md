@@ -14,7 +14,7 @@ Prevention-first Go workflow. This skill is the **procedure**. Project architect
 
 **Deep reference:** [reference.md](reference.md) (full encyclopedia). **Compact patterns:** [reference-patterns.md](reference-patterns.md).
 
-**Related:** `.cursor/skills/review-code-staged/SKILL.md` for staged review; `.cursor/skills/review-member-visibility/SKILL.md` for export audits.
+**Related:** `.cursor/skills/review-code-staged/SKILL.md` for staged review (**Stage 8** applies these Core constraints at review, not only while writing); `.cursor/skills/review-member-visibility/SKILL.md` for export audits. Report layouts: `.cursor/rules/go-structured-strings.mdc`.
 
 ---
 
@@ -23,12 +23,13 @@ Prevention-first Go workflow. This skill is the **procedure**. Project architect
 - Generating or editing `.go` files
 - Finishing a Go implementation, fix, or refactor
 - User asks to lint, format, vet, or verify Go quality
+- Staged review **Stage 8 (Generation Gates)** is running (load this skill and apply Core constraints as a detect checklist)
 
 ---
 
 ## Core constraints
 
-Apply these **while writing**, not only at review.
+Apply these **while writing** and again when staged review **Stage 8** runs. Do not treat review Stage 7 (clarity) as a substitute for these gates.
 
 **CONSTRAINT 1 — HTTP bodies.** Every `resp.Body` MUST have `defer resp.Body.Close()` immediately after the error check.
 
