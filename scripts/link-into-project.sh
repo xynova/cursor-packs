@@ -73,6 +73,7 @@ SKILLS=(
 )
 RULES=(
   golang.mdc
+  go-structured-strings.mdc
   dspy.mdc
   strop.mdc
   go-releases.mdc

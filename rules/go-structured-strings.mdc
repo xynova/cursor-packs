@@ -1,0 +1,100 @@
+---
+description: >-
+  Prefer Go templates for multi-section string documents; ban long WriteString
+  or fmt.Sprintf spaghetti for markdown, reports, and TOC builders. Triggers:
+  strings.Builder, WriteString, text/template, html/template, markdown builder,
+  TOC, structured string, document generation.
+globs:
+  - "**/*.go"
+alwaysApply: false
+---
+
+# Go structured strings
+
+**Moral:** Document shape belongs in a template. Imperative string stitching hides structure, drifts (duplicate numbering), and is hard to review.
+
+When generating or editing Go that builds multi-section prose, markdown, reports, or indexes:
+
+## Prefer templates for document shape
+
+**CONSTRAINT:** When assembling a multi-section document (headings, lists, optional blocks, repeated rows), MUST use `text/template` or `html/template` (or an existing project template helper). MUST NOT grow the document with long chains of `WriteString` / `WriteByte` / `fmt.Fprintf` that encode headings and list layout in Go control flow.
+
+- MUST: put document skeleton in a `const` template string (or `.tmpl` file) with `{{range}}` / `{{if}}`
+- MUST NOT: encode the same skeleton as 10+ sequential builder writes of literal `"## ..."`, `"1. ..."`, `"\n"`
+
+Enforcement: If the function body mostly concatenates document markup, rewrite to a template; spot-check for `WriteString` chains longer than a short linear join
+Violation: STOP, move shape into a template, keep Go for data prep only
+
+CORRECT:
+```go
+const tocTmpl = `## Reading order
+{{range $i, $e := .Entries}}{{add $i 1}}. [{{$e.Label}}]({{$e.Href}})
+{{end}}{{if .HasAppendix}}
+### Appendix
+{{range .Appendix}}- {{.}}
+{{end}}{{end}}`
+
+func formatTOC(data tocData) (string, error) {
+	t, err := template.New("toc").Funcs(template.FuncMap{
+		"add": func(a, b int) int { return a + b },
+	}).Parse(tocTmpl)
+	if err != nil {
+		return "", err
+	}
+	var b strings.Builder
+	if err := t.Execute(&b, data); err != nil {
+		return "", err
+	}
+	return b.String(), nil
+}
+```
+
+PROHIBITED:
+```go
+func formatTOC(entries []entry, appendix []string) string {
+	var b strings.Builder
+	b.WriteString("## Reading order\n\n")
+	for i, e := range entries {
+		b.WriteString(fmt.Sprintf("%d. [%s](%s)\n", i+1, e.Label, e.Href))
+	}
+	if len(appendix) > 0 {
+		b.WriteString("\n### Appendix\n\n")
+		for _, a := range appendix {
+			b.WriteString("- `")
+			b.WriteString(a)
+			b.WriteString("`\n")
+		}
+	}
+	b.WriteString("\n8. Back to story TOC\n") // hand-edited numbers drift
+	return b.String()
+}
+```
+
+## Builder and Sprintf stay for small joins
+
+**CONSTRAINT:** `strings.Builder` and `fmt.Sprintf` remain allowed for short linear joins (a few fragments, one line, or wrapping an already-rendered template). MUST NOT use them as the primary layout engine for multi-section documents.
+
+Enforcement: Count structural markup literals in the function; more than a handful of heading/list markers means use a template
+Violation: STOP, extract a template
+
+CORRECT:
+```go
+return prev + " → " + next
+// or: fmt.Sprintf("[%s](%s)", label, href)
+```
+
+PROHIBITED:
+```go
+// Entire README / TOC / report built only with Builder + fmt.Sprintf loops
+```
+
+## Data prep stays in Go
+
+**CONSTRAINT:** Filtering paths, existence checks, and ordering MUST stay in Go. The template MUST receive ready data (slices, flags, labels). MUST NOT push filesystem or business logic into template funcs beyond trivial helpers (`add`, `join`).
+
+Enforcement: Template `FuncMap` is tiny; I/O and policy live outside `Execute`
+Violation: STOP, move logic into Go, pass plain data
+
+## Pointer
+
+Full Go generation workflow: `.cursor/skills/golang-quality/SKILL.md`.
