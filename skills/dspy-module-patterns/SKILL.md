@@ -77,6 +77,7 @@ See `strop-pipeline-pattern` skill §4.
 - Do **not** inject synthetic text into outputs to pass mandatory validation.
 - Do let validation fail so retry runs; after exhaustion, fail clearly.
 - Empty evaluator `feedback` is invalid, not "all criteria met."
+- Reader-facing prose evaluation MUST attach strop `ai_cadence` (`dspy.AppendAICadenceEvaluator`, cheap model via `roleProviders`) the same way modules MUST wire `RetryModuleInterceptor`. Do **not** attach on sayings fluff or structural extractors. Details: `strop-pipeline-pattern` skill §3.
 
 ---
 
