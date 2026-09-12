@@ -12,6 +12,7 @@ Mount path in consumers: `.cursor/packs/shared`
 |------|---------|
 | `skills/edit-cursor-packs/` | Branch/commit shared pack edits (not the consumer repo) |
 | `skills/agent-smith/` | Author/review Cursor skills and rules (Agent Smith standards) |
+| `skills/author-ai-copilots/` | Library-owned `ai-copilots/` harness + multi-IDE BOOTSTRAP (incl. Go module Dir resolve) |
 | `skills/golang-quality/` | Generation/completion constraints + quality gates; `reference.md` encyclopedia |
 | `skills/review-code-staged/` | Staged Go review (menu, detect vs consultant; Stage 8 = generation gates) |
 | `skills/setup-goreleaser/` | Scaffold GoReleaser v2 + GitHub Release workflow |
@@ -20,19 +21,17 @@ Mount path in consumers: `.cursor/packs/shared`
 | `skills/dspy-go-debugging/` | Validation / retry / refinement failures |
 | `skills/dspy-module-patterns/` | Module + interceptor wiring; `reference.md` dspy-go encyclopedia |
 | `skills/dspy-prompt-engineering/` | Compact prompt contract; `reference.md` bias/CoT/templates |
-| `skills/strop-orchestration/` | Refinement loops, composition walks, regenerate policy |
-| `skills/strop-pipeline-pattern/` | JobRunner, clients, modules, evaluators, one table per job |
-| `skills/strop-human-review/` | Gate, reviewflow engine, ports, reject-and-regen |
 | `skills/plan-scaffold/` | Implementation plan meta-framework |
 | `skills/review-member-visibility/` | Export-only-what-is-essential audit |
 | `skills/review-code-smells/` | Code smell / maintainability review protocol |
 | `skills/perplexity-browser-research/` | Perplexity Pro via Browser MCP; default persona + packs. Project overlay: `.cursor/perplexity/` (not inside the skill symlink) |
 | `rules/golang.mdc` | `globs: **/*.go` — load golang-quality / staged review |
 | `rules/dspy.mdc` | Agent-decided — load thin dspy skills |
-| `rules/strop.mdc` | Agent-decided — load strop orchestration / pipeline / review skills |
+| `rules/strop.mdc` | Agent-decided — load strop skills (softlinked from the strop module `ai-copilots/`) |
 | `rules/go-releases.mdc` | Agent-decided — load manage-go-releases for tags and consumer pins |
 | `rules/cursor-packs.mdc` | Soft-link ownership — load edit-cursor-packs |
 | `rules/agent-smith.mdc` | Authoring skills/rules — load agent-smith |
+| `rules/ai-copilots.mdc` | Library `AGENTS.md` / `ai-copilots/**` — load author-ai-copilots |
 | `rules/always-rules-0-ai.mdc` | Always-on model behavior: English identifiers, US spelling, no em dash, tmp clones |
 | `rules/always-rules-01-human-interaction.mdc` | Always-on fluent consultant + light tutor voice, implement gate, Intent-First / Consultant loaders |
 | `rules/png-to-webp.mdc` | `globs: **/*.png` — convert shipping PNGs with cwebp, update refs, drop duplicates |
@@ -93,12 +92,12 @@ Git still records a commit SHA under the hood; tags are the human-facing pin.
 
 ## strop consumers
 
-This pack assumes runtime lives in `github.com/behaviorengineering/strop`. App repos map config/logger at the boundary and keep product prompts, job packs, and DB adapters local.
+Runtime and operator skills live in `github.com/behaviorengineering/strop` (`ai-copilots/skills/`). Wire host softlinks with that module's `ai-copilots/BOOTSTRAP.md` (or `go list -m -f '{{.Dir}}' github.com/behaviorengineering/strop`). This pack keeps `strop.mdc` as a thin loader and the cross-product `dspy-*` skills.
 
 Load order for a new pipeline job:
 
-1. `strop-pipeline-pattern` + `strop-orchestration`
-2. `dspy-prompt-engineering` + `dspy-xml-structured-output`
+1. `strop-pipeline-pattern` + `strop-orchestration` (from the strop module softlinks)
+2. `dspy-prompt-engineering` + `dspy-xml-structured-output` (this pack)
 3. Project overlay (if any)
 
 ## Link script behavior

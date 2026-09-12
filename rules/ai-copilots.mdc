@@ -1,0 +1,23 @@
+---
+description: >-
+  Library-owned ai-copilots harness (AGENTS.md, BOOTSTRAP, in-module skills) —
+  load author-ai-copilots when creating, migrating, or wiring operator packs for
+  Cursor, Copilot, Claude, or Codex, including Go module dependency installs.
+globs:
+  - "**/AGENTS.md"
+  - "**/ai-copilots/**"
+  - "**/ai-copilots/BOOTSTRAP.md"
+alwaysApply: false
+---
+
+# ai-copilots (library operator harness)
+
+When creating or migrating a library's agent harness, editing `AGENTS.md` /
+`ai-copilots/**`, or wiring a Go dependency's skills into a host IDE:
+
+- Load `.cursor/skills/author-ai-copilots/SKILL.md` (templates in `reference.md`).
+- Load `.cursor/skills/agent-smith/SKILL.md` when authoring or reviewing skill bodies.
+- If editing pack-owned files under `.cursor/packs/shared/`, follow `.cursor/skills/edit-cursor-packs/SKILL.md`.
+
+Resolve module Dir with `go list -m -f '{{.Dir}}' <module-path>` before host symlinks.
+Prefer symlink/junction to in-module `ai-copilots/`; do not copy skill bodies without approval.

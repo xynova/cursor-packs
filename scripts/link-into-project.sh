@@ -56,9 +56,6 @@ SKILLS=(
   dspy-module-patterns
   dspy-prompt-engineering
   dspy-xml-structured-output
-  strop-orchestration
-  strop-pipeline-pattern
-  strop-human-review
   plan-scaffold
   review-member-visibility
   review-code-smells
@@ -69,6 +66,7 @@ SKILLS=(
   sync-submodules-after-merge
   edit-cursor-packs
   agent-smith
+  author-ai-copilots
   perplexity-browser-research
 )
 RULES=(
@@ -81,6 +79,7 @@ RULES=(
   sync-submodules.mdc
   cursor-packs.mdc
   agent-smith.mdc
+  ai-copilots.mdc
   always-rules-0-ai.mdc
   always-rules-01-human-interaction.mdc
   png-to-webp.mdc
