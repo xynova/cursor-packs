@@ -67,7 +67,6 @@ SKILLS=(
   edit-cursor-packs
   agent-smith
   author-ai-copilots
-  perplexity-browser-research
 )
 RULES=(
   golang.mdc
