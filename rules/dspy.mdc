@@ -19,4 +19,9 @@ When validation fails, fields look full in logs but parse empty, retries exhaust
 - Load `.cursor/skills/dspy-go-debugging/SKILL.md`.
 - Load `.cursor/skills/dspy-xml-structured-output/SKILL.md` for parser details.
 
+When adding a Go gate on model output (lists, ids, verdicts, merge rows), or when tempted to scrape a `*_md` field:
+
+- Load `.cursor/skills/dspy-xml-structured-output/SKILL.md` §0 and §0.1 first.
+- Discrete contracts MUST be signature fields via strop structured output; `*_md` is counsel only.
+
 Pipeline job layout (JobRunner, per-job clients): load `.cursor/skills/strop-pipeline-pattern/SKILL.md` and `.cursor/rules/strop.mdc` when orchestration or review is involved. Project overlays (if any) extend — do not replace — the pack pattern.

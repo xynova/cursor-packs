@@ -35,12 +35,14 @@ FormatInterceptor  →  LLM  →  ParseInterceptor  →  ValidationInterceptor  
 - Validate **map keys** from the signature via `ValidateMandatoryFields` or job-specific validators registered at container startup.
 - Phase-aware jobs: filter **both** format instructions **and** parse signature with the same helper (app hook via `SetStructuredOutputHooks` when the product needs phased output).
 - Fix empty fields by aligning **prompt + XML template + parser + inputs** (§4–§5), not by scraping text.
+- Put every **discrete machine contract** (ids, enums, lists, verdicts, merge rows, gate inputs) in its **own signature output field** so strop structured output owns the parse.
 
 ### Do not do this (runtime)
 
 - `strings.Contains` on LLM output to decide if a field is present.
 - Reading nested `response` maps or manual XML walking in services/CLI when interceptors are enabled.
 - Regex on model prose as the **primary** extraction path.
+- Embedding a machine contract inside a counsel `*_md` (or other free-text) field and scraping headings, fences, or YAML from that prose to gate business logic.
 
 ### Narrow exceptions (document if you add more)
 
@@ -49,6 +51,35 @@ FormatInterceptor  →  LLM  →  ParseInterceptor  →  ValidationInterceptor  
 | App-specific raw recovery after parse | **Fallback only** when the parser dropped text inside nested tags under a **plain string** field; runs after parse, before validation. Register via product hooks, not in services. |
 | Keyword filter on **evaluator feedback** | Free-text feedback is unstructured by nature; intentional scope filters only. |
 | `strings.TrimSpace` on **already-parsed** string values | Normal empty check, not parsing. |
+| Go rewriting a teaching `*_md` artifact from already-parsed fields | Display sync only; MUST NOT be the gate input. |
+
+---
+
+## 0.1 Discrete contracts MUST be signature fields
+
+**CONSTRAINT:** Discrete non-prose outputs that Go (or another job) gates on MUST be signature output fields parsed by strop structured output. Free-text `*_md` fields are counsel for humans only.
+
+- MUST: declare ids, enums, lists, verdicts, merge rows, and similar contracts as `out(...)` fields (plain string YAML, array field, or map field as appropriate).
+- MUST: gate retries and downstream jobs on the **parsed map value** for that field.
+- MUST NOT: bury those contracts inside markdown sections, fenced blocks, or prose that a heading/regex scrape later recovers.
+- MUST NOT: treat a heading-level typo (`###` vs `##`) or similar markdown shape as a valid reason to skip an auditor or gate.
+
+Enforcement: for each new or changed generator output used by a Go gate, confirm a signature field exists and the gate reads `stringField` / typed map value, not a markdown scrape helper.
+Violation: STOP, add or restore the structured field, move the gate off prose scrape, re-verify.
+
+CORRECT:
+```text
+out("proposed_merges_yaml", "YAML list of merge rows, or []")
+→ Refine parses proposed_merges_yaml
+→ cluster_proposal_md stays counsel (renames, debt, rationale)
+```
+
+PROHIBITED:
+```text
+out("cluster_proposal_md", "...") only
+→ prompt: require "## Proposed merges (machine)" inside the markdown
+→ Go: regexp extract H2 body and yaml.Unmarshal for the audit gate
+```
 
 ### Tests
 
@@ -100,6 +131,7 @@ A field that parses as `""` or an **empty slice** trips validation even when the
 3. **Update prompts** in `{job}_modules.go`: XML examples MUST match `WithXMLFormatting` / shared XML rules.
 4. **Add or extend tests** in `strop/dspy/structured_output/xml/*_test.go` for the shape you rely on.
 5. **Interceptors:** Enable via factory; validation runs on parsed outputs — do not “fix” missing fields by reading nested `response` maps in application code.
+6. **Gate input:** If Go or another job will gate on the value, put it in its own field (§0.1); do not scrape `*_md`.
 
 ---
 
@@ -127,3 +159,12 @@ A field that parses as `""` or an **empty slice** trips validation even when the
 | Product parse/format hooks | App: register via `SetStructuredOutputHooks` at container startup |
 
 If the project has a **local overlay** skill for phased composition or field special-cases, load it after this skill.
+
+---
+
+## Pre-completion checklist
+
+- [ ] **Discrete gate fields:** Any new Go gate on model output uses a signature field, not a `*_md` scrape.
+      Method: grep gate helpers for markdown heading/regex extract on counsel fields; confirm signature `out(...)` exists for the contract.
+      Pass: gate reads parsed map field; `*_md` is display/counsel only.
+      Fail: machine YAML or list buried in markdown → STOP, add structured field.
