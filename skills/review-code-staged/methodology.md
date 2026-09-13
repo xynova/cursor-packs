@@ -16,7 +16,7 @@ Eight stages in two modes. MUST present as a numbered menu and ask which stages 
 | 2 | Type Safety | `any` / `interface{}`, type assertions, nil before dereference |
 | 3 | Error Handling | typed wrap-chain, `_ =`, log-without-return, persistence, DB fallback |
 | 7 | Code Clarity | naming, godot periods, structured logs, over-export |
-| 8 | Generation Gates | `golang-quality` constraints 1–15 (templates, OTEL, resources, layering); `go-structured-strings` for report builders |
+| 8 | Generation Gates | `golang-quality` constraints 1–16 (templates, OTEL, durable AI dumps, resources, layering); `go-structured-strings` for report builders |
 
 AI finds issues, reports them with code pairs in the plan file. No user input required mid-stage.
 
@@ -197,12 +197,12 @@ Clarity only. Templates, resource defers, CLI→service→client layering, and p
 
 ## Stage 8: Generation Gates — Detect
 
-Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality/SKILL.md` **Core constraints** (1–15) and apply them as a checklist against the review target. For multi-section markdown, reports, TOC, or similar human layout builders, also Read and apply `.cursor/rules/go-structured-strings.mdc`.
+Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality/SKILL.md` **Core constraints** (1–16) and apply them as a checklist against the review target. For multi-section markdown, reports, TOC, or similar human layout builders, also Read and apply `.cursor/rules/go-structured-strings.mdc`.
 
 ### Ownership vs Stage 3
 
 - **Stage 3** keeps error-handling depth (typed wrap-chain, `_ =`, log-without-return, persistence, named returns, DB fallback).
-- **Stage 8** owns generation-specific gates Stage 3 does not cover: C1–3 (HTTP/cancel/txn defers), C7–15 (nil, ctx, unused/N+1, layering, format/godot overlap, interfaces, templates, structured logging, OTEL).
+- **Stage 8** owns generation-specific gates Stage 3 does not cover: C1–3 (HTTP/cancel/txn defers), C7–16 (nil, ctx, unused/N+1, layering, format/godot overlap, interfaces, templates, structured logging, OTEL, durable AI dumps).
 - Apply **C4** and **C6** in Stage 8 **only when Stage 3 was not selected** for this review. If Stage 3 already ran, do not duplicate those findings under Stage 8.
 
 ### Checklist (map to golang-quality)
@@ -220,8 +220,9 @@ Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality
 - [ ] C13: multi-line operator reports / diagrams use `text/template` (or `html/template`); not chained `WriteString` / `Sprintf` spaghetti — see `go-structured-strings.mdc`
 - [ ] C14: injected structured logger; no `fmt.Print*` / ad-hoc `logrus.New()` in services
 - [ ] C15: LLM/inference entrypoints init OTEL; OTLP when endpoint env is set; client spans on generate/evaluate (not gateway-only); named-return span defers use `err =`
+- [ ] C16: AI work dumps (RLM TraceDir, runreport, inference-failure JSON) survive process exit; not only under `defer RemoveAll` scratch; durable path logged or returned
 
-Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope.
+Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, and pattern 15 when TraceDir / runreport / failure dumps are in scope.
 
 ---
 
