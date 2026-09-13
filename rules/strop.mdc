@@ -24,6 +24,7 @@ When implementing human review, Gate, reject-and-regenerate, or reviewflow ports
 When working on XML structured output or parser alignment:
 
 - Load `.cursor/skills/dspy-xml-structured-output/SKILL.md`.
+- Discrete machine contracts (ids, lists, verdicts) MUST be signature fields, not markdown scrapes; see that skill §0.1.
 - If the project has phased-composition hooks, load its `pipelines-x-*` XML overlay if present.
 
 Module wiring and prompts: see `.cursor/rules/dspy.mdc`.
