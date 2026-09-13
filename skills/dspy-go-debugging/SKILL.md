@@ -19,17 +19,21 @@ Decision tree for runtime failures. Parser details: `.cursor/skills/dspy-xml-str
 
 Module **fails validation**, returns **empty/nil fields**, retries exhaust, or a **refinement loop** exits early.
 
+Before digging into signatures: confirm durable AI dumps still exist (RLM TraceDir JSONL, runreport under the job's work-story dir). If dumps lived only under a wiped temp analysis tree, recover is impossible; fix dump lifetime first (golang-quality CONSTRAINT 16; strop-pipeline-pattern §8).
+
 ---
 
 ## Decision tree
 
 ```
-Error mentions "empty fields" or mandatory validation?
-├─ Yes → §1 Empty field (then XML skill)
-└─ No → LLM / timeout / retry exhausted?
-    ├─ Retry exhausted after validation → §1 then §3 Retry
-    ├─ LLM / API error → §4 LLM layer
-    └─ Refinement / orchestration → §5 Orchestration
+Durable TraceDir / runreport missing after the run?
+├─ Yes → Fix dump root (C16 / pipeline §8); re-run before parsing theories
+└─ No → Error mentions "empty fields" or mandatory validation?
+    ├─ Yes → §1 Empty field (then XML skill)
+    └─ No → LLM / timeout / retry exhausted?
+        ├─ Retry exhausted after validation → §1 then §3 Retry
+        ├─ LLM / API error → §4 LLM layer
+        └─ Refinement / orchestration → §5 Orchestration
 ```
 
 ---

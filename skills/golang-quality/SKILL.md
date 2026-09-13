@@ -106,13 +106,34 @@ PROHIBITED:
 // "We can see it in the gateway UI" used as the only observability plan.
 ```
 
+**CONSTRAINT 16 — Durable AI work dumps.** When a job writes RLM `TraceDir` JSONL, strop `runreport` JSON, olly-style inference-failure dumps, or equivalent AI work-story files, those paths MUST remain readable after the process exits. MUST NOT place the only copy under a directory removed by `defer os.RemoveAll` (analysis clones, digests cache worktrees, or other scratch trees). MUST log or return the durable root (flag, env, or result field) so operators can reopen traces without guessing OS temp paths. Spans (C15) do not replace on-disk dumps for local AI testing. See [reference-patterns.md](reference-patterns.md#durable-ai-work-dumps) and review appendix pattern 15. Strop wiring: `.cursor/skills/strop-pipeline-pattern/SKILL.md` (durable TraceDir / runreport).
+- Enforcement: Trace every `MkdirTemp` / `RemoveAll` paired with TraceDir, runreport `Dir`, or failure-dump roots; confirm dumps land outside deleted trees; CLI/result exposes the path.
+- Violation: STOP, move dumps to a durable work-story root (or copy before cleanup), log/return the path, re-check.
+
+CORRECT:
+```go
+workStory := filepath.Join("tmp", "digest-runs", repoID+"-"+stamp)
+rlmCfg.TraceDir = filepath.Join(workStory, "rlm-traces", task)
+rrCfg.Dir = filepath.Join(workStory, "logs", "runs")
+// analysisDir may still be MkdirTemp + RemoveAll; dumps do not live only there.
+logf("INFO", "AI work story dir=%s", workStory)
+```
+
+PROHIBITED:
+```go
+analysisDir, _ := os.MkdirTemp("", "majordomo-typology-*")
+defer os.RemoveAll(analysisDir)
+rlmCfg.TraceDir = filepath.Join(analysisDir, "rlm-traces", task) // only copy, wiped on exit
+// Operator has no work_story_dir / flag after a successful local run.
+```
+
 ---
 
 ## Steps
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
-2. **Implement** — Apply all 15 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? PASS or fix.
+2. **Implement** — Apply all 16 constraints during generation. First param on I/O functions: `ctx context.Context`.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? PASS or fix.
 4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
 
 ```bash
@@ -168,3 +189,4 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] Multi-line reports/diagrams use `text/template` (not chained `WriteString`)
 - [ ] Injected structured logger; no `fmt.Print*` / ad-hoc logger in services
 - [ ] LLM/inference entrypoints init OTEL; OTLP exporter when endpoint env set; client spans on generate/evaluate (not gateway-only)
+- [ ] AI work dumps (RLM TraceDir, runreport, inference-failure JSON) survive process exit; not only under `defer RemoveAll` scratch; path logged or returned

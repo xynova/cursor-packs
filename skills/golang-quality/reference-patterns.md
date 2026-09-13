@@ -470,6 +470,29 @@ PROHIBITED:
 // Treat gateway UI timing as proof the client path is healthy.
 ```
 
+### Durable AI work dumps
+
+When the job enables RLM `TraceDir`, strop `runreport`, or olly-style inference-failure dumps, operators MUST be able to reopen those files after exit. Spans and Phoenix do not replace local JSONL/JSON for AI testing.
+
+- MUST write dumps to a durable root (project `tmp/...` run dir, explicit flag/env, or documented work-story path).
+- MUST NOT keep the only copy under `MkdirTemp` + `defer os.RemoveAll` analysis/cache worktrees.
+- MUST log or return the durable root on the operator path (CLI flag, result JSON field, or INFO line).
+- Teaching/context branches are separate: do not commit TraceDir/runreport into product teaching trees unless the project explicitly says so.
+
+CORRECT:
+```go
+workStory := resolveWorkStoryDir(opts) // survives analysis cleanup
+rlmCfg.TraceDir = filepath.Join(workStory, "rlm-traces", task)
+runReport.Dir = filepath.Join(workStory, "logs", "runs")
+```
+
+PROHIBITED:
+```go
+defer os.RemoveAll(analysisDir)
+rlmCfg.TraceDir = filepath.Join(analysisDir, "rlm-traces", task)
+// Successful local run leaves no traces for the next debugging session.
+```
+
 ---
 
 ## Import organization

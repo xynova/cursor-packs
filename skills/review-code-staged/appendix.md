@@ -128,3 +128,17 @@ RIGHT: Init the tracer at the entrypoint; export OTLP when the project's endpoin
 Detect: LLM call sites with no span start; `ResolveConfig` / `Init` never called from the command path; docs that say "debug in the gateway" with no client exporter.
 
 Related: golang-quality CONSTRAINT 15; Stage 8 Generation Gates checklist (C15); Stage 4/5 consultant questions on observability.
+
+---
+
+## 15. AI dumps wiped with scratch trees
+
+Jobs that set RLM `TraceDir`, strop `runreport` `Dir`, or olly inference-failure dump roots often nest those paths under an analysis `MkdirTemp` that `defer os.RemoveAll` deletes. After a local AI test, operators have no JSONL/JSON to reopen even when the run succeeded.
+
+WRONG: `rlmCfg.TraceDir = filepath.Join(analysisDir, "rlm-traces", task)` where `analysisDir` is removed on exit, with no durable work-story copy and no logged/returned path.
+
+RIGHT: Write dumps under a durable root (`tmp/digest-runs/<id>-<ts>`, `--work-story-dir`, or project-documented equivalent); keep analysis clones disposable; log or return `work_story_dir` (or equivalent).
+
+Detect: TraceDir/runreport under the same tree as `RemoveAll`; successful CLI with no dump path in logs/result; docs that say "check rlm-traces" without naming a surviving directory.
+
+Related: golang-quality CONSTRAINT 16; Stage 8 Generation Gates checklist (C16); strop-pipeline-pattern durable TraceDir / runreport.
