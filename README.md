@@ -24,7 +24,7 @@ Mount path in consumers: `.cursor/packs/shared`
 | `skills/plan-scaffold/` | Implementation plan meta-framework |
 | `skills/review-member-visibility/` | Export-only-what-is-essential audit |
 | `skills/review-code-smells/` | Code smell / maintainability review protocol |
-| `rules/golang.mdc` | `globs: **/*.go` — load golang-quality / staged review |
+| `rules/golang.mdc` | Go + `go.mod`/`go.work` — load golang-quality / staged review; no module-skeleton rewrite |
 | `rules/dspy.mdc` | Agent-decided — load thin dspy skills |
 | `rules/strop.mdc` | Agent-decided — load strop skills (softlinked from the strop module `ai-copilots/`) |
 | `rules/go-releases.mdc` | Agent-decided — load manage-go-releases for tags and consumer pins |
