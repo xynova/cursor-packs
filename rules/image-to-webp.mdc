@@ -1,0 +1,31 @@
+---
+description: >-
+  Convert shipping raster images (PNG, HEIC/HEIF, and similar) to WebP. Load
+  skill image-to-webp for the tool runbook. Apply when adding or editing
+  .png/.heic/.heif files or references to them. Triggers: PNG, HEIC, HEIF,
+  webp, cwebp, raster, image convert.
+globs: "**/*.{png,heic,heif}"
+alwaysApply: false
+---
+
+# Image to WebP
+
+**Skill:** `.cursor/skills/image-to-webp/SKILL.md` (MUST Read and follow when this rule loads).
+
+## Scope
+
+- MUST apply when the agent adds or updates a **shipping** `.png`, `.heic`, or `.heif`, or leaves a shipping path pointing at those extensions.
+- MUST NOT auto-convert under `tmp/`, `node_modules/`, `.git/`, `vendor/`, or other clearly vendored / scratch trees unless the user points at a file there.
+- MUST NOT treat intermediate build scratch (for example a temp PNG before encode) as a shipping asset.
+
+## When a shipping raster appears
+
+- MUST convert each in-scope raster to `.webp` before finishing the task, unless the user explicitly asks to keep the source format.
+- MUST follow skill `image-to-webp` for tool checks, install-ask (and install only after user agreement), `cwebp` encode, reference updates, and source removal.
+- MUST NOT silently keep PNG/HEIC/HEIF because `cwebp` or a HEIC decoder is missing.
+- Host products MAY override the convert command with a product CLI (documented in a host skill) while still obeying WebP output, ref updates, and no silent keep-source-format.
+- MAY leave existing `.jpg`, `.jpeg`, and `.webp` unchanged unless the user asks to recompress or convert those too.
+
+## Verify
+
+- MUST run the project's documented build or check (for example `make build`, `hugo`, or the nearest test that loads the asset) after path changes so broken references surface immediately.
