@@ -96,9 +96,9 @@ Prefer one helper pattern per host (load fixture → `AttachModuleTrace` → `Ne
 
 ---
 
-## 5. Review bar (Stage 8)
+## 5. Review bar (Stage 5)
 
-When staged review **Stage 8** runs on AI module changes, apply golang-quality **C17** and appendix pattern 16: structured fields, durable dumps, and opt-in live replay (or an explicit offline-only rationale in the PR).
+When staged review **Stage 5** (Generation Gates) runs on AI module changes, apply golang-quality **C17** and appendix pattern 16: structured fields, durable dumps, and opt-in live replay (or an explicit offline-only rationale in the PR).
 
 ---
 

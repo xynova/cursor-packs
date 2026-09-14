@@ -1,8 +1,8 @@
 # Project-specific review patterns
 
-LOAD-WHEN: staged review stages 3, 4, 5, or 8 (or when tracing a Go change in this repo).
+LOAD-WHEN: staged review stages 3, A, B, or 5 (or when tracing a Go change in this repo).
 
-These are bugs this codebase actually hits. Full architecture anti-patterns: `.cursor/rules/always-rules-2-architecture.mdc`. Generation workflow: `.cursor/skills/golang-quality/SKILL.md` (also checked by staged review **Stage 8**).
+These are bugs this codebase actually hits. Full architecture anti-patterns: `.cursor/rules/always-rules-2-architecture.mdc`. Generation workflow: `.cursor/skills/golang-quality/SKILL.md` (also checked by staged review **Stage 5** Generation Gates).
 
 ---
 
@@ -127,7 +127,7 @@ RIGHT: Init the tracer at the entrypoint; export OTLP when the project's endpoin
 
 Detect: LLM call sites with no span start; `ResolveConfig` / `Init` never called from the command path; docs that say "debug in the gateway" with no client exporter.
 
-Related: golang-quality CONSTRAINT 15; Stage 8 Generation Gates checklist (C15); Stage 4/5 consultant questions on observability.
+Related: golang-quality CONSTRAINT 15; Stage 5 Generation Gates checklist (C15); Stage A/B consultant questions on observability.
 
 ---
 
@@ -141,7 +141,7 @@ RIGHT: Write dumps under a durable root (`tmp/digest-runs/<id>-<ts>`, `--work-st
 
 Detect: TraceDir/runreport under the same tree as `RemoveAll`; successful CLI with no dump path in logs/result; docs that say "check rlm-traces" without naming a surviving directory.
 
-Related: golang-quality CONSTRAINT 16; Stage 8 Generation Gates checklist (C16); strop-pipeline-pattern durable TraceDir / runreport.
+Related: golang-quality CONSTRAINT 16; Stage 5 Generation Gates checklist (C16); strop-pipeline-pattern durable TraceDir / runreport.
 
 ---
 
@@ -155,4 +155,4 @@ RIGHT: Capture Process inputs from `module-traces/` (or TraceDir) into `testdata
 
 Detect: Staged `*_modules.go` / signatures / generator wiring with no `LIVE_*` replay test and no offline fixture; gates that read markdown instead of structured outs; PR that says "verified by reseed" with no module-level path.
 
-Related: golang-quality CONSTRAINT 17; Stage 8 Generation Gates checklist (C17); `.cursor/skills/dspy-pipeline-isolation/SKILL.md`.
+Related: golang-quality CONSTRAINT 17; Stage 5 Generation Gates checklist (C17); `.cursor/skills/dspy-pipeline-isolation/SKILL.md`.

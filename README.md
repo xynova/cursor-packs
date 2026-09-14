@@ -14,7 +14,7 @@ Mount path in consumers: `.cursor/packs/shared`
 | `skills/agent-smith/` | Author/review Cursor skills and rules (Agent Smith standards) |
 | `skills/author-ai-copilots/` | Library-owned `ai-copilots/` harness + multi-IDE BOOTSTRAP (incl. Go module Dir resolve) |
 | `skills/golang-quality/` | Generation/completion constraints + quality gates; `reference.md` encyclopedia |
-| `skills/review-code-staged/` | Staged Go review (menu, detect vs consultant; Stage 8 = generation gates) |
+| `skills/review-code-staged/` | Staged Go review (mechanical 1–5 / consultant A–C; Stage 5 = generation gates) |
 | `skills/setup-goreleaser/` | Scaffold GoReleaser v2 + GitHub Release workflow |
 | `skills/manage-go-releases/` | Auto-patch / skip docs-chore / pin consumers to `v*` (agent release practice) |
 | `skills/dspy-xml-structured-output/` | Generic XML parser + mandatory-field validation (strop paths) |

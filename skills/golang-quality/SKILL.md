@@ -14,7 +14,7 @@ Prevention-first Go workflow. This skill is the **procedure**. Project architect
 
 **Deep reference:** [reference.md](reference.md) (full encyclopedia). **Compact patterns:** [reference-patterns.md](reference-patterns.md).
 
-**Related:** `.cursor/skills/review-code-staged/SKILL.md` for staged review (**Stage 8** applies these Core constraints at review, not only while writing); `.cursor/skills/review-member-visibility/SKILL.md` for export audits. Report layouts: `.cursor/rules/go-structured-strings.mdc`.
+**Related:** `.cursor/skills/review-code-staged/SKILL.md` for staged review (**Stage 5** Generation Gates applies these Core constraints at review, not only while writing); `.cursor/skills/review-member-visibility/SKILL.md` for export audits. Report layouts: `.cursor/rules/go-structured-strings.mdc`.
 
 ### External readability baseline
 
@@ -23,18 +23,18 @@ Cite these for idiomatic Go taste. They are **not** a second checklist to score 
 - [Go Code Review Comments](https://go.dev/wiki/CodeReviewComments)
 - [Uber Go Style Guide](https://github.com/uber-go/guide/blob/master/style.md)
 
-**CONSTRAINT:** Agents MUST enforce and review against this skill's Core constraints (and project rules). MUST NOT fail a change solely because an external guide prefers a different spelling of the same idea. When promoting a house pattern (for example config create), MUST put it here as a numbered constraint so write-time and Stage 8 share one bar.
-- Enforcement: Generation and Stage 8 checklists map to Core constraints 1–N only; external links appear as citations, not scored rows.
+**CONSTRAINT:** Agents MUST enforce and review against this skill's Core constraints (and project rules). MUST NOT fail a change solely because an external guide prefers a different spelling of the same idea. When promoting a house pattern (for example config create), MUST put it here as a numbered constraint so write-time and Stage 5 share one bar.
+- Enforcement: Generation and Stage 5 checklists map to Core constraints 1–N only; external links appear as citations, not scored rows.
 - Violation: STOP, score the house constraint (or add one), drop the raw external-guide finding.
 
 CORRECT:
 ```text
-Stage 8: fail C18 (config create). Citation: Uber/Code Review Comments favor clear constructors from config-shaped inputs.
+Stage 5: fail C18 (config create). Citation: Uber/Code Review Comments favor clear constructors from config-shaped inputs.
 ```
 
 PROHIBITED:
 ```text
-Stage 8: 40 findings copied from Uber Go Style Guide sections with no map to C1–CN.
+Stage 5: 40 findings copied from Uber Go Style Guide sections with no map to C1–CN.
 ```
 
 ---
@@ -44,13 +44,13 @@ Stage 8: 40 findings copied from Uber Go Style Guide sections with no map to C1�
 - Generating or editing `.go` files
 - Finishing a Go implementation, fix, or refactor
 - User asks to lint, format, vet, or verify Go quality
-- Staged review **Stage 8 (Generation Gates)** is running (load this skill and apply Core constraints as a detect checklist)
+- Staged review **Stage 5 (Generation Gates)** is running (load this skill and apply Core constraints as a detect checklist)
 
 ---
 
 ## Core constraints
 
-Apply these **while writing** and again when staged review **Stage 8** runs. Do not treat review Stage 7 (clarity) as a substitute for these gates.
+Apply these **while writing** and again when staged review **Stage 5** runs. Do not treat review Stage 4 (clarity) as a substitute for these gates.
 
 **CONSTRAINT 1 — HTTP bodies.** Every `resp.Body` MUST have `defer resp.Body.Close()` immediately after the error check.
 
