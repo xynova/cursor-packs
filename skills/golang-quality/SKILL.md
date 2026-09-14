@@ -3,9 +3,9 @@ name: golang-quality
 description: >-
   Go generation and completion workflow: resource cleanup, error wrapping, nil
   guards, context propagation, CLI-service-client layering, structured logging,
-  OpenTelemetry / OpenInference observability, and quality gates. Use when
-  generating, completing, or fixing Go code, or before claiming a Go change is
-  done.
+  OpenTelemetry / OpenInference observability, config create constructors, and
+  quality gates. Use when generating, completing, or fixing Go code, or before
+  claiming a Go change is done.
 ---
 
 # Go Quality
@@ -14,7 +14,28 @@ Prevention-first Go workflow. This skill is the **procedure**. Project architect
 
 **Deep reference:** [reference.md](reference.md) (full encyclopedia). **Compact patterns:** [reference-patterns.md](reference-patterns.md).
 
-**Related:** `.cursor/skills/review-code-staged/SKILL.md` for staged review (**Stage 8** applies these Core constraints at review, not only while writing); `.cursor/skills/review-member-visibility/SKILL.md` for export audits. Report layouts: `.cursor/rules/go-structured-strings.mdc`.
+**Related:** `.cursor/skills/review-code-staged/SKILL.md` for staged review (**Stage 5** Generation Gates applies these Core constraints at review, not only while writing); `.cursor/skills/review-member-visibility/SKILL.md` for export audits. Report layouts: `.cursor/rules/go-structured-strings.mdc`.
+
+### External readability baseline
+
+Cite these for idiomatic Go taste. They are **not** a second checklist to score line-by-line.
+
+- [Go Code Review Comments](https://go.dev/wiki/CodeReviewComments)
+- [Uber Go Style Guide](https://github.com/uber-go/guide/blob/master/style.md)
+
+**CONSTRAINT:** Agents MUST enforce and review against this skill's Core constraints (and project rules). MUST NOT fail a change solely because an external guide prefers a different spelling of the same idea. When promoting a house pattern (for example config create), MUST put it here as a numbered constraint so write-time and Stage 5 share one bar.
+- Enforcement: Generation and Stage 5 checklists map to Core constraints 1–N only; external links appear as citations, not scored rows.
+- Violation: STOP, score the house constraint (or add one), drop the raw external-guide finding.
+
+CORRECT:
+```text
+Stage 5: fail C18 (config create). Citation: Uber/Code Review Comments favor clear constructors from config-shaped inputs.
+```
+
+PROHIBITED:
+```text
+Stage 5: 40 findings copied from Uber Go Style Guide sections with no map to C1–CN.
+```
 
 ---
 
@@ -23,13 +44,13 @@ Prevention-first Go workflow. This skill is the **procedure**. Project architect
 - Generating or editing `.go` files
 - Finishing a Go implementation, fix, or refactor
 - User asks to lint, format, vet, or verify Go quality
-- Staged review **Stage 8 (Generation Gates)** is running (load this skill and apply Core constraints as a detect checklist)
+- Staged review **Stage 5 (Generation Gates)** is running (load this skill and apply Core constraints as a detect checklist)
 
 ---
 
 ## Core constraints
 
-Apply these **while writing** and again when staged review **Stage 8** runs. Do not treat review Stage 7 (clarity) as a substitute for these gates.
+Apply these **while writing** and again when staged review **Stage 5** runs. Do not treat review Stage 4 (clarity) as a substitute for these gates.
 
 **CONSTRAINT 1 — HTTP bodies.** Every `resp.Body` MUST have `defer resp.Body.Close()` immediately after the error check.
 
@@ -127,13 +148,48 @@ rlmCfg.TraceDir = filepath.Join(analysisDir, "rlm-traces", task) // only copy, w
 // Operator has no work_story_dir / flag after a successful local run.
 ```
 
+**CONSTRAINT 17 — AI module isolation and structured contracts.** When adding or changing a dspy-go generator or evaluator used in a pipeline, discrete machine outputs MUST be signature fields with structured XML (`dspy-xml-structured-output` §0 / §0.1). MUST provide or extend an env-gated live opt-in replay test that loads Process inputs from a module-trace / TraceDir fixture and runs that module alone, OR document in the PR why offline-only is enough for this change. MUST NOT rely on a full pipeline reseed as the only way to exercise the module. Keep C15 spans and C16 dumps on for live replay. See `.cursor/skills/dspy-pipeline-isolation/SKILL.md` and review appendix pattern 16.
+- Enforcement: For staged generator/evaluator/signature diffs, search for `LIVE_` / env `Skip` + `Generate(` / `Evaluate(`; confirm gates read typed signature fields, not scraped `*_md`.
+- Violation: STOP, add structured fields and/or opt-in live replay (or write the offline-only rationale), re-check.
+
+CORRECT:
+```text
+testdata/<task>_span.json from module-traces → offline zip gate →
+MAJORDOMO_LIVE_<TASK>_REPLAY=1 go test -run Live… → then rejoin JobRunner.
+```
+
+PROHIBITED:
+```text
+Edit typology_cluster instruction; only verification path is a 10-minute full digest reseed.
+Gate merge_ids by scraping cluster_proposal_md headings.
+```
+
+**CONSTRAINT 18 — Config create.** When a type needs several construction inputs (deps, budgets, prompts, optional hooks), MUST put them on a typed `Config` (or `*Config`) and expose `CreateX` / `CreateModule` that takes no construction args beyond what the method signature already needs for runtime (`ctx` only when creation itself performs I/O). Call sites MUST fill the config, then call create. MUST NOT pass a long parallel argument list beside a half-empty config. Prefer this over ad-hoc `NewFoo(a, b, c, d, e)` when the same bundle is reused or will grow. Package-level `CreateFoo(cfg)` MAY wrap `cfg.CreateFoo()` for discoverability.
+- Enforcement: New multi-field constructors use config create; scan for `Create*` / `New*` with ≥4 related parameters that already have a Config type.
+- Violation: STOP, move fields onto Config, add `Create*`, update call sites.
+
+CORRECT:
+```go
+cfg := stropdspy.RLMDefaults()
+cfg.LLM = llm
+cfg.Timeout = timeout
+cfg.TraceDir = traceDir
+module, err := cfg.CreateModule()
+```
+
+PROHIBITED:
+```go
+module, err := stropdspy.CreateRLMModule(llm, rlmCfg) // llm already belongs on the config
+NewClient(url, token, timeout, retries, logger, tracer, metrics) // no Config
+```
+
 ---
 
 ## Steps
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
-2. **Implement** — Apply all 16 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? PASS or fix.
+2. **Implement** — Apply all 18 constraints during generation. First param on I/O functions: `ctx context.Context`.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? PASS or fix.
 4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
 
 ```bash
@@ -190,3 +246,4 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] Injected structured logger; no `fmt.Print*` / ad-hoc logger in services
 - [ ] LLM/inference entrypoints init OTEL; OTLP exporter when endpoint env set; client spans on generate/evaluate (not gateway-only)
 - [ ] AI work dumps (RLM TraceDir, runreport, inference-failure JSON) survive process exit; not only under `defer RemoveAll` scratch; path logged or returned
+- [ ] Multi-field construction uses config create (`cfg.Create*` / `CreateModule`); no long parallel arg lists beside a half-empty Config

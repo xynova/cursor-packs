@@ -2,9 +2,10 @@
 name: dspy-module-patterns
 description: >-
   dspy-go module wiring on strop: Predict vs ChainOfThought, structured-output
-  interceptors, EnableStructuredOutput on inner Predict, Create* constructors with
-  WithXMLFormatting, and testing parsed maps. Use when creating modules, enabling
-  XML structured output, wiring interceptors, or choosing module types.
+  interceptors, EnableStructuredOutput on inner Predict, config create
+  (GeneratorConfig / RLMConfig CreateModule), WithXMLFormatting in Create*, and
+  testing parsed maps. Use when creating modules, enabling XML structured output,
+  wiring interceptors, RLM construction, or choosing module types.
 ---
 
 # DSPy module patterns (strop)
@@ -69,6 +70,34 @@ Apply **`WithXMLFormatting`** inside **Create\*** functions, not at call sites:
 | Consolidator | `CreateDefaultConsolidatorModule` |
 
 See `strop-pipeline-pattern` skill §4.
+
+---
+
+## Config create (recommended)
+
+House name: **config create**. Same idea as golang-quality CONSTRAINT 18.
+
+Fill a typed config with everything the module needs to construct, then call `CreateModule()` (no parallel long arg list).
+
+**Generators** (signature/prompt shape; LLM still via factory `CreateGenerator`):
+
+```go
+genCfg := stropdspy.GeneratorConfig{Name: name, Signature: sig, SystemPrompt: prompt}
+mod, err := genCfg.CreateModule()
+```
+
+**RLM** (LLM must live on the config because `NewFromLLM` needs it at construct time; run via `RLMComplete`, not `Process`):
+
+```go
+rlmCfg := stropdspy.RLMDefaults()
+rlmCfg.LLM = llm // after factory.LLMFactory.CreateLLM (and optional retry wrap)
+rlmCfg.Timeout = timeout
+rlmCfg.TraceDir = traceDir
+module, err := rlmCfg.CreateModule()
+answer, result, err := stropdspy.RLMComplete(ctx, module, contextPayload, query)
+```
+
+Prefer `cfg.CreateModule()` over `CreateRLMModule(llm, cfg)` at host call sites. `factory.CreateRLM` remains available when starting from `ProviderConfig` only.
 
 ---
 

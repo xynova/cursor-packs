@@ -9,7 +9,7 @@ description: >-
 
 # DSPy-Go debugging (strop)
 
-Decision tree for runtime failures. Parser details: `.cursor/skills/dspy-xml-structured-output/SKILL.md`. Job/orchestration: `.cursor/skills/strop-orchestration/SKILL.md`, `.cursor/skills/strop-pipeline-pattern/SKILL.md`.
+Decision tree for runtime failures. Parser details: `.cursor/skills/dspy-xml-structured-output/SKILL.md`. Job/orchestration: `.cursor/skills/strop-orchestration/SKILL.md`, `.cursor/skills/strop-pipeline-pattern/SKILL.md`. Isolating one module before a full reseed: `.cursor/skills/dspy-pipeline-isolation/SKILL.md`.
 
 **Related:** `.cursor/skills/dspy-module-patterns/SKILL.md`.
 
@@ -19,7 +19,7 @@ Decision tree for runtime failures. Parser details: `.cursor/skills/dspy-xml-str
 
 Module **fails validation**, returns **empty/nil fields**, retries exhaust, or a **refinement loop** exits early.
 
-Before digging into signatures: confirm durable AI dumps still exist (RLM TraceDir JSONL, runreport under the job's work-story dir). If dumps lived only under a wiped temp analysis tree, recover is impossible; fix dump lifetime first (golang-quality CONSTRAINT 16; strop-pipeline-pattern §8).
+Before digging into signatures: confirm durable AI dumps still exist (RLM TraceDir JSONL, module-traces, runreport under the job's work-story dir). If dumps lived only under a wiped temp analysis tree, recover is impossible; fix dump lifetime first (golang-quality CONSTRAINT 16; strop-pipeline-pattern §8). Prefer replaying the failing module from a fixture (`dspy-pipeline-isolation`) over another full pipeline run.
 
 ---
 

@@ -6,40 +6,80 @@ LOAD-WHEN: `review-code-staged` skill is active.
 
 ## Review stage catalogue
 
-Eight stages in two modes. MUST present as a numbered menu and ask which stages to run before executing any stage. Run selected stages in **ascending number order**.
+Eight stages in **two groups**. MUST present the menu as those groups first, then the stage tables, and ask which group(s) or stages to run before executing any stage.
 
-### Detect stages — objective, no dialogue mid-stage
+**Run order:** mechanical numbers ascending (`1`–`5`), then consultant letters ascending (`A`–`C`). When both groups are selected, run `1, 2, 3, 4, 5, A, B, C`.
+
+### Group aliases (prefer these)
+
+| Selection | Expands to | Meaning |
+|-----------|------------|---------|
+| `mechanical` | `1, 2, 3, 4, 5` | Detect-only: tools, types, errors, clarity, generation gates. No dialogue mid-stage. |
+| `consultant` | `A, B, C` | Architecture / robustness / testability questions. Dialogue mid-stage. |
+| `both` or `all` | `1`–`5`, `A`–`C` | Mechanical then consultant (`A`–`C` still ask mid-pass). |
+
+Also accept stage IDs, ranges (`1-3`, `A-C`), or mixes (`mechanical, A` → mechanical plus Architecture).
+
+**CONSTRAINT:** The opening menu MUST offer `mechanical`, `consultant`, and `both` as first-class choices (not only raw stage IDs).
+- Enforcement: First review chat turn after the target is known includes those three group words and waits.
+- Violation: STOP, re-present the group menu; do not start a stage.
+
+CORRECT:
+```text
+Groups: mechanical | consultant | both
+Or stages: 1–5 (mechanical), A–C (consultant). Which?
+```
+
+PROHIBITED:
+```text
+Which stages? (numbers, ranges, or 'all')
+→ only that, with no mechanical/consultant group names
+```
+
+### Mechanical stages — objective, no dialogue mid-stage
 
 | # | Stage | What it covers |
 |---|-------|----------------|
 | 1 | Automated Tools | `make vet`, `make lint`, format check; capture exit codes and raw output |
 | 2 | Type Safety | `any` / `interface{}`, type assertions, nil before dereference |
 | 3 | Error Handling | typed wrap-chain, `_ =`, log-without-return, persistence, DB fallback |
-| 7 | Code Clarity | naming, godot periods, structured logs, over-export |
-| 8 | Generation Gates | `golang-quality` constraints 1–16 (templates, OTEL, durable AI dumps, resources, layering); `go-structured-strings` for report builders |
+| 4 | Code Clarity | naming, godot periods, structured logs, over-export |
+| 5 | Generation Gates | `golang-quality` constraints 1–18 (templates, OTEL, durable AI dumps, resources, layering, config create); `go-structured-strings` for report builders. External Uber / Code Review Comments are citations only. |
 
 AI finds issues, reports them with code pairs in the plan file. No user input required mid-stage.
 
-For a full write-time quality story without consultant dialogue, prefer Detect stages `1, 2, 3, 7, 8` (or `all` if consultant stages are wanted too).
+For a full write-time quality story without consultant dialogue, prefer **`mechanical`** (same as `1, 2, 3, 4, 5`).
 
 ### Consultant stages — ask, do not verdict
 
-| # | Stage | What it covers |
-|---|-------|----------------|
-| 4 | Architecture | SRP, layering, coupling, ISP, CLI→service→client, typed error wrap-chain, observability init seams |
-| 5 | Robustness | timeouts, missing-deadline fail-closed, resource cleanup, edge cases, LLM-in-transaction, client OTEL vs gateway-only |
-| 6 | Testability | DI seams, mocks, constructor hooks, mixed concerns |
+| ID | Stage | What it covers |
+|----|-------|----------------|
+| A | Architecture | SRP, layering, coupling, ISP, CLI→service→client, typed error wrap-chain, observability init seams |
+| B | Robustness | timeouts, missing-deadline fail-closed, resource cleanup, edge cases, LLM-in-transaction, client OTEL vs gateway-only |
+| C | Testability | DI seams, mocks, constructor hooks, mixed concerns |
 
 AI surfaces **concerns as questions**. User answers → finding or non-issue. "I don't know" → open question, move on.
 
-**"All"** runs stages 1–8 in ascending order (consultant stages 4–6 still ask mid-pass when selected).
+### Legacy ID map (pre-reindex)
+
+| Old | New |
+|-----|-----|
+| 1–3 | 1–3 (unchanged) |
+| 4 Architecture | A |
+| 5 Robustness | B |
+| 6 Testability | C |
+| 7 Code Clarity | 4 |
+| 8 Generation Gates | 5 |
+
+If a plan file still lists old IDs, map with this table, then continue.
 
 **Rules:**
 
 - MUST present this menu before executing anything.
-- MUST ask "Which stages? (numbers, ranges, or 'all')" and wait.
-- MUST NOT begin stage execution without explicit stage selection.
-- MUST run the user's selection in ascending stage number order.
+- MUST ask which group(s) or stages (`mechanical`, `consultant`, `both`/`all`, `1`–`5`, `A`–`C`, or ranges) and wait.
+- MUST NOT begin stage execution without explicit selection.
+- MUST expand group aliases to stage IDs, then run in order `1`–`5` then `A`–`C` (skipping unselected).
+- MUST NOT invent a third group; omit stages by ID if the user wants a subset of mechanical or consultant.
 
 ---
 
@@ -85,7 +125,55 @@ Also load [appendix.md](appendix.md) for this stage.
 
 ---
 
-## Stage 4: Architecture — Consultant
+## Stage 4: Code Clarity — Detect
+
+- [ ] Comments end with a period (`godot`)
+- [ ] No `fmt.Print*` for logs (pterm OK for interactive CLI)
+- [ ] Logging uses injected `*observability.Logger` (or project equivalent); no ad-hoc `logrus.New()` in services
+- [ ] Log lines include discriminator fields (IDs, job/task names)
+- [ ] Names are specific (not `process` / `handle` / `do` unless the package already uses them)
+- [ ] Only essential symbols exported — if unsure, run `.cursor/skills/review-member-visibility/SKILL.md`
+- [ ] No TODO/FIXME without explanation
+- [ ] String literals used 3+ times extracted as constants (`goconst`)
+
+Clarity only. Templates, resource defers, CLI→service→client layering, and process/LLM OTEL gates belong in **Stage 5**, not here. If Stage 5 is not selected, note that generation gates were skipped rather than re-checking them under clarity.
+
+---
+
+## Stage 5: Generation Gates — Detect
+
+Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality/SKILL.md` **Core constraints** (1–18) and apply them as a checklist against the review target. For multi-section markdown, reports, TOC, or similar human layout builders, also Read and apply `.cursor/rules/go-structured-strings.mdc`. Go Code Review Comments and Uber Go Style Guide are the external taste baseline cited in `golang-quality`; MUST NOT invent Stage 5 findings from those guides unless they map to a Core constraint.
+
+### Ownership vs Stage 3
+
+- **Stage 3** keeps error-handling depth (typed wrap-chain, `_ =`, log-without-return, persistence, named returns, DB fallback).
+- **Stage 5** owns generation-specific gates Stage 3 does not cover: C1–3 (HTTP/cancel/txn defers), C7–18 (nil, ctx, unused/N+1, layering, format/godot overlap, interfaces, templates, structured logging, OTEL, durable AI dumps, AI module isolation, config create).
+- Apply **C4** and **C6** in Stage 5 **only when Stage 3 was not selected** for this review. If Stage 3 already ran, do not duplicate those findings under Stage 5.
+
+### Checklist (map to golang-quality)
+
+- [ ] C1: every `resp.Body` has `defer Close()` after the error check
+- [ ] C2: every `WithTimeout` / `WithCancel` / `WithDeadline` has `defer cancel()` on the next line
+- [ ] C3: every `Begin` has `defer tx.Rollback` after the error check
+- [ ] C4 / C6 (only if Stage 3 not selected): no `_ =` except defer cleanup; no log-without-return; persistence errors returned
+- [ ] C7: constructor nil panics; public pointer params nil-checked
+- [ ] C8: no replacing received `ctx` with `context.Background()`; `ctx.Done()` before expensive work
+- [ ] C9: no unused work; no N+1 when a batch exists
+- [ ] C10: HTTP / external API only in client packages; CLI has no business logic
+- [ ] C11: comments end with period; format/lint gates known for the project (Stage 1 already ran tools when selected)
+- [ ] C12: interfaces ≤ 5–6 methods
+- [ ] C13: multi-line operator reports / diagrams use `text/template` (or `html/template`); not chained `WriteString` / `Sprintf` spaghetti — see `go-structured-strings.mdc`
+- [ ] C14: injected structured logger; no `fmt.Print*` / ad-hoc `logrus.New()` in services
+- [ ] C15: LLM/inference entrypoints init OTEL; OTLP when endpoint env is set; client spans on generate/evaluate (not gateway-only); named-return span defers use `err =`
+- [ ] C16: AI work dumps (RLM TraceDir, runreport, inference-failure JSON) survive process exit; not only under `defer RemoveAll` scratch; durable path logged or returned
+- [ ] C17: when generators/evaluators/signatures change: discrete contracts are structured signature fields; env-gated live opt-in replay exists (or PR documents offline-only); full reseed is not the only exercise path — see `dspy-pipeline-isolation`
+- [ ] C18: multi-field construction uses config create (`cfg.Create*` / `CreateModule`); no long parallel arg lists beside a half-empty Config
+
+Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pattern 15 when TraceDir / runreport / failure dumps are in scope, and pattern 16 when generator/evaluator/signature diffs are in scope.
+
+---
+
+## Stage A: Architecture — Consultant
 
 **Inspect first:**
 
@@ -112,7 +200,7 @@ For a full architecture pass, point at project `pipelines-x-review-architecture`
 
 ---
 
-## Stage 5: Robustness — Consultant
+## Stage B: Robustness — Consultant
 
 **Inspect first:**
 
@@ -135,11 +223,11 @@ For a full architecture pass, point at project `pipelines-x-review-architecture`
 - "LLM work is only visible in the AI gateway. Is a client-side hang after HTTP 200 acceptable without a Phoenix/OTLP span?"
 
 **CONSTRAINT:** Outbound hops that require a caller-supplied bound MUST fail closed when `ctx` has no deadline: return an error and NEVER call the downstream. MUST NOT invent a fallback timeout. Caller/gateway still MUST set the deadline on normal traffic.
-- Enforcement: Stage 5 inspect lists this hop; the consultant asks the question above in the same turn as Why this matters.
+- Enforcement: Stage B inspect lists this hop; the consultant asks the question above in the same turn as Why this matters.
 - Violation: Record a finding (or an open question if the user is unsure). Do not treat a fallback duration as an implicit bound.
 
 **CONSTRAINT:** LLM generate/evaluate (and equivalent inference hops) MUST be observable from the calling process via OpenTelemetry / OpenInference spans exported when an OTLP endpoint is configured. MUST NOT treat AI-gateway HTTP traces as the sole observability plan for client parse, evaluate, or hang failures after the response.
-- Enforcement: Stage 5 inspect lists gateway-only or missing-init cases; consultant asks the Phoenix/OTLP question above with Why this matters.
+- Enforcement: Stage B inspect lists gateway-only or missing-init cases; consultant asks the Phoenix/OTLP question above with Why this matters.
 - Violation: Record a finding (or open question). Do not clear as non-issue solely because the gateway shows HTTP 200.
 
 CORRECT:
@@ -163,7 +251,7 @@ MUST NOT flag tests, `context.Background()` at process start, or in-process work
 
 ---
 
-## Stage 6: Testability — Consultant
+## Stage C: Testability — Consultant
 
 **Inspect first:**
 
@@ -177,52 +265,6 @@ MUST NOT flag tests, `context.Background()` at process start, or in-process work
 
 - "[Type] constructs [dep] in `New`/`method`. Do tests need a mock seam?"
 - "[Function] is [N] lines covering [concerns]. Split in scope?"
-
----
-
-## Stage 7: Code Clarity — Detect
-
-- [ ] Comments end with a period (`godot`)
-- [ ] No `fmt.Print*` for logs (pterm OK for interactive CLI)
-- [ ] Logging uses injected `*observability.Logger` (or project equivalent); no ad-hoc `logrus.New()` in services
-- [ ] Log lines include discriminator fields (IDs, job/task names)
-- [ ] Names are specific (not `process` / `handle` / `do` unless the package already uses them)
-- [ ] Only essential symbols exported — if unsure, run `.cursor/skills/review-member-visibility/SKILL.md`
-- [ ] No TODO/FIXME without explanation
-- [ ] String literals used 3+ times extracted as constants (`goconst`)
-
-Clarity only. Templates, resource defers, CLI→service→client layering, and process/LLM OTEL gates belong in **Stage 8**, not here. If Stage 8 is not selected, note that generation gates were skipped rather than re-checking them under clarity.
-
----
-
-## Stage 8: Generation Gates — Detect
-
-Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality/SKILL.md` **Core constraints** (1–16) and apply them as a checklist against the review target. For multi-section markdown, reports, TOC, or similar human layout builders, also Read and apply `.cursor/rules/go-structured-strings.mdc`.
-
-### Ownership vs Stage 3
-
-- **Stage 3** keeps error-handling depth (typed wrap-chain, `_ =`, log-without-return, persistence, named returns, DB fallback).
-- **Stage 8** owns generation-specific gates Stage 3 does not cover: C1–3 (HTTP/cancel/txn defers), C7–16 (nil, ctx, unused/N+1, layering, format/godot overlap, interfaces, templates, structured logging, OTEL, durable AI dumps).
-- Apply **C4** and **C6** in Stage 8 **only when Stage 3 was not selected** for this review. If Stage 3 already ran, do not duplicate those findings under Stage 8.
-
-### Checklist (map to golang-quality)
-
-- [ ] C1: every `resp.Body` has `defer Close()` after the error check
-- [ ] C2: every `WithTimeout` / `WithCancel` / `WithDeadline` has `defer cancel()` on the next line
-- [ ] C3: every `Begin` has `defer tx.Rollback` after the error check
-- [ ] C4 / C6 (only if Stage 3 not selected): no `_ =` except defer cleanup; no log-without-return; persistence errors returned
-- [ ] C7: constructor nil panics; public pointer params nil-checked
-- [ ] C8: no replacing received `ctx` with `context.Background()`; `ctx.Done()` before expensive work
-- [ ] C9: no unused work; no N+1 when a batch exists
-- [ ] C10: HTTP / external API only in client packages; CLI has no business logic
-- [ ] C11: comments end with period; format/lint gates known for the project (Stage 1 already ran tools when selected)
-- [ ] C12: interfaces ≤ 5–6 methods
-- [ ] C13: multi-line operator reports / diagrams use `text/template` (or `html/template`); not chained `WriteString` / `Sprintf` spaghetti — see `go-structured-strings.mdc`
-- [ ] C14: injected structured logger; no `fmt.Print*` / ad-hoc `logrus.New()` in services
-- [ ] C15: LLM/inference entrypoints init OTEL; OTLP when endpoint env is set; client spans on generate/evaluate (not gateway-only); named-return span defers use `err =`
-- [ ] C16: AI work dumps (RLM TraceDir, runreport, inference-failure JSON) survive process exit; not only under `defer RemoveAll` scratch; durable path logged or returned
-
-Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, and pattern 15 when TraceDir / runreport / failure dumps are in scope.
 
 ---
 
@@ -250,7 +292,7 @@ For each concern:
 - MAY launch a research subagent only when the fork depends on an upstream or library fact that is not in this repo (for example provider docs). That is research, not display.
 
 **CONSTRAINT:** Consultant questions MUST include Why this matters in the same turn as the question.
-- Enforcement: Chat turn that asks a stage 4–6 question also contains a Why this matters block of 2-5 lines.
+- Enforcement: Chat turn that asks a stage A–C question also contains a Why this matters block of 2-5 lines.
 - Violation: Add the block before waiting; do not start the next concern.
 
 CORRECT:
@@ -264,7 +306,7 @@ Is keeping all of those on one Handler intentional, or should capabilities split
 
 PROHIBITED: Compact question only, with no Why this matters, then waiting.
 PROHIBITED: `Task` / subagent whose only job is to write the explanation.
-PROHIBITED: Starting Stage N+1 because the user said `explain`.
+PROHIBITED: Starting the next stage because the user said `explain`.
 
 Question shape:
 
@@ -288,14 +330,17 @@ Is [specific question]?
 # Review Plan: <slug>
 **Date:** <YYYY-MM-DD>
 **Target:** <file or directory>
-**Selected Stages:** <e.g. "1, 2, 3, 7, 8">
+**Selected Stages:** <e.g. "mechanical" or "1, 2, 3, 4, 5" or "A, B, C">
 
 ## Stages
 - [ ] 1. Automated Tools
 - [ ] 2. Type Safety
 - [ ] 3. Error Handling
-- [ ] 7. Code Clarity
-- [ ] 8. Generation Gates
+- [ ] 4. Code Clarity
+- [ ] 5. Generation Gates
+- [ ] A. Architecture
+- [ ] B. Robustness
+- [ ] C. Testability
 
 ## Findings
 
@@ -303,7 +348,7 @@ Is [specific question]?
 
 ## Open Questions
 ```
-- MUST create the plan file before stage 1.
+- MUST create the plan file before the first selected stage.
 - MUST tick `[x]` only after findings are appended.
 - MUST NOT delete previous stage findings.
 - Resume: list `tmp/review-*.md`, read the file, next unchecked stage, confirm, then run.
@@ -314,7 +359,7 @@ Is [specific question]?
 
 ```
 ---
-**Stage N: <Name>** [Detect / Consultant] — Score: X/10
+**Stage <ID>: <Name>** [Mechanical / Consultant] — Score: X/10
 
 critical: <count>  medium: <count>  low: <count>  open questions: <count>
 
@@ -326,7 +371,7 @@ critical: <count>  medium: <count>  low: <count>  open questions: <count>
 (or "No issues found." if clean)
 
 ---
-Next: Stage N+1 — <Name>. Continue?
+Next: Stage <ID> — <Name>. Continue?
 ```
 
 - MUST include score even if 10/10.

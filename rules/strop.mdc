@@ -15,6 +15,7 @@ When adding a pipeline job, clients, modules, evaluators, or aligning to JobRunn
 
 - Load `.cursor/skills/strop-pipeline-pattern/SKILL.md`.
 - If the project has a local overlay (e.g. `pipelines-x-pipeline-pattern`), load it **after** the library skill for product-specific paths.
+- For fixture + env-gated live replay of one generator/evaluator, also load `.cursor/skills/dspy-pipeline-isolation/SKILL.md`.
 
 When implementing human review, Gate, reject-and-regenerate, or reviewflow ports:
 
