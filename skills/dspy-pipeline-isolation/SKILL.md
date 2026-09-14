@@ -31,6 +31,8 @@ description: >-
 - Enforcement: Fixture under `testdata/` (or documented path) loads into `Generate` / `Evaluate`; live test is opt-in via env.
 - Violation: STOP, extract a span fixture from `module-traces/` (or TraceDir), add offline and/or live replay, re-check.
 
+For RLM steps, prefer TraceDir/`rlm_inputs.jsonl` (strop `RLMComplete` sidecar with full context + query). Do not rely on dspy-go session metadata `context` alone; that field is truncated to ~500 characters for display.
+
 CORRECT:
 ```text
 1. Run pipeline once with AttachModuleTrace / work-story dumps.

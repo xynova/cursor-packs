@@ -199,6 +199,8 @@ func (s *Service) LongRunningTask(ctx context.Context) error {
 
 Primary pattern: constructor injection. Wire from `internal/container` (or the pipeline container). NEVER instantiate clients or loggers inside business logic.
 
+When construction needs a growing bundle of fields (prompts, budgets, optional hooks, resolved deps), use **config create** (golang-quality CONSTRAINT 18): fill a typed `Config`, then `cfg.CreateX()` / `cfg.CreateModule()`.
+
 ```go
 type Service struct {
     db     DatabaseClient
@@ -216,9 +218,19 @@ func NewService(db DatabaseClient, logger *observability.Logger) *Service {
 }
 ```
 
+Config create (when the constructor would grow past a few clear deps):
+
+```go
+cfg := RLMDefaults()
+cfg.LLM = llm
+cfg.TraceDir = traceDir
+module, err := cfg.CreateModule()
+```
+
 - MUST inject ALL dependencies via constructor.
 - MUST use interfaces for external dependencies (HTTP, DB, APIs).
 - Concrete types are acceptable for a single stable adapter (see architecture DI notes).
+- MUST prefer config create over a long `NewFoo(a, b, c, d, e)` list when the same bundle is reused or will grow.
 
 PROHIBITED:
 
@@ -511,6 +523,31 @@ LIVE_<TASK>_REPLAY=1 live Generate/Evaluate → then JobRunner chain.
 PROHIBITED:
 ```text
 Prompt edit verified only by a multi-minute end-to-end reseed.
+```
+
+---
+
+## Config create
+
+House name for fill-a-config-then-construct. Full rule: CONSTRAINT 18 in [SKILL.md](SKILL.md). DSPy examples: `.cursor/skills/dspy-module-patterns/SKILL.md` (Config create).
+
+```go
+cfg := stropdspy.RLMDefaults()
+cfg.LLM = llm
+cfg.Timeout = timeout
+cfg.TraceDir = traceDir
+module, err := cfg.CreateModule()
+```
+
+- MUST put related construction inputs on a typed `Config`.
+- MUST expose `CreateX` / `CreateModule` (no long parallel arg list beside the config).
+- `ctx` on create ONLY when creation itself performs I/O.
+- Package-level `CreateFoo(cfg)` MAY wrap `cfg.CreateFoo()`.
+
+PROHIBITED:
+```go
+module, err := CreateRLMModule(llm, rlmCfg) // llm belongs on cfg
+NewClient(url, token, timeout, retries, logger, tracer)
 ```
 
 ---

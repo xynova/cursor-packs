@@ -3,9 +3,9 @@ name: golang-quality
 description: >-
   Go generation and completion workflow: resource cleanup, error wrapping, nil
   guards, context propagation, CLI-service-client layering, structured logging,
-  OpenTelemetry / OpenInference observability, and quality gates. Use when
-  generating, completing, or fixing Go code, or before claiming a Go change is
-  done.
+  OpenTelemetry / OpenInference observability, config create constructors, and
+  quality gates. Use when generating, completing, or fixing Go code, or before
+  claiming a Go change is done.
 ---
 
 # Go Quality
@@ -143,13 +143,32 @@ Edit typology_cluster instruction; only verification path is a 10-minute full di
 Gate merge_ids by scraping cluster_proposal_md headings.
 ```
 
+**CONSTRAINT 18 — Config create.** When a type needs several construction inputs (deps, budgets, prompts, optional hooks), MUST put them on a typed `Config` (or `*Config`) and expose `CreateX` / `CreateModule` that takes no construction args beyond what the method signature already needs for runtime (`ctx` only when creation itself performs I/O). Call sites MUST fill the config, then call create. MUST NOT pass a long parallel argument list beside a half-empty config. Prefer this over ad-hoc `NewFoo(a, b, c, d, e)` when the same bundle is reused or will grow. Package-level `CreateFoo(cfg)` MAY wrap `cfg.CreateFoo()` for discoverability.
+- Enforcement: New multi-field constructors use config create; scan for `Create*` / `New*` with ≥4 related parameters that already have a Config type.
+- Violation: STOP, move fields onto Config, add `Create*`, update call sites.
+
+CORRECT:
+```go
+cfg := stropdspy.RLMDefaults()
+cfg.LLM = llm
+cfg.Timeout = timeout
+cfg.TraceDir = traceDir
+module, err := cfg.CreateModule()
+```
+
+PROHIBITED:
+```go
+module, err := stropdspy.CreateRLMModule(llm, rlmCfg) // llm already belongs on the config
+NewClient(url, token, timeout, retries, logger, tracer, metrics) // no Config
+```
+
 ---
 
 ## Steps
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
-2. **Implement** — Apply all 17 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? PASS or fix.
+2. **Implement** — Apply all 18 constraints during generation. First param on I/O functions: `ctx context.Context`.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? PASS or fix.
 4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
 
 ```bash
@@ -206,3 +225,4 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] Injected structured logger; no `fmt.Print*` / ad-hoc logger in services
 - [ ] LLM/inference entrypoints init OTEL; OTLP exporter when endpoint env set; client spans on generate/evaluate (not gateway-only)
 - [ ] AI work dumps (RLM TraceDir, runreport, inference-failure JSON) survive process exit; not only under `defer RemoveAll` scratch; path logged or returned
+- [ ] Multi-field construction uses config create (`cfg.Create*` / `CreateModule`); no long parallel arg lists beside a half-empty Config
