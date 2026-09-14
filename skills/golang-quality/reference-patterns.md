@@ -529,7 +529,7 @@ Prompt edit verified only by a multi-minute end-to-end reseed.
 
 ## Config create
 
-House name for fill-a-config-then-construct. Full rule: CONSTRAINT 18 in [SKILL.md](SKILL.md). DSPy examples: `.cursor/skills/dspy-module-patterns/SKILL.md` (Config create).
+House name for fill-a-config-then-construct. Full rule: CONSTRAINT 18 in [SKILL.md](SKILL.md). DSPy examples: `.cursor/skills/dspy-module-patterns/SKILL.md` (Config create). External taste: Go Code Review Comments and Uber Go Style Guide (cited in SKILL.md); score C18, not those guides as a second list.
 
 ```go
 cfg := stropdspy.RLMDefaults()

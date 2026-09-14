@@ -6,9 +6,35 @@ LOAD-WHEN: `review-code-staged` skill is active.
 
 ## Review stage catalogue
 
-Eight stages in two modes. MUST present as a numbered menu and ask which stages to run before executing any stage. Run selected stages in **ascending number order**.
+Eight stages in **two groups**. MUST present the menu as those groups first, then the stage tables, and ask which group(s) or stages to run before executing any stage. Run selected stages in **ascending number order**.
 
-### Detect stages — objective, no dialogue mid-stage
+### Group aliases (prefer these)
+
+| Selection | Expands to | Meaning |
+|-----------|------------|---------|
+| `mechanical` | `1, 2, 3, 7, 8` | Detect-only: tools, types, errors, clarity, generation gates. No dialogue mid-stage. |
+| `consultant` | `4, 5, 6` | Architecture / robustness / testability questions. Dialogue mid-stage. |
+| `both` or `all` | `1`–`8` | Mechanical then consultant in ascending number order (4–6 still ask mid-pass). |
+
+Also accept stage numbers, ranges (`1-3`), or mixes (`mechanical, 4` → mechanical plus Architecture).
+
+**CONSTRAINT:** The opening menu MUST offer `mechanical`, `consultant`, and `both` as first-class choices (not only raw stage numbers).
+- Enforcement: First review chat turn after the target is known includes those three group words and waits.
+- Violation: STOP, re-present the group menu; do not start a stage.
+
+CORRECT:
+```text
+Groups: mechanical | consultant | both
+Or stages: 1–8 (see tables). Which?
+```
+
+PROHIBITED:
+```text
+Which stages? (numbers, ranges, or 'all')
+→ only that, with no mechanical/consultant group names
+```
+
+### Mechanical stages — objective, no dialogue mid-stage
 
 | # | Stage | What it covers |
 |---|-------|----------------|
@@ -16,11 +42,11 @@ Eight stages in two modes. MUST present as a numbered menu and ask which stages 
 | 2 | Type Safety | `any` / `interface{}`, type assertions, nil before dereference |
 | 3 | Error Handling | typed wrap-chain, `_ =`, log-without-return, persistence, DB fallback |
 | 7 | Code Clarity | naming, godot periods, structured logs, over-export |
-| 8 | Generation Gates | `golang-quality` constraints 1–16 (templates, OTEL, durable AI dumps, resources, layering); `go-structured-strings` for report builders |
+| 8 | Generation Gates | `golang-quality` constraints 1–18 (templates, OTEL, durable AI dumps, resources, layering, config create); `go-structured-strings` for report builders. External Uber / Code Review Comments are citations only. |
 
 AI finds issues, reports them with code pairs in the plan file. No user input required mid-stage.
 
-For a full write-time quality story without consultant dialogue, prefer Detect stages `1, 2, 3, 7, 8` (or `all` if consultant stages are wanted too).
+For a full write-time quality story without consultant dialogue, prefer **`mechanical`** (same as `1, 2, 3, 7, 8`).
 
 ### Consultant stages — ask, do not verdict
 
@@ -32,14 +58,13 @@ For a full write-time quality story without consultant dialogue, prefer Detect s
 
 AI surfaces **concerns as questions**. User answers → finding or non-issue. "I don't know" → open question, move on.
 
-**"All"** runs stages 1–8 in ascending order (consultant stages 4–6 still ask mid-pass when selected).
-
 **Rules:**
 
 - MUST present this menu before executing anything.
-- MUST ask "Which stages? (numbers, ranges, or 'all')" and wait.
-- MUST NOT begin stage execution without explicit stage selection.
-- MUST run the user's selection in ascending stage number order.
+- MUST ask which group(s) or stages (`mechanical`, `consultant`, `both`/`all`, numbers, or ranges) and wait.
+- MUST NOT begin stage execution without explicit selection.
+- MUST expand group aliases to stage numbers, then run in ascending stage number order.
+- MUST NOT invent a third group; omit stages by number if the user wants a subset of mechanical or consultant.
 
 ---
 
@@ -197,12 +222,12 @@ Clarity only. Templates, resource defers, CLI→service→client layering, and p
 
 ## Stage 8: Generation Gates — Detect
 
-Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality/SKILL.md` **Core constraints** (1–17) and apply them as a checklist against the review target. For multi-section markdown, reports, TOC, or similar human layout builders, also Read and apply `.cursor/rules/go-structured-strings.mdc`.
+Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality/SKILL.md` **Core constraints** (1–18) and apply them as a checklist against the review target. For multi-section markdown, reports, TOC, or similar human layout builders, also Read and apply `.cursor/rules/go-structured-strings.mdc`. Go Code Review Comments and Uber Go Style Guide are the external taste baseline cited in `golang-quality`; MUST NOT invent Stage 8 findings from those guides unless they map to a Core constraint.
 
 ### Ownership vs Stage 3
 
 - **Stage 3** keeps error-handling depth (typed wrap-chain, `_ =`, log-without-return, persistence, named returns, DB fallback).
-- **Stage 8** owns generation-specific gates Stage 3 does not cover: C1–3 (HTTP/cancel/txn defers), C7–17 (nil, ctx, unused/N+1, layering, format/godot overlap, interfaces, templates, structured logging, OTEL, durable AI dumps, AI module isolation).
+- **Stage 8** owns generation-specific gates Stage 3 does not cover: C1–3 (HTTP/cancel/txn defers), C7–18 (nil, ctx, unused/N+1, layering, format/godot overlap, interfaces, templates, structured logging, OTEL, durable AI dumps, AI module isolation, config create).
 - Apply **C4** and **C6** in Stage 8 **only when Stage 3 was not selected** for this review. If Stage 3 already ran, do not duplicate those findings under Stage 8.
 
 ### Checklist (map to golang-quality)
@@ -222,6 +247,7 @@ Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality
 - [ ] C15: LLM/inference entrypoints init OTEL; OTLP when endpoint env is set; client spans on generate/evaluate (not gateway-only); named-return span defers use `err =`
 - [ ] C16: AI work dumps (RLM TraceDir, runreport, inference-failure JSON) survive process exit; not only under `defer RemoveAll` scratch; durable path logged or returned
 - [ ] C17: when generators/evaluators/signatures change: discrete contracts are structured signature fields; env-gated live opt-in replay exists (or PR documents offline-only); full reseed is not the only exercise path — see `dspy-pipeline-isolation`
+- [ ] C18: multi-field construction uses config create (`cfg.Create*` / `CreateModule`); no long parallel arg lists beside a half-empty Config
 
 Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pattern 15 when TraceDir / runreport / failure dumps are in scope, and pattern 16 when generator/evaluator/signature diffs are in scope.
 
@@ -289,7 +315,7 @@ Is [specific question]?
 # Review Plan: <slug>
 **Date:** <YYYY-MM-DD>
 **Target:** <file or directory>
-**Selected Stages:** <e.g. "1, 2, 3, 7, 8">
+**Selected Stages:** <e.g. "mechanical" or "1, 2, 3, 7, 8">
 
 ## Stages
 - [ ] 1. Automated Tools

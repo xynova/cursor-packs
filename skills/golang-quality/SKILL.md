@@ -16,6 +16,27 @@ Prevention-first Go workflow. This skill is the **procedure**. Project architect
 
 **Related:** `.cursor/skills/review-code-staged/SKILL.md` for staged review (**Stage 8** applies these Core constraints at review, not only while writing); `.cursor/skills/review-member-visibility/SKILL.md` for export audits. Report layouts: `.cursor/rules/go-structured-strings.mdc`.
 
+### External readability baseline
+
+Cite these for idiomatic Go taste. They are **not** a second checklist to score line-by-line.
+
+- [Go Code Review Comments](https://go.dev/wiki/CodeReviewComments)
+- [Uber Go Style Guide](https://github.com/uber-go/guide/blob/master/style.md)
+
+**CONSTRAINT:** Agents MUST enforce and review against this skill's Core constraints (and project rules). MUST NOT fail a change solely because an external guide prefers a different spelling of the same idea. When promoting a house pattern (for example config create), MUST put it here as a numbered constraint so write-time and Stage 8 share one bar.
+- Enforcement: Generation and Stage 8 checklists map to Core constraints 1–N only; external links appear as citations, not scored rows.
+- Violation: STOP, score the house constraint (or add one), drop the raw external-guide finding.
+
+CORRECT:
+```text
+Stage 8: fail C18 (config create). Citation: Uber/Code Review Comments favor clear constructors from config-shaped inputs.
+```
+
+PROHIBITED:
+```text
+Stage 8: 40 findings copied from Uber Go Style Guide sections with no map to C1–CN.
+```
+
 ---
 
 ## When to load
