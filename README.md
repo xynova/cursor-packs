@@ -13,6 +13,7 @@ Mount path in consumers: `.cursor/packs/shared`
 | `skills/edit-cursor-packs/` | Branch/commit shared pack edits (not the consumer repo) |
 | `skills/agent-smith/` | Author/review Cursor skills and rules (Agent Smith standards) |
 | `skills/author-ai-copilots/` | Library-owned `ai-copilots/` harness + multi-IDE BOOTSTRAP (incl. Go module Dir resolve) |
+| `skills/image-to-webp/` | Portable PNG/HEIC→WebP via cwebp; ask/install tools only after user agrees |
 | `skills/golang-quality/` | Generation/completion constraints + quality gates; `reference.md` encyclopedia |
 | `skills/review-code-staged/` | Staged Go review (menu, detect vs consultant; Stage 8 = generation gates) |
 | `skills/setup-goreleaser/` | Scaffold GoReleaser v2 + GitHub Release workflow |
@@ -24,7 +25,7 @@ Mount path in consumers: `.cursor/packs/shared`
 | `skills/plan-scaffold/` | Implementation plan meta-framework |
 | `skills/review-member-visibility/` | Export-only-what-is-essential audit |
 | `skills/review-code-smells/` | Code smell / maintainability review protocol |
-| `rules/golang.mdc` | `globs: **/*.go` — load golang-quality / staged review |
+| `rules/golang.mdc` | Go + `go.mod`/`go.work` — load golang-quality / staged review; no module-skeleton rewrite |
 | `rules/dspy.mdc` | Agent-decided — load thin dspy skills |
 | `rules/strop.mdc` | Agent-decided — load strop skills (softlinked from the strop module `ai-copilots/`) |
 | `rules/go-releases.mdc` | Agent-decided — load manage-go-releases for tags and consumer pins |
@@ -33,7 +34,7 @@ Mount path in consumers: `.cursor/packs/shared`
 | `rules/ai-copilots.mdc` | Library `AGENTS.md` / `ai-copilots/**` — load author-ai-copilots |
 | `rules/always-rules-0-ai.mdc` | Always-on model behavior: English identifiers, US spelling, no em dash, tmp clones |
 | `rules/always-rules-01-human-interaction.mdc` | Always-on fluent consultant + light tutor voice, implement gate, Intent-First / Consultant loaders |
-| `rules/png-to-webp.mdc` | `globs: **/*.png` — convert shipping PNGs with cwebp, update refs, drop duplicates |
+| `rules/image-to-webp.mdc` | `globs: **/*.{png,heic,heif}` — convert shipping rasters to WebP; load skill `image-to-webp` |
 | `personas/intent-first.persona.md` | Gated: confirm exploratory intent, then wait |
 | `personas/consultant.persona.md` | Gated: present real forks, wait for a pick |
 
