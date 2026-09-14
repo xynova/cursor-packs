@@ -19,6 +19,7 @@ Mount path in consumers: `.cursor/packs/shared`
 | `skills/manage-go-releases/` | Auto-patch / skip docs-chore / pin consumers to `v*` (agent release practice) |
 | `skills/dspy-xml-structured-output/` | Generic XML parser + mandatory-field validation (strop paths) |
 | `skills/dspy-go-debugging/` | Validation / retry / refinement failures |
+| `skills/dspy-pipeline-isolation/` | Fixture + env-gated live replay per generator/evaluator (C17) |
 | `skills/dspy-module-patterns/` | Module + interceptor wiring; `reference.md` dspy-go encyclopedia |
 | `skills/dspy-prompt-engineering/` | Compact prompt contract; `reference.md` bias/CoT/templates |
 | `skills/plan-scaffold/` | Implementation plan meta-framework |

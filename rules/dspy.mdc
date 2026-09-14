@@ -24,4 +24,9 @@ When adding a Go gate on model output (lists, ids, verdicts, merge rows), or whe
 - Load `.cursor/skills/dspy-xml-structured-output/SKILL.md` §0 and §0.1 first.
 - Discrete contracts MUST be signature fields via strop structured output; `*_md` is counsel only.
 
+When adding or changing a pipeline generator or evaluator, capturing fixtures from module-traces, or adding env-gated live opt-in replay:
+
+- Load `.cursor/skills/dspy-pipeline-isolation/SKILL.md`.
+- Full JobRunner reseed is the integration check, not the inner loop (golang-quality C17).
+
 Pipeline job layout (JobRunner, per-job clients): load `.cursor/skills/strop-pipeline-pattern/SKILL.md` and `.cursor/rules/strop.mdc` when orchestration or review is involved. Project overlays (if any) extend — do not replace — the pack pattern.

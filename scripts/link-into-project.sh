@@ -54,6 +54,7 @@ SKILLS=(
   review-code-staged
   dspy-go-debugging
   dspy-module-patterns
+  dspy-pipeline-isolation
   dspy-prompt-engineering
   dspy-xml-structured-output
   plan-scaffold

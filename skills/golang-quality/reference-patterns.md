@@ -493,6 +493,26 @@ rlmCfg.TraceDir = filepath.Join(analysisDir, "rlm-traces", task)
 // Successful local run leaves no traces for the next debugging session.
 ```
 
+### AI module isolation (generators and evaluators)
+
+When changing a dspy-go generator or evaluator in a pipeline, isolate that step before rejoining JobRunner. Full detail: `.cursor/skills/dspy-pipeline-isolation/SKILL.md` (golang-quality C17).
+
+- MUST keep discrete contracts as structured signature fields (not scraped `*_md`).
+- MUST capture Process inputs from module-traces / TraceDir into testdata (or document the dump path).
+- MUST add or extend env-gated live `Generate`/`Evaluate` for that task when the module is touched, or document why offline-only is enough.
+- MUST NOT treat a full pipeline reseed as the only exercise path.
+
+CORRECT:
+```text
+module-traces → testdata span → offline gate in default go test →
+LIVE_<TASK>_REPLAY=1 live Generate/Evaluate → then JobRunner chain.
+```
+
+PROHIBITED:
+```text
+Prompt edit verified only by a multi-minute end-to-end reseed.
+```
+
 ---
 
 ## Import organization

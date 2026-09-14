@@ -127,13 +127,29 @@ rlmCfg.TraceDir = filepath.Join(analysisDir, "rlm-traces", task) // only copy, w
 // Operator has no work_story_dir / flag after a successful local run.
 ```
 
+**CONSTRAINT 17 — AI module isolation and structured contracts.** When adding or changing a dspy-go generator or evaluator used in a pipeline, discrete machine outputs MUST be signature fields with structured XML (`dspy-xml-structured-output` §0 / §0.1). MUST provide or extend an env-gated live opt-in replay test that loads Process inputs from a module-trace / TraceDir fixture and runs that module alone, OR document in the PR why offline-only is enough for this change. MUST NOT rely on a full pipeline reseed as the only way to exercise the module. Keep C15 spans and C16 dumps on for live replay. See `.cursor/skills/dspy-pipeline-isolation/SKILL.md` and review appendix pattern 16.
+- Enforcement: For staged generator/evaluator/signature diffs, search for `LIVE_` / env `Skip` + `Generate(` / `Evaluate(`; confirm gates read typed signature fields, not scraped `*_md`.
+- Violation: STOP, add structured fields and/or opt-in live replay (or write the offline-only rationale), re-check.
+
+CORRECT:
+```text
+testdata/<task>_span.json from module-traces → offline zip gate →
+MAJORDOMO_LIVE_<TASK>_REPLAY=1 go test -run Live… → then rejoin JobRunner.
+```
+
+PROHIBITED:
+```text
+Edit typology_cluster instruction; only verification path is a 10-minute full digest reseed.
+Gate merge_ids by scraping cluster_proposal_md headings.
+```
+
 ---
 
 ## Steps
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
-2. **Implement** — Apply all 16 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? PASS or fix.
+2. **Implement** — Apply all 17 constraints during generation. First param on I/O functions: `ctx context.Context`.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? PASS or fix.
 4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
 
 ```bash
