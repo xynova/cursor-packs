@@ -68,6 +68,7 @@ SKILLS=(
   edit-cursor-packs
   agent-smith
   author-ai-copilots
+  image-to-webp
 )
 RULES=(
   golang.mdc
@@ -82,7 +83,7 @@ RULES=(
   ai-copilots.mdc
   always-rules-0-ai.mdc
   always-rules-01-human-interaction.mdc
-  png-to-webp.mdc
+  image-to-webp.mdc
   repository-boundaries.mdc
 )
 PERSONAS=(

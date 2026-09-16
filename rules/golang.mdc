@@ -1,6 +1,9 @@
 ---
-description: Go coding workflow — load golang-quality for generation/completion and review-code-staged for reviews
-globs: **/*.go
+description: >-
+  Go coding workflow — load golang-quality for generation/completion and
+  review-code-staged for reviews. Also covers existing-module skeleton safety
+  (no go mod init / delete go.mod when a module already exists).
+globs: "**/*.go,**/go.mod,**/go.sum,**/go.work,**/go.work.sum"
 alwaysApply: false
 ---
 
@@ -27,3 +30,28 @@ Project-specific `.cursor/rules/` (architecture, logging, domain) still apply an
 When the user asks for code smells, technical debt, or maintainability review:
 
 1. Load `.cursor/skills/review-code-smells/SKILL.md`.
+
+## Module skeleton (existing repos)
+
+**CONSTRAINT:** When a Go module or workspace already exists in the repository, MUST NOT recreate it to "fix" builds or tests.
+
+- MUST NOT run `go mod init` in a tree that already has `go.mod` (or a parent / `go.work` member that owns the package).
+- MUST NOT delete `go.mod`, `go.sum`, `go.work`, or `go.work.sum` to clear errors.
+- MUST NOT invent a parallel module layout or duplicate Makefile targets that already exist.
+- MUST NOT change the module import path only to make tests compile, without an explicit stated reason.
+- MUST add or remove dependencies via `go get` / `go.mod` edits, then `go mod tidy` (and `go mod verify` when checking integrity).
+- MUST fix application or test code when builds fail; do not replace the module skeleton.
+
+CORRECT:
+```text
+go test ./... fails on import
+→ fix the package or add the dep with go get + go mod tidy
+→ use existing make test / make build when present
+```
+
+PROHIBITED:
+```text
+go test ./... fails
+→ rm go.mod go.sum
+→ go mod init something_new
+```
