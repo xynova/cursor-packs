@@ -101,16 +101,47 @@ jobs:
 
 ## Version in `package main`
 
+GoReleaser and `make build` inject the tag via ldflags. Plain `go install module/cmd/…@vX.Y.Z` does not, so print through `reportVersion()` (BuildInfo fallback). Keep `(devel)` as `dev` for local `go run` / workspace builds.
+
 ```go
+import (
+	"fmt"
+	"runtime/debug"
+	"strings"
+)
+
 // version is set by GoReleaser / make build via -ldflags -X main.version=...
+// go install does not apply those ldflags, so reportVersion falls back to BuildInfo.
 var version = "dev"
+
+func reportVersion() string {
+	moduleVersion := ""
+	if bi, ok := debug.ReadBuildInfo(); ok {
+		moduleVersion = bi.Main.Version
+	}
+	return resolveVersion(version, moduleVersion)
+}
+
+func resolveVersion(ldflag, moduleVersion string) string {
+	if v := strings.TrimSpace(ldflag); v != "" && v != "dev" {
+		return v
+	}
+	if v := strings.TrimSpace(moduleVersion); v != "" && v != "(devel)" {
+		return v
+	}
+	return "dev"
+}
 ```
 
 Print example:
 
 ```go
-fmt.Printf("%s %s\n", "<binary>", version)
+fmt.Printf("%s %s\n", "<binary>", reportVersion())
 ```
+
+Prefer a table test on `resolveVersion`: ldflag wins over module version; `dev` + `v0.1.0` → `v0.1.0`; `dev` + `(devel)` → `dev`.
+
+If the version var is not in `package main`, set GoReleaser `-X` to that package path (for example `-X github.com/org/mod/internal/cli.version={{.Version}}`) and keep the same `reportVersion` helpers next to the var.
 
 ## Makefile fragment
 
