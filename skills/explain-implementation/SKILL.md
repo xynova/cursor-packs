@@ -1,22 +1,22 @@
 ---
 name: explain-implementation
 description: >-
-  After finishing an implementation that changed files, explain in plain
-  English what happened and how it is put together: enough for a developer to
-  follow, no fluff, no forced template. Use when claiming work is done,
-  summarizing an implementation, or when the user asks what you did / how it
-  was built.
+  After finishing an implementation that changed files, give a short
+  visual-friendly explain: one lead line, then compact bullets or numbered
+  steps (optional tiny diagram). Prefer scanability over prose. Use when
+  claiming work is done, summarizing an implementation, or when the user asks
+  what you did / how it was built.
 ---
 
 # Explain implementation
 
-**Moral:** After you change the product, the developer must be able to re-tell
-what landed and how the pieces connect without reading the whole diff. Say
-enough. Do not pad.
+**Moral:** After you change the product, a developer must skim what landed and
+how the pieces connect without reading an essay. Prefer a tight visual layout
+over paragraphs.
 
 **Voice:** Still follow `.cursor/rules/always-rules-01-human-interaction.mdc`
-(fluent consultant, no icon-prefixed reply headings). This skill owns the
-**content** of the post-implementation explain, not a rigid reply template.
+for the rest of the turn (no icon-prefixed reply headings). For this explain
+pass only, MUST prefer scannable structure over fluent multi-sentence prose.
 
 ---
 
@@ -37,92 +37,95 @@ asks you to explain a prior implementation).
 
 ## Core constraints
 
-**CONSTRAINT:** The final reply after an implementation MUST explain, in plain English, (1) what is different now and (2) how the change is put together (the important steps or moving parts). MUST NOT require fixed heading names, a fixed section count, or filler paragraphs.
+**CONSTRAINT:** The post-implementation explain MUST be visual-first and short:
 
-- MUST: cover outcome + how it fits together, briefly.
-- MUST NOT: invent “what stayed the same”, “who wrote key pieces”, or other sections when they add nothing.
-- MUST NOT: pad with restating the task, praising the approach, or repeating the same point.
-- Enforcement: Before send, a cold reader could answer “what changed?” and “how does it work now?” from the reply alone.
-- Violation: STOP, tighten or fill the gap, then send.
+1. **Lead** — one line: what is different now.
+2. **How it fits** — compact numbered steps or bullets for the moving parts (inputs → decisions → outputs). Optional: one small mermaid or markdown table when it clarifies the flow better than a list.
+3. **Authorship** — one bullet only if LLM vs mechanical could be confused; otherwise omit.
+4. **Evidence** — optional short path list last.
 
-CORRECT (compact; headings optional):
+- MUST: keep the explain scannable in a few seconds.
+- MUST NOT: write paragraph essays, restated task fluff, or empty ceremonial headings.
+- MUST NOT: replace the explain with only file names or SHAs.
+- Enforcement: Lead is ≤2 short sentences; body is mostly list/diagram/table, not prose blocks.
+- Violation: STOP, cut prose into lead + list (or tiny diagram), then send.
+
+CORRECT:
 ```markdown
-Digest can now open a product PR that promotes the refined typology catalog onto default when the confirmed catalog drifted.
+Digest can promote a drifted confirmed typology catalog onto default via a product PR.
 
-After the context PR finishes, Go compares confirmed vs refined YAML. On drift it pushes `majordomo-typology/…-update` and opens a PR against default. No new LLM calls; the PR body reuses findings digest already wrote.
+1. Context digest finishes as usual (proposal on `majordomo-context/…`).
+2. If mode is `reuse` and refined ≠ confirmed → push `majordomo-typology/…-update`.
+3. Open/restack PR **base = default** writing `.typology/typology.yaml`.
+4. Skip on discover / local seed; never auto-merge.
+
+- Mechanical Go only (no new LLM); PR body reuses existing findings markdown.
 ```
 
-CORRECT (when a short walkthrough helps):
+CORRECT (flow diagram when steps alone are muddy):
 ```markdown
-The promote path is mechanical and runs after the usual digest:
+Promote runs after the context PR:
 
-1. Skip unless survey mode was reuse.
-2. Compare confirmed and refined catalogs.
-3. On drift, write `.typology/typology.yaml` on a default-targeted branch and open/restack the product PR.
+```mermaid
+flowchart LR
+  ctxPR[context PR] --> compare{reuse and drifted?}
+  compare -->|yes| productPR[typology PR on default]
+  compare -->|no| skip[skip]
 ```
 
-PROHIBITED:
-```markdown
-Changed typology_promote.go, run.go, poll.go, and the docs.
-Tests pass. Want me to commit?
+- Payload: refined YAML → `.typology/typology.yaml`
+- No new LLM calls
 ```
 
-PROHIBITED (fluff / rigid ceremony):
+PROHIBITED (prose wall):
 ```markdown
-## Short answer
-Great question — here's what I accomplished for you today...
-
-## What stayed the same
-Many things stayed the same...
-
-## What is new
-## Who wrote key pieces
-(empty sections or filler to satisfy a template)
+Digest can now open a product PR that promotes the refined typology catalog onto default when the confirmed catalog drifted. Usual digest still builds the proposal on the context branch. After that PR is opened, Go checks survey mode was reuse, compares confirmed vs refined YAML, and on drift force-pushes…
 ```
 
-**CONSTRAINT:** When you describe steps, they MUST be behavior a developer can follow in their head (inputs, decisions, outputs). MUST NOT replace the explain with only paths, symbol names, or commit hashes. Identifiers MAY appear after the prose or in parentheses.
+PROHIBITED (file dump):
+```markdown
+Changed typology_promote.go, run.go, poll.go.
+Tests pass.
+```
 
-- Enforcement: The reply has at least one behavior sentence; not a bare file list.
-- Violation: STOP, rewrite in behavior language.
-
-**CONSTRAINT:** MUST NOT use icon-prefixed headings (`✅`, `🔍`, `🧭`, `➡️`, `❓`). MUST NOT ship a telegraph dump (one path per line with no why).
+**CONSTRAINT:** MUST NOT use icon-prefixed headings (`✅`, `🔍`, `🧭`, `➡️`, `❓`).
 
 - Enforcement: Scan before send.
-- Violation: Rewrite in fluent prose.
+- Violation: Rewrite without icons.
 
-**CONSTRAINT:** When a reader might wrongly assume an LLM wrote a piece (PR body, config, docs), MUST say in one plain sentence whether that piece is mechanical, LLM-backed, or human-owned. MUST NOT add an authorship essay when nothing is confusable.
+**CONSTRAINT:** List items MUST name behavior (compare, write, skip, open), not only symbols. Paths MAY trail a behavior bullet.
 
-- Enforcement: Only if confusion is plausible.
-- Violation: STOP, add or remove that one sentence.
+- Enforcement: Each bullet/step has a verb about what the system does.
+- Violation: STOP, rewrite as behavior bullets.
 
 ---
 
 ## Agent procedure
 
 1. **Detect** — File-changing implement/fix, or user asked what you did.
-2. **Say what is different** — Outcome in plain English.
-3. **Say how it is put together** — Only the steps or parts that matter; omit the rest.
-4. **Clarify authorship** — One sentence only if LLM vs mechanical could be confused.
-5. **Evidence lightly** — Optional short path list after the prose.
-6. **Stop** — No filler. One next-step question is fine when useful.
+2. **Lead line** — Outcome only.
+3. **List or tiny diagram** — How it is put together; cut anything that does not help scanning.
+4. **One authorship bullet** — Only if confusable.
+5. **Optional paths** — Last, short.
+6. **Stop** — No essay. One next-step question is fine.
 
 ---
 
 ## Pre-completion checklist
 
-- [ ] **Enough explain:** Reply answers what changed and how it fits together
-      Method: Cold-reader test
-      Pass: Both clear without opening the diff
-      Fail: STOP, add the missing beat
-- [ ] **No fluff / no forced template:** No empty ceremonial sections; no padding
-      Method: Scan for filler and mandatory-looking empty headings
-      Pass: Every sentence earns its place
-      Fail: STOP, cut or rewrite
-- [ ] **Not a file dump:** Behavior is present; paths are secondary
-      Method: Read first screen of reply
-      Pass: Prose first
+- [ ] **Visual-first:** Lead + list/diagram; not a prose wall
+      Method: Count long paragraphs in the explain
+      Pass: At most one short lead; body is list/diagram/table
+      Fail: STOP, convert to bullets or a tiny diagram
+- [ ] **Enough:** Cold reader gets what changed and how it fits
+      Method: Skim-only test (~5 seconds)
+      Pass: Both clear
+      Fail: STOP, add the missing beat as a bullet
+- [ ] **Not a file dump:** Behavior verbs present
+      Method: Read bullets
+      Pass: System behavior first
       Fail: STOP, rewrite
-- [ ] **No icon template:** No ✅/🔍/🧭 reply scaffolding
-      Method: Scan headings
-      Pass: Ordinary markdown or plain paragraphs
-      Fail: STOP, rewrite
+- [ ] **No icon template / no fluff**
+      Method: Scan
+      Pass: Clean and short
+      Fail: STOP, cut
