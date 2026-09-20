@@ -15,14 +15,37 @@ description: >-
 
 Load when authoring or changing process-compose launchers that start Docker containers (observability, databases, collectors) beside host binaries.
 
+**Related:** shared Make verb names (`serve` / `serve-down`) live in golang-quality CONSTRAINT 21.
+
 ## When to load
 
 - Editing `process-compose.yaml`, `pc-up.sh` / `pc-down.sh`, or `docker-compose.yml` used by those scripts
-- `make serve` / `make serve-down` (or equivalent) for a multi-namespace process-compose project
+- `make serve` / `make serve-down` for a multi-namespace process-compose project
 - Serve hangs with no output after the up script starts (classic stuck `docker info`)
 - Down scripts, compose stop targets, or volume cleanup discussions
 
 ## Core constraints
+
+**CONSTRAINT:** When a Makefile (or documented operator entrypoint) starts or stops a process-compose local stack, MUST name those verbs `serve` and `serve-down`. MUST NOT expose the long-running stack only as `dev` / `dev-down` on a new or rewritten Makefile. MAY keep `dev` / `dev-down` as thin aliases that invoke `serve` / `serve-down` during migration. Help lines MUST be one short product-neutral or host-specific description (host MAY name itself; pack docs MUST NOT require a brand).
+
+- Enforcement: Read Makefile `.PHONY` / `##` lines and pc-up/pc-down wiring; up/down are `serve` / `serve-down`
+- Violation: STOP, add or rename to `serve` / `serve-down`, optionally alias old names, re-verify
+
+CORRECT:
+```makefile
+serve: ## process-compose TUI; rebuilds on file changes
+	./scripts/pc-up.sh
+
+serve-down: ## Stop this process-compose project
+	./scripts/pc-down.sh
+```
+
+PROHIBITED:
+```makefile
+dev: ## Start local stack
+	process-compose up
+# no serve target
+```
 
 **CONSTRAINT:** Up scripts that optionally start Docker containers MUST probe the daemon with a bounded timeout before `docker compose up` / process start. MUST NOT call bare `docker info` (or equivalent) without a timeout.
 
@@ -126,6 +149,10 @@ services:
 
 ## Pre-completion checklist
 
+- [ ] **Serve verbs:** Makefile (if present) exposes `serve` / `serve-down` for the process-compose stack
+      Method: `rg -n '^serve|^serve-down|dev-down' Makefile`
+      Pass: `serve` and `serve-down` exist; `dev` only as optional alias
+      Fail: Stack only under `dev` → STOP, rename
 - [ ] **Timed probe:** Up script cannot hang forever on `docker info`
       Method: Read probe helper; confirm timeout or kill path
       Pass: Bounded wait + reuse once per run

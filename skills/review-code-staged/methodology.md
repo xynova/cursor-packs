@@ -44,7 +44,7 @@ Which stages? (numbers, ranges, or 'all')
 | 2 | Type Safety | `any` / `interface{}`, type assertions, nil before dereference |
 | 3 | Error Handling | typed wrap-chain, `_ =`, log-without-return, persistence, DB fallback |
 | 4 | Code Clarity | naming, godot periods, structured logs, over-export |
-| 5 | Generation Gates | `golang-quality` constraints 1–20 (templates, OTEL, durable AI dumps, resources, layering, config create, package layout, Makefile verb list); `go-structured-strings` for report builders. External Uber / Code Review Comments are citations only. |
+| 5 | Generation Gates | `golang-quality` constraints 1–21 (templates, OTEL, durable AI dumps, resources, layering, config create, package layout, Makefile verb list + shared Make verbs); `go-structured-strings` for report builders. External Uber / Code Review Comments are citations only. |
 
 AI finds issues, reports them with code pairs in the plan file. No user input required mid-stage.
 

@@ -1,10 +1,11 @@
 ---
 description: >-
   Process-compose stacks with Docker sidecars: timed Docker preflight on up,
-  confirm when the daemon is down, never remove named volumes on down. Load
-  skill process-compose-docker. Triggers: process-compose, pc-up, pc-down,
+  confirm when the daemon is down, never remove named volumes on down. Make
+  verbs are serve/serve-down (golang-quality C21). Load skill
+  process-compose-docker. Triggers: process-compose, pc-up, pc-down,
   docker compose, serve-down, Phoenix, HyperDX, named volumes.
-globs: "**/process-compose*.{yaml,yml},**/pc-up.sh,**/pc-down.sh,**/docker-compose*.{yml,yaml}"
+globs: "**/process-compose*.{yaml,yml},**/pc-up.sh,**/pc-down.sh,**/docker-compose*.{yml,yaml},**/Makefile"
 alwaysApply: false
 ---
 
@@ -14,6 +15,7 @@ alwaysApply: false
 
 ## MUST
 
+- Name stack up/down `make serve` / `make serve-down` (not only `dev` / `dev-down`)
 - Timed Docker daemon probe before optional container namespaces start
 - Ask before continuing without those containers when the probe fails on a TTY
 - Stop stacks without `-v` / `--volumes` / `docker volume rm` on the default down path
