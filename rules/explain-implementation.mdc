@@ -1,0 +1,29 @@
+---
+description: >-
+  After an implementation that changed files, load explain-implementation and
+  give a plain-English teaching pass (short answer, what stayed the same, what
+  is new step by step, who wrote key pieces). Triggers: implementation done,
+  what did you do, how was it built, summarize the change, ready to commit.
+alwaysApply: true
+---
+
+# Explain implementation (cursor-packs)
+
+**CONSTRAINT:** When the agent finishes an implementation or fix that changed project files, or when the user asks what changed / how it was built, MUST Read and follow `.cursor/skills/explain-implementation/SKILL.md` before the final user-facing reply.
+
+- MUST: include the skill’s plain-English explain pass (short answer; what is new as behavior steps; optional same-path and authorship sections).
+- MUST NOT: end with only a file list, test status, or “want me to commit?” without that explain pass.
+- Enforcement: Before send on an implement/fix turn, confirm the skill was applied to the reply draft.
+- Violation: STOP, Read the skill, rewrite the reply, then send.
+
+CORRECT:
+```text
+Edited contextdigest promote path → final reply uses explain-implementation sections
+```
+
+PROHIBITED:
+```text
+Edited files → “Done. Tests pass. Commit?”
+```
+
+Chat voice remains `.cursor/rules/always-rules-01-human-interaction.mdc`. This rule only forces the post-implementation teaching structure.

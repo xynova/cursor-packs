@@ -71,6 +71,7 @@ SKILLS=(
   author-ai-copilots
   image-to-webp
   process-compose-docker
+  explain-implementation
 )
 RULES=(
   golang.mdc
@@ -89,6 +90,7 @@ RULES=(
   image-to-webp.mdc
   repository-boundaries.mdc
   process-compose-docker.mdc
+  explain-implementation.mdc
 )
 PERSONAS=(
   intent-first.persona.md
