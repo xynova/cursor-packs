@@ -2,17 +2,19 @@
 name: explain-implementation
 description: >-
   After finishing an implementation that changed files, give a short
-  visual-friendly explain: one lead line, then numbered step-by-step how it
-  fits together (a small diagram MAY replace or sit beside the steps). Prefer
-  scanability over prose. Use when claiming work is done, summarizing an
-  implementation, or when the user asks what you did / how it was built.
+  visual-friendly explain: one lead line, then numbered pseudocode-style steps
+  for how it fits together (a small diagram MAY replace or sit beside the
+  steps). Prefer scanability over prose. Use when claiming work is done,
+  summarizing an implementation, or when the user asks what you did / how it
+  was built.
 ---
 
 # Explain implementation
 
 **Moral:** After you change the product, a developer must skim what landed and
 how the pieces connect without reading an essay. Prefer a tight visual layout
-over paragraphs.
+over paragraphs. Numbered steps MUST read like readable **pseudocode**
+(behavior, decisions, skips), not like a narrative.
 
 **Voice:** Still follow `.cursor/rules/always-rules-01-human-interaction.mdc`
 for the rest of the turn (no icon-prefixed reply headings). For this explain
@@ -40,27 +42,36 @@ asks you to explain a prior implementation).
 **CONSTRAINT:** The post-implementation explain MUST be visual-first and short:
 
 1. **Lead** — one line: what is different now.
-2. **How it fits** — numbered **step-by-step** for the moving parts (inputs → decisions → outputs). A small mermaid (or compact table) MAY replace the list or sit beside it when the flow is branching or easier to see as a diagram.
+2. **How it fits** — numbered **pseudocode-style steps** for the moving parts (`IF` / `ELSE` / skip / write / open). A small mermaid (or compact table) MAY replace the list or sit beside it when the flow is branching or easier to see as a diagram.
 3. **Authorship** — one line/bullet only if LLM vs mechanical could be confused; otherwise omit.
 4. **Evidence** — optional short path list last.
 
-- MUST: default to numbered steps; use a diagram when it makes the path clearer.
+- MUST: default to numbered pseudocode steps; use a diagram when it makes the path clearer.
 - MUST: keep the explain scannable in a few seconds.
+- MUST: keep each step concrete enough that a cold reader knows what happens without decoding jargon (split packed phrases into two steps when needed).
 - MUST NOT: write paragraph essays, restated task fluff, or empty ceremonial headings.
 - MUST NOT: replace the explain with only file names or SHAs.
-- Enforcement: Lead is ≤2 short sentences; body is numbered steps and/or one small diagram, not prose blocks.
-- Violation: STOP, cut prose into lead + steps (and/or tiny diagram), then send.
+- MUST NOT: pack several actions into one vague line (for example “open/restack PR base=default writing X”).
+- Enforcement: Lead is ≤2 short sentences; body is numbered steps and/or one small diagram, not prose blocks; each step states one clear action or decision.
+- Violation: STOP, cut prose into lead + concrete steps (and/or tiny diagram), then send.
 
 CORRECT:
 ```markdown
 Digest can promote a drifted confirmed typology catalog onto default via a product PR.
 
-1. Context digest finishes as usual (proposal on `majordomo-context/…`).
-2. If mode is `reuse` and refined ≠ confirmed → push `majordomo-typology/…-update`.
-3. Open/restack PR **base = default** writing `.typology/typology.yaml`.
-4. Skip on discover / local seed; never auto-merge.
+1. Finish context digest (proposal stays on `majordomo-context/…`).
+2. IF survey mode ≠ reuse → skip.
+3. IF refined catalog == confirmed `.typology/typology.yaml` (normalized) → skip.
+4. ELSE write refined YAML into `.typology/typology.yaml` on branch `majordomo-typology/<repo>-update`.
+5. Push that branch and open (or update) a product PR whose base is the default branch.
+6. Do not auto-merge that product PR.
 
 - Mechanical Go only (no new LLM); PR body reuses existing findings markdown.
+```
+
+PROHIBITED (vague packed step):
+```markdown
+4. ELSE push `majordomo-typology/…-update` and open/restack PR base=default with `.typology/typology.yaml`.
 ```
 
 CORRECT (flow diagram when steps alone are muddy):
@@ -70,11 +81,11 @@ Promote runs after the context PR:
 ```mermaid
 flowchart LR
   ctxPR[context PR] --> compare{reuse and drifted?}
-  compare -->|yes| productPR[typology PR on default]
+  compare -->|yes| writeCatalog[write .typology on typology branch]
+  writeCatalog --> productPR[open PR against default]
   compare -->|no| skip[skip]
 ```
 
-- Payload: refined YAML → `.typology/typology.yaml`
 - No new LLM calls
 ```
 
@@ -94,10 +105,10 @@ Tests pass.
 - Enforcement: Scan before send.
 - Violation: Rewrite without icons.
 
-**CONSTRAINT:** Steps MUST name behavior (compare, write, skip, open), not only symbols. Paths MAY trail a behavior step.
+**CONSTRAINT:** Steps MUST name one concrete behavior each (compare, write, skip, push, open). Paths and branch names MAY appear, but the action MUST stay obvious. MUST NOT crush write + push + open into one opaque phrase.
 
-- Enforcement: Each numbered step has a verb about what the system does.
-- Violation: STOP, rewrite as behavior steps.
+- Enforcement: Read each step; ask whether a new teammate would know what git/forge action just happened.
+- Violation: STOP, split or reword the step.
 
 ---
 
@@ -105,7 +116,7 @@ Tests pass.
 
 1. **Detect** — File-changing implement/fix, or user asked what you did.
 2. **Lead line** — Outcome only.
-3. **Numbered steps** — How it is put together; add or swap in a small diagram when the flow is clearer that way; cut anything that does not help scanning.
+3. **Pseudocode steps** — How it is put together; add or swap in a small diagram when the flow is clearer that way; cut anything that does not help scanning.
 4. **One authorship bullet** — Only if confusable.
 5. **Optional paths** — Last, short.
 6. **Stop** — No essay. One next-step question is fine.
@@ -126,6 +137,10 @@ Tests pass.
       Method: Read steps
       Pass: System behavior first
       Fail: STOP, rewrite
+- [ ] **Concrete steps:** No packed vague lines; each step is one clear action/decision
+      Method: Teammate test on each step
+      Pass: Action is obvious without decoding jargon
+      Fail: STOP, split or reword
 - [ ] **No icon template / no fluff**
       Method: Scan
       Pass: Clean and short
