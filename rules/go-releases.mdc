@@ -9,6 +9,7 @@ When releasing, tagging, auto-patching, or pinning a Go module / submodule depen
 
 1. Load `.cursor/skills/manage-go-releases/SKILL.md` and follow its constraints.
 2. For first-time GoReleaser scaffolding (especially CLIs), load `.cursor/skills/setup-goreleaser/SKILL.md` first, then manage-go-releases for ongoing policy.
-3. When the forge is not release-ready (missing protected `main`, package registry off, job-token `admin_packages` 403, or no Go quality / secret CI), load `.cursor/skills/prepare-go-forge/SKILL.md` and run the host prepare script before retrying publish.
+3. For signed `license.lic` activation on a shipped CLI or daemon, load `.cursor/skills/setup-go-binary-license/SKILL.md` (Gate, issuance, `-tags release`).
+4. When the forge is not release-ready (missing protected `main`, package registry off, job-token `admin_packages` 403, or no Go quality / secret CI), load `.cursor/skills/prepare-go-forge/SKILL.md` and run the host prepare script before retrying publish.
 
 Project overlays may name concrete paths (for example `providers/strop`); the shared skill owns the version policy.
