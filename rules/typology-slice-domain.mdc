@@ -21,17 +21,16 @@ alwaysApply: false
 
 Orchestrator: `JudgeTypologySlicePipeline.Assemble` (not a method named Refine).
 
-CLI resume stage: `catalog` (legacy alias `refine` for one release only).
+CLI resume stage: `catalog`.
 
 ## Constraints
 
-**CONSTRAINT:** New code, comments, logs, docs, and explain diagrams for these stages MUST use grouping / meaning / catalog (and the task ids above).
+**CONSTRAINT:** Code, comments, logs, docs, and explain diagrams for these stages MUST use grouping / meaning / catalog (and the task ids above).
 
 - MUST: label loops as subgraphs with in-loop retry edges; place meaning **outside** both loops (runs once between them).
-- MUST NOT: introduce fresh `typology_cluster`, `typology_refine`, or `typology_objective_grounding` as the primary name for new work.
+- MUST NOT: use `typology_cluster`, `typology_refine`, or `typology_objective_grounding` for these stages.
 - MUST NOT: call the whole pipeline “refine” when you mean only catalog assemble.
-- MAY: mention legacy ids only in alias maps, migration footnotes, or dual-read of old evidence filenames.
-- Enforcement: Grep new diffs for primary uses of legacy stage jargon without “legacy” / alias context.
+- Enforcement: Grep new diffs for those retired task ids or opaque Loop A/B boxes.
 - Violation: STOP, rename to the vocabulary table, then continue.
 
 CORRECT (explain / docs):
@@ -51,5 +50,5 @@ newGenerator(sig, TaskTypologySliceGrouping)
 
 PROHIBITED:
 ```go
-newGenerator(sig, "typology_cluster") // primary new registration
+newGenerator(sig, "typology_cluster")
 ```
