@@ -1,31 +1,36 @@
 ---
 description: >-
-  After an implementation that changed files, load explain-implementation and
-  give a short visual-friendly explain (lead line + numbered pseudocode-style
-  steps; a small diagram MAY help). Triggers: implementation done, what did
-  you do, how was it built, summarize the change, ready to commit.
+  After an implementation or a finished program run, load explain-implementation
+  and give a short visual-friendly explain (headings, lead, numbered IF/ELSE
+  steps with parenthetical why-it-matters; present for how it works, past for
+  what ran; a small diagram MAY help). Triggers: implementation done, trajectory,
+  refine loop, what did you do, what happened, how was it built, summarize the
+  change, ready to commit.
 alwaysApply: true
 ---
 
 # Explain implementation (cursor-packs)
 
-**CONSTRAINT:** When the agent finishes an implementation or fix that changed project files, or when the user asks what changed / how it was built, MUST Read and follow `.cursor/skills/explain-implementation/SKILL.md` before the final user-facing reply.
+**CONSTRAINT:** When the agent finishes an implementation or fix that changed project files, or when the user asks what changed / how it was built / what a finished run did, MUST Read and follow `.cursor/skills/explain-implementation/SKILL.md` before the final user-facing reply.
 
-- MUST: short lead + numbered pseudocode-style steps that stay concrete (one clear action or decision per step; small diagram MAY help).
+- MUST: short lead + numbered IF/ELSE steps that stay concrete (one clear action or decision per step; plain section headings OK; parenthetical why-it-matters on phase titles; small diagram MAY help).
+- MUST: use present tense for how a change works; past tense for what already executed; keep parentheticals in the same tense (`no folds applied`, not `no folds to apply`).
+- MUST: when a diagram shows loops, draw each loop as a subgraph with an in-loop retry edge; once-only steps (for example ledger RLM) sit outside those subgraphs.
 - MUST NOT: pack write/push/open into one vague line.
-- MUST NOT: end with only a file list / “want me to commit?” and no explain.
+- MUST NOT: label a lone box `Loop A` / `Loop B` on a straight-line flowchart (hides what is inside the loop).
+- MUST NOT: end with only a file list / "want me to commit?" and no explain.
 - MUST NOT: ship a prose essay for the explain pass.
-- Enforcement: Before send on an implement/fix turn, confirm the skill was applied to the reply draft.
+- Enforcement: Before send on an implement/fix or post-run explain turn, confirm the skill was applied to the reply draft; if loops appear, confirm subgraph boundaries.
 - Violation: STOP, Read the skill, rewrite the reply, then send.
 
 CORRECT:
 ```text
-Lead line + numbered IF/ELSE-style steps (optional mermaid when flow branches)
+Lead (+ optional headings) + numbered IF/ELSE steps with (why it matters); past if the run finished; optional mermaid with loop subgraphs
 ```
 
 PROHIBITED:
 ```text
-Multi-paragraph walkthrough, or “Done. Tests pass. Commit?”
+Multi-paragraph walkthrough, or "Done. Tests pass. Commit?", or Loop A → ledger → Loop B as three opaque boxes
 ```
 
 Chat voice remains `.cursor/rules/always-rules-01-human-interaction.mdc` outside this explain pass. This rule requires a scannable step-by-step explain.
