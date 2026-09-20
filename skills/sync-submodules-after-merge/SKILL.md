@@ -56,8 +56,9 @@ git status   # still "modified: .majordomo (new commits)" — ignore it
 
 - MUST: after sync, `git status` has no staged/unstaged gitlink bumps unless the user asked to pin a new SHA
 - MUST NOT: `git add .majordomo` / `git add .cursor/packs/shared` merely to silence dirt from a drifted checkout
+- MUST NOT: treat `(new commits)` after a **pin bump** as “commit all”; that dirt is usually a **stale checkout behind the new gitlink**. Staging it reverts the pin. See **`edit-cursor-packs`** → **Consumer pin: sync checkout after gitlink bump**.
 
-Enforcement: `git diff --submodule` / `git status` show no intentional pin commit from this skill
+Enforcement: `git diff --submodule` / `git status` show no intentional pin commit from this skill; before any `git add <submodule>`, compare `git ls-files -s <path>` to `git -C <path> rev-parse HEAD`
 Violation: STOP, unstage; reset checkouts with `git submodule update` instead
 
 CORRECT:
@@ -70,6 +71,17 @@ PROHIBITED:
 ```bash
 git add .majordomo .cursor/packs/shared
 git commit -m "sync submodules"
+```
+
+**CONSTRAINT:** If `git submodule update` fails with `Operation not permitted` / cannot lock `.git/modules/.../config` (common in sandboxed agents), MUST stop and ask the human to run the sync in their terminal. MUST NOT rewrite the submodule `gitdir` pointer or stage the drifted checkout as a workaround.
+
+- Enforcement: agent surfaces the one-liner and waits when module-config locks fail
+- Violation: STOP; do not ship a reverse pin
+
+Human one-liner (path as needed):
+```bash
+git submodule update --init --recursive
+# or: git submodule update --init --recursive -- .cursor/packs/shared
 ```
 
 **CONSTRAINT:** Untracked content inside a nest (for example old `logs/`) is a separate problem. MUST report it; MUST NOT delete it unless the user explicitly asks.
