@@ -144,6 +144,17 @@ Clarity only. Templates, resource defers, CLI→service→client layering, and p
 
 Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality/SKILL.md` **Core constraints** (1–20) and apply them as a checklist against the review target. For multi-section markdown, reports, TOC, or similar human layout builders, also Read and apply `.cursor/rules/go-structured-strings.mdc`. Go Code Review Comments and Uber Go Style Guide are the external taste baseline cited in `golang-quality`; MUST NOT invent Stage 5 findings from those guides unless they map to a Core constraint.
 
+### CLI command surface (when a binary / CLI entrypoint is in scope)
+
+When the review target includes a command-line runner (`cmd/`, daemon `main`, CLI package that owns process argv), MUST also Read `.cursor/skills/cli-command-surface/SKILL.md` and apply its binary checks. These checks are language-agnostic behavior gates; they apply to Go entrypoints in this review and to other-language runners when that is the stated target.
+
+- [ ] Bare invoke (no args) does not Listen/Serve; prints usage and exits non-zero
+- [ ] Root `version` (or documented equivalent) prints identity without config / license Gate / network
+- [ ] Root help catalog lists start + version + other real root commands
+- [ ] Unknown root command does not fall through to serve
+- [ ] Makefile / Docker / Air / compose / README start paths use the explicit start command
+- [ ] Optional discovery flags (`--config`, `--license`, socket) are not documented as required when defaults exist
+
 ### Ownership vs Stage 3
 
 - **Stage 3** keeps error-handling depth (typed wrap-chain, `_ =`, log-without-return, persistence, named returns, DB fallback).
@@ -170,7 +181,7 @@ Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality
 - [ ] C18: multi-field construction uses config create (`cfg.Create*` / `CreateModule`); no long parallel arg lists beside a half-empty Config
 - [ ] C19: kit vs app classified; kit public API in `pkg/<domain>/` (not trapped in `internal/`); app `main` is wiring only (no mux/handlers/routing in `package main`); new files sit under `internal/<domain>/` rather than a new root sibling or grab-bag (`util`, `common`, `helpers`, `shared`, `misc`, `tools`); `internal/` is not a flat dumping ground; app modules do not grow a mixed host `pkg/` unless they are also a published kit. See appendix pattern 17.
 
-Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pattern 15 when TraceDir / runreport / failure dumps are in scope, pattern 16 when generator/evaluator/signature diffs are in scope, and pattern 17 when package paths, `cmd` mains, or `internal/` layout are in scope.
+Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pattern 15 when TraceDir / runreport / failure dumps are in scope, pattern 16 when generator/evaluator/signature diffs are in scope, pattern 17 when package paths, `cmd` mains, or `internal/` layout are in scope, and pattern 18 when CLI argv / `serve` / `version` / bare-binary start paths are in scope.
 
 ---
 
@@ -187,6 +198,7 @@ Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pat
 - Direct `NewClient` / `logrus.New` inside a service
 - Request-path package that returns only `fmt.Errorf` / bare `error` with no layer-typed error
 - LLM/inference CLI or worker entrypoint with no `observability.Init` (or project OTEL bootstrap)
+- Daemon or long-running CLI whose default argv path Listen/Serves without an explicit start command → command-surface violation (also Stage 5 detect; ask naming / migration here)
 - Generate/evaluate path with no client OpenInference (or project) spans; only an AI gateway is expected to show traces
 - Reusable library API trapped in `internal/`, flat `internal/` sprawl (many sibling leaves, no domain parents), a new top-level `internal/<leaf>` that belongs under an existing domain, grab-bag names (`util`, `common`, `helpers`, `shared`, `misc`, `tools`), fat `cmd` mains, or an app module adding mixed host `pkg/`
 
@@ -200,6 +212,7 @@ Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pat
 - "Is this a reusable library with public API trapped in `internal/`, or should that surface move to `pkg/`?"
 - "This `cmd/<app>/main.go` does more than wiring. Should it be thinned to config, observability, and a run call?"
 - "This change adds `internal/<leaf>` at the internal root. Does an existing domain folder own it, or is a new domain parent the right nest?"
+- "Bare `<bin>` starts the service. Should start be an explicit command (`serve` / `run`), and what breaks if we change launchers?"
 
 For a full architecture pass, point at project `pipelines-x-review-architecture` (if present) instead of duplicating it.
 

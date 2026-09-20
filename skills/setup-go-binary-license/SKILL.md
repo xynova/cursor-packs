@@ -16,7 +16,7 @@ Load this skill when adding or changing signed `license.lic` activation, `make b
 
 **Reference:** [reference.md](reference.md) (file list, make targets, Gate signatures).
 
-**Related:** `.cursor/skills/setup-goreleaser/SKILL.md` for archive plumbing; `.cursor/skills/manage-go-releases/SKILL.md` for tags. This skill owns the activation Gate, not tagging policy.
+**Related:** `.cursor/skills/setup-goreleaser/SKILL.md` for archive plumbing; `.cursor/skills/manage-go-releases/SKILL.md` for tags; `.cursor/skills/cli-command-surface/SKILL.md` for explicit `serve` / `version` dispatch before Gate. This skill owns the activation Gate, not tagging policy.
 
 ---
 
@@ -129,7 +129,7 @@ Violation: STOP, split ungated CI build vs tagged archives, re-verify
 
 1. **Fit** — confirm customers run a binary/image; source stays private. If not, stop.
 2. **Package** — add `internal/license` from [reference.md](reference.md) (sign/verify/enforce/gate pair/ledger/keychain). No attestation. One default feature (for example `serve`).
-3. **CLI** — `<bin> license keygen|sign|issue|show|list` in `internal/cli`; serve `--license` + env + `~/.config/<product>/license.lic` + `./license.lic`.
+3. **CLI** — root commands per `cli-command-surface` (`serve`, `version`, `help`); `<bin> license keygen|sign|issue|show|list` in `internal/cli`; serve `--license` + env + `~/.config/<product>/license.lic` + `./license.lic`.
 4. **Wire** — Gate in `cmd/<bin>` as specified. Make targets from the reference. Gitignore the private key.
 5. **Release** — embed pubkey; GoReleaser `tags: [release]`; CI ungated build + release-tag license tests.
 6. **Prove** — `go test ./internal/license/...`; `go test -tags release ./internal/license/...`; ungated binary starts without `.lic`; `-tags release` binary prints `activation required` then starts with a matching file.

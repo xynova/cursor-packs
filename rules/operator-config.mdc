@@ -1,0 +1,29 @@
+---
+description: >-
+  Operator config discovery and secrets: XDG user config.yaml, make init,
+  no literal secrets, ${VAR} expand, optional macOS Keychain. Load skill
+  operator-config. Triggers: config.yaml, XDG_CONFIG_HOME, make init,
+  UserConfig, keychain secrets, .env.example, bearer_env.
+globs: "**/config.yaml,**/config.yaml.example,**/internal/config/**/*.go,**/cmd/**/config*.go,**/Makefile"
+alwaysApply: false
+---
+
+# Operator config
+
+**Skill:** `.cursor/skills/operator-config/SKILL.md` (MUST Read and follow when this rule loads). Patterns: that skill's `reference.md`.
+
+## MUST
+
+- Put live operator config under `~/.config/<app>/` (or `$XDG_CONFIG_HOME/<app>/`)
+- Prefer `<APP>_CONFIG` / `--config`, then user `config.yaml`, then documented cwd fallbacks
+- Provide `make init` / `<bin> init` that creates user config if missing (`0600`)
+- Keep secrets out of YAML literals; use `${VAR}` and/or Keychain account names
+- Resolve runtime secrets env-first, then optional Keychain; fail closed when required and empty
+
+## MUST NOT
+
+- Ship cwd-only config discovery with no user-dir candidate
+- Overwrite existing user `config.yaml` without an explicit force flag
+- Commit literal API keys, passwords, tokens, or credential URLs in config examples
+- Require macOS Keychain on Linux/CI as the only secret source
+- Conflate license signing-key Keychain items with app password Keychain items

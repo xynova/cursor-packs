@@ -16,11 +16,12 @@ When generating, completing, or fixing Go:
 3. Prefer project `make format` / `make lint` / `make vet` / `make test` when those targets exist; otherwise use `gofumpt`/`gofmt`, `golangci-lint`, `go vet`, `go test`. When a `Makefile` exists, bare `make` / `make help` MUST list every operator verb (golang-quality C20), and shared jobs MUST use shared names such as `serve` / `serve-down` (C21; not only `dev`).
 4. For multi-section markdown, reports, or TOC builders: follow `.cursor/rules/go-structured-strings.mdc` (`text/template` over WriteString spaghetti).
 5. For package layout, follow golang-quality C19: reusable API in `pkg/` for libraries, thin `cmd/` entrypoints for applications, domain names over grab-bags like `util` or `common`.
+6. For CLI / daemon argv surface (`serve`, `version`, root help, no bare start): follow `.cursor/skills/cli-command-surface/SKILL.md` (and `.cursor/rules/cli-command-surface.mdc`).
 
 When the user asks to review, audit, rate quality, check code, or production readiness of Go:
 
 1. Load `.cursor/skills/review-code-staged/SKILL.md` (group menu: `mechanical` | `consultant` | `both`; do not dump all checklists first).
-2. Staged review **includes** generation-gate detect as **Stage 5** (same `golang-quality` constraints used while writing, plus `go-structured-strings` for report builders). Prefer **`mechanical`** (includes stage 5) when the user wants detect-only full quality.
+2. Staged review **includes** generation-gate detect as **Stage 5** (same `golang-quality` constraints used while writing, plus `go-structured-strings` for report builders, plus `cli-command-surface` when a CLI entrypoint is in scope). Prefer **`mechanical`** (includes stage 5) when the user wants detect-only full quality.
 
 For export/visibility audits: `.cursor/skills/review-member-visibility/SKILL.md`.
 

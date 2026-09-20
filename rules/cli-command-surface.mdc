@@ -1,0 +1,19 @@
+---
+description: >-
+  Language-agnostic CLI runner contract — load cli-command-surface when
+  generating or changing command-line binaries, daemons, cmd entrypoints,
+  version/help/serve UX, cobra, clap, click, argparse, or tyro.
+globs: "**/cmd/**,**/cli/**,**/__main__.py,**/main.go,**/main.rs,**/main.ts,**/main.js,**/bin/**"
+alwaysApply: false
+---
+
+# CLI command surface (cursor-packs)
+
+When generating, completing, or fixing a command-line runner or daemon entrypoint:
+
+1. Load `.cursor/skills/cli-command-surface/SKILL.md` and follow its constraints.
+2. For cross-language examples: that skill's `reference.md`.
+3. Go release version stamping still uses `.cursor/skills/setup-goreleaser/SKILL.md`.
+4. Go license Gate skip for `version` / `license` still uses `.cursor/skills/setup-go-binary-license/SKILL.md`.
+
+When staged Go review includes a CLI entrypoint in scope: mechanical **Stage 5** MUST also apply `cli-command-surface` binary checks (see `review-code-staged` methodology).

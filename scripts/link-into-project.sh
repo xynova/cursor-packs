@@ -52,6 +52,7 @@ fi
 SKILLS=(
   golang-quality
   review-code-staged
+  cli-command-surface
   dspy-go-debugging
   dspy-module-patterns
   dspy-pipeline-isolation
@@ -71,11 +72,13 @@ SKILLS=(
   author-ai-copilots
   image-to-webp
   process-compose-docker
+  operator-config
   explain-implementation
 )
 RULES=(
   golang.mdc
   go-structured-strings.mdc
+  cli-command-surface.mdc
   dspy.mdc
   strop.mdc
   go-releases.mdc
@@ -90,6 +93,7 @@ RULES=(
   image-to-webp.mdc
   repository-boundaries.mdc
   process-compose-docker.mdc
+  operator-config.mdc
   explain-implementation.mdc
 )
 PERSONAS=(

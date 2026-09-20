@@ -177,3 +177,22 @@ Detect (Stage 5 / C19):
 - App module grows a mixed `pkg/` of host types without being a published kit (host architecture may forbid this).
 
 Related: golang-quality CONSTRAINT 19; Stage 5 Generation Gates checklist (C19); Stage A architecture questions on library vs application layout; `golang-quality/reference-patterns.md` package layout.
+
+---
+
+## 18. Bare binary starts the service (missing CLI command surface)
+
+Operators expect a catalog (`serve`, `version`, `help`). A daemon whose default argv path Listen/Serves turns `tool -v` and empty invokes into config failures or accidental starts.
+
+WRONG: `main` parses flags and listens when `os.Args` has no subcommand; no root `version`; README says `go run ./cmd/tool` to start the daemon.
+
+RIGHT: Explicit start command (`serve`); bare invoke prints usage and exits non-zero; `version` works without config or license Gate; Makefile / Docker / Air / compose use the start command. See `cli-command-surface`.
+
+Detect (Stage 5 when CLI in scope; Stage A consult):
+
+- Entrypoint falls through to Listen/Serve with no subcommand.
+- Missing `version` / root help catalog.
+- Launchers still invoke the bare binary after start became explicit.
+- Help text marks discovery flags as required when resolvers already default them.
+
+Related: `.cursor/skills/cli-command-surface/SKILL.md`; Stage 5 CLI command surface checklist; Stage A question on implicit start.
