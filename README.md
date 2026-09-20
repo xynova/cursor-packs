@@ -18,6 +18,7 @@ Mount path in consumers: `.cursor/packs/shared`
 | `skills/golang-quality/` | Generation/completion constraints + quality gates; `reference.md` encyclopedia |
 | `skills/review-code-staged/` | Staged Go review (mechanical 1–5 / consultant A–C; Stage 5 = generation gates) |
 | `skills/setup-goreleaser/` | Scaffold GoReleaser v2 + GitHub Release workflow |
+| `skills/setup-go-binary-license/` | Signed `license.lic` Gate for a shipped Go CLI/daemon (`-tags release`) |
 | `skills/manage-go-releases/` | Auto-patch / skip docs-chore / pin consumers to `v*` (agent release practice) |
 | `skills/dspy-xml-structured-output/` | Generic XML parser + mandatory-field validation (strop paths) |
 | `skills/dspy-go-debugging/` | Validation / retry / refinement failures |
@@ -31,6 +32,7 @@ Mount path in consumers: `.cursor/packs/shared`
 | `rules/dspy.mdc` | Agent-decided — load thin dspy skills |
 | `rules/strop.mdc` | Agent-decided — load strop skills (softlinked from the strop module `ai-copilots/`) |
 | `rules/go-releases.mdc` | Agent-decided — load manage-go-releases for tags and consumer pins |
+| `rules/go-binary-license.mdc` | `internal/license`, goreleaser, `cmd/**/main.go` — load setup-go-binary-license |
 | `rules/cursor-packs.mdc` | Soft-link ownership — load edit-cursor-packs |
 | `rules/agent-smith.mdc` | Authoring skills/rules — load agent-smith |
 | `rules/ai-copilots.mdc` | Library `AGENTS.md` / `ai-copilots/**` — load author-ai-copilots |

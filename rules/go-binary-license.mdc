@@ -1,0 +1,21 @@
+---
+description: >-
+  Signed Go CLI/daemon activation (license.lic, release Gate, garble) — load
+  setup-go-binary-license when adding product licenses, obfuscation, or
+  GoReleaser -tags release for a shipped binary
+globs:
+  - "**/internal/license/**"
+  - "**/.goreleaser.yaml"
+  - "**/cmd/**/main.go"
+alwaysApply: false
+---
+
+# Go binary license (cursor-packs)
+
+When adding or changing signed activation, `license.lic`, `make build-protected`, garble, or GoReleaser `-tags release` for a Go CLI or daemon:
+
+1. Load `.cursor/skills/setup-go-binary-license/SKILL.md` and follow its constraints.
+2. File list and Make/GoReleaser snippets: that skill's `reference.md`.
+3. Archive plumbing still belongs to `setup-goreleaser`; this rule is the Gate, not tagging policy.
+
+MUST gate `cmd/` only. MUST NOT license-check importable `pkg/` libraries.

@@ -61,6 +61,7 @@ SKILLS=(
   review-member-visibility
   review-code-smells
   setup-goreleaser
+  setup-go-binary-license
   manage-go-releases
   prepare-go-forge
   resolve-pr-merge-conflicts
@@ -77,6 +78,7 @@ RULES=(
   dspy.mdc
   strop.mdc
   go-releases.mdc
+  go-binary-license.mdc
   pr-merge-conflicts.mdc
   sync-submodules.mdc
   cursor-packs.mdc
