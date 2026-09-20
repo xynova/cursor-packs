@@ -52,6 +52,7 @@ fi
 SKILLS=(
   golang-quality
   review-code-staged
+  cli-command-surface
   dspy-go-debugging
   dspy-module-patterns
   dspy-pipeline-isolation
@@ -76,6 +77,7 @@ SKILLS=(
 RULES=(
   golang.mdc
   go-structured-strings.mdc
+  cli-command-surface.mdc
   dspy.mdc
   strop.mdc
   go-releases.mdc
