@@ -1088,38 +1088,32 @@ Keep one of these two shapes, and do not mix them casually:
 #### Reusable library or provider kit
 
 ```text
-pkg/
-├── core/
-├── modules/
-└── llms/
-internal/
-├── cache/
-├── tracing/
-└── testutil/
+pkg/<domain>/
+internal/<hidden>/
 examples/
 tests/
 ```
 
-- Public API lives in `pkg/<domain>/` or an exported root package.
-- Hidden helpers stay in `internal/`.
+- Public API lives in `pkg/<domain>/` or an exported root package. Consumers MUST be able to import it; MUST NOT trap those types only under `internal/`.
+- Hidden helpers stay in `internal/` and still use domain folder names when there is more than a handful of packages.
 - Examples and blackbox tests show how to use the kit.
-- Avoid grab-bag package names like `util`, `common`, `helpers`, or `shared`.
+- MUST NOT use grab-bag package names like `util`, `common`, `helpers`, `shared`, `misc`, or `tools`.
 
 #### Application or host service
 
 ```text
-cmd/app/main.go
-internal/
-├── cli/
-├── clients/
-├── config/
-└── domain/
+cmd/<app>/main.go
+internal/<domain>/
+internal/<domain>/<pkg>/
 ```
 
-- `cmd/<app>/main.go` should only wire config, observability, and the top-level run call.
-- Business logic lives under `internal/<domain>/`.
-- HTTP and external API calls stay in `internal/clients/<service>/`.
+- `cmd/<app>/main.go` MUST only wire flags, config/root, observability, listen/`os.Exit`, and one `Mount`/`Run` call. MUST NOT put mux handlers or routing predicates in `package main`.
+- Business logic and HTTP handlers live under `internal/<domain>/` (nest related packages; MUST NOT grow a flat sibling forest).
+- Outbound HTTP and external API calls stay in `internal/clients/<service>/` (or the project's client packages). C10.
+- MUST NOT add a mixed host `pkg/` unless this module is also a published kit. MUST publish reusable API from a kit module rather than mixing `pkg/` into an app. Host architecture rules take precedence.
 - Keep the repo root free of loose `.go` implementation files.
+
+Write-time and Stage 5 gate: golang-quality CONSTRAINT 19. Compact trees: [reference-patterns.md](reference-patterns.md#package-layout-library-vs-application).
 
 ### 2. Global Variables Pattern
 - **Rule**: Use global variables for cross-cutting concerns only

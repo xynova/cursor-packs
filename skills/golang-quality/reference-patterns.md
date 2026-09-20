@@ -234,49 +234,63 @@ module, err := cfg.CreateModule()
 
 ## Package layout (library vs application)
 
-### Reusable library or provider kit
+**LOAD-WHEN:** adding a Go file, a new package, a `cmd` binary, or reviewing layout (golang-quality C19 / staged review Stage 5).
+
+Classify the module, then place the file. Host architecture rules (if present) win for local forbids.
+
+### Classify
+
+| Kind | Signal | Public API |
+|------|--------|------------|
+| Kit | Other modules import this `go.mod` | `pkg/<domain>/` (or one exported root package) |
+| App | This module's `cmd/` is the product | `internal/<domain>/` only; no mixed host `pkg/` unless this module is also a published kit |
+
+MUST NOT treat an app as a kit by adding `pkg/` "for cleanliness." MUST publish reusable API from a kit module rather than mixing `pkg/` into an app.
+
+### Kit tree
 
 ```text
-pkg/
-├── core/
-├── modules/
-└── llms/
-internal/
-├── cache/
-├── tracing/
-└── testutil/
+pkg/<domain>/
+internal/<hidden>/
 examples/
 tests/
 ```
 
-- Public API lives in `pkg/<domain>/` or an exported root package.
-- Hidden helpers stay in `internal/`.
-- Examples and blackbox tests show how to use the kit.
-- Avoid grab-bag package names like `util`, `common`, or `shared`.
+MUST export what consumers import from `pkg/<domain>/`. MUST NOT put those types only under `internal/`. Hidden `internal/` MUST still use domain folder names when there is more than a handful of packages.
 
-### Application or host service
+### App tree
 
 ```text
-cmd/app/main.go
-internal/
-├── cli/
-├── clients/
-├── config/
-└── domain/
+cmd/<app>/main.go
+internal/<domain>/
+internal/<domain>/<pkg>/
 ```
 
-- `cmd/<app>/main.go` should only wire config, observability, and the top-level run call.
-- Business logic lives under `internal/<domain>/`.
-- HTTP and external API calls stay in `internal/clients/<service>/`.
-- Keep the repo root free of loose `.go` implementation files.
+`package main` MUST stay wiring: flags, config/root, observability init, listen / `os.Exit`, one `Mount` / `Run` call. MUST NOT put ServeMux handlers, routing predicates, or domain logic in `main`. HTTP *handlers* belong under `internal/<domain>/` (mount/run packages). Outbound HTTP *clients* still follow C10 (`internal/clients/<service>/` or the project's client packages).
 
-PROHIBITED:
+### Placement (authors)
 
-```go
-func (s *Service) ProcessOrder() error {
-    db := database.NewClient() // bypasses DI
-    log := observability.NewLogger("info") // bypasses DI
-}
+MUST put a new file in the domain directory that already owns that concern. MUST nest a new related package under `internal/<domain>/` instead of adding another sibling at `internal/` root. MUST NOT create `util`, `common`, `helpers`, `shared`, `misc`, or `tools`. MUST NOT leave loose implementation `.go` files at the repo root.
+
+A **dumping ground** is `internal/` as a flat forest: many sibling packages, no parent domain directories. MUST nest before the listing becomes a scroll of unrelated leaves. Dozens of siblings is already a fail; do not wait for a hard count.
+
+CORRECT (app):
+
+```text
+cmd/invoice-api/main.go
+internal/invoice/invoiceapi/
+internal/pay/
+```
+
+PROHIBITED (app dumping ground + fat main):
+
+```text
+cmd/invoice-api/main.go    # handlers and CORS in main
+internal/util/
+internal/invoiceapi/
+internal/payapi/
+internal/ledger/
+internal/helpers/
 ```
 
 ---
