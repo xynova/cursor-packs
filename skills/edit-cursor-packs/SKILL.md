@@ -56,6 +56,44 @@ git add .cursor/skills .cursor/rules .cursor/personas   # new symlinks only
 git commit
 ```
 
+## Consumer pin: sync checkout after gitlink bump (MUST)
+
+**CONSTRAINT:** After the consumer records a new `.cursor/packs/shared` gitlink (or any submodule pin), MUST sync the nested checkout to that SHA before treating the tree as clean or staging more submodule changes. Load and follow **`sync-submodules-after-merge`** (at least `git submodule update --init --recursive -- .cursor/packs/shared`).
+
+- Enforcement: `git ls-files -s .cursor/packs/shared` SHA equals `git -C .cursor/packs/shared rev-parse HEAD`; `git status` has no `modified: .cursor/packs/shared (new commits)` from pin drift
+- Violation: STOP, sync; do not declare the bump done while status shows submodule dirt
+
+CORRECT:
+```bash
+# gitlink already committed (or staged) at v0.1.29 / desired SHA
+git submodule update --init --recursive -- .cursor/packs/shared
+git -C .cursor/packs/shared describe --tags --exact-match HEAD   # expected tag
+git status   # no packs (new commits) dirt
+```
+
+PROHIBITED:
+```bash
+# Index pins v0.1.29 but checkout still on v0.1.17
+git status   # "modified: .cursor/packs/shared (new commits)"
+git add .cursor/packs/shared && git commit -m "commit all"
+# → silently reverts the pin to the old checkout SHA
+```
+
+**CONSTRAINT:** MUST NOT `git add .cursor/packs/shared` (or commit “all”) to silence `(new commits)` dirt when the working-tree submodule HEAD is **behind** the recorded gitlink. That dirt means “run submodule update,” not “stage a new pin.”
+
+- Enforcement: before `git add` on a submodule path, compare `git ls-files -s <path>` to `git -C <path> rev-parse HEAD`
+- Violation: STOP, unstage; sync checkout to the gitlink
+
+**CONSTRAINT:** If `git submodule update` fails with `Operation not permitted` (or cannot lock `.git/modules/.../config`) in a sandboxed agent environment, MUST stop and ask the human to run the sync in their own terminal. MUST NOT invent alternate checkouts that rewrite the submodule `gitdir` pointer, and MUST NOT stage the drifted checkout as a “fix.”
+
+- Enforcement: agent reports the one-liner and waits
+- Violation: STOP; do not ship a reverse pin or a broken `gitdir`
+
+Human one-liner:
+```bash
+git submodule update --init --recursive -- .cursor/packs/shared
+```
+
 ## Link script
 
 Allow-lists live in `scripts/link-into-project.sh` (`SKILLS=(...)`, `RULES=(...)`, `PERSONAS=(...)`). New shared skills, rules, or personas MUST be appended there or consumers will not get symlinks.
