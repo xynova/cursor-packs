@@ -156,3 +156,17 @@ RIGHT: Capture Process inputs from `module-traces/` (or TraceDir) into `testdata
 Detect: Staged `*_modules.go` / signatures / generator wiring with no `LIVE_*` replay test and no offline fixture; gates that read markdown instead of structured outs; PR that says "verified by reseed" with no module-level path.
 
 Related: golang-quality CONSTRAINT 17; Stage 5 Generation Gates checklist (C17); `.cursor/skills/dspy-pipeline-isolation/SKILL.md`.
+
+---
+
+## 17. Package layout sprawl and grab-bags
+
+Library roots and application roots drift in different ways, but both break when package names become junk drawers or when public API gets trapped behind `internal/`.
+
+WRONG: `cmd/server/main.go` loads config, builds clients, starts HTTP, and also owns business logic; `internal/util`, `internal/common`, and `internal/shared` hide unrelated helpers; reusable module types live only under `internal/`.
+
+RIGHT: reusable kits keep public API in `pkg/<domain>/`, hidden helpers in `internal/`, and runnable examples in `examples/`; application services keep `cmd/<app>/main.go` thin and push business logic into `internal/<domain>/`; HTTP lives in `internal/clients/<service>/`.
+
+Detect: loose `.go` files at the repo root, `cmd/<app>/main.go` with business logic or HTTP, flat `internal/` trees with no domain boundaries, or package names like `util`, `common`, `helpers`, `shared`, `misc`, or `tools`.
+
+Related: golang-quality CONSTRAINT 19; Stage 5 Generation Gates checklist (C19); Stage A architecture questions on library vs application layout.

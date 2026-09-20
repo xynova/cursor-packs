@@ -44,7 +44,7 @@ Which stages? (numbers, ranges, or 'all')
 | 2 | Type Safety | `any` / `interface{}`, type assertions, nil before dereference |
 | 3 | Error Handling | typed wrap-chain, `_ =`, log-without-return, persistence, DB fallback |
 | 4 | Code Clarity | naming, godot periods, structured logs, over-export |
-| 5 | Generation Gates | `golang-quality` constraints 1–18 (templates, OTEL, durable AI dumps, resources, layering, config create); `go-structured-strings` for report builders. External Uber / Code Review Comments are citations only. |
+| 5 | Generation Gates | `golang-quality` constraints 1–19 (templates, OTEL, durable AI dumps, resources, layering, config create, package layout); `go-structured-strings` for report builders. External Uber / Code Review Comments are citations only. |
 
 AI finds issues, reports them with code pairs in the plan file. No user input required mid-stage.
 
@@ -142,12 +142,12 @@ Clarity only. Templates, resource defers, CLI→service→client layering, and p
 
 ## Stage 5: Generation Gates — Detect
 
-Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality/SKILL.md` **Core constraints** (1–18) and apply them as a checklist against the review target. For multi-section markdown, reports, TOC, or similar human layout builders, also Read and apply `.cursor/rules/go-structured-strings.mdc`. Go Code Review Comments and Uber Go Style Guide are the external taste baseline cited in `golang-quality`; MUST NOT invent Stage 5 findings from those guides unless they map to a Core constraint.
+Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality/SKILL.md` **Core constraints** (1–19) and apply them as a checklist against the review target. For multi-section markdown, reports, TOC, or similar human layout builders, also Read and apply `.cursor/rules/go-structured-strings.mdc`. Go Code Review Comments and Uber Go Style Guide are the external taste baseline cited in `golang-quality`; MUST NOT invent Stage 5 findings from those guides unless they map to a Core constraint.
 
 ### Ownership vs Stage 3
 
 - **Stage 3** keeps error-handling depth (typed wrap-chain, `_ =`, log-without-return, persistence, named returns, DB fallback).
-- **Stage 5** owns generation-specific gates Stage 3 does not cover: C1–3 (HTTP/cancel/txn defers), C7–18 (nil, ctx, unused/N+1, layering, format/godot overlap, interfaces, templates, structured logging, OTEL, durable AI dumps, AI module isolation, config create).
+- **Stage 5** owns generation-specific gates Stage 3 does not cover: C1–3 (HTTP/cancel/txn defers), C7–19 (nil, ctx, unused/N+1, layering, format/godot overlap, interfaces, templates, structured logging, OTEL, durable AI dumps, AI module isolation, config create, package layout).
 - Apply **C4** and **C6** in Stage 5 **only when Stage 3 was not selected** for this review. If Stage 3 already ran, do not duplicate those findings under Stage 5.
 
 ### Checklist (map to golang-quality)
@@ -168,6 +168,7 @@ Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality
 - [ ] C16: AI work dumps (RLM TraceDir, runreport, inference-failure JSON) survive process exit; not only under `defer RemoveAll` scratch; durable path logged or returned
 - [ ] C17: when generators/evaluators/signatures change: discrete contracts are structured signature fields; env-gated live opt-in replay exists (or PR documents offline-only); full reseed is not the only exercise path — see `dspy-pipeline-isolation`
 - [ ] C18: multi-field construction uses config create (`cfg.Create*` / `CreateModule`); no long parallel arg lists beside a half-empty Config
+- [ ] C19: package layout follows library/app rules; reusable API in `pkg/`, app entrypoints thin in `cmd/`, domain packages over grab-bag names
 
 Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pattern 15 when TraceDir / runreport / failure dumps are in scope, and pattern 16 when generator/evaluator/signature diffs are in scope.
 
@@ -187,6 +188,7 @@ Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pat
 - Request-path package that returns only `fmt.Errorf` / bare `error` with no layer-typed error
 - LLM/inference CLI or worker entrypoint with no `observability.Init` (or project OTEL bootstrap)
 - Generate/evaluate path with no client OpenInference (or project) spans; only an AI gateway is expected to show traces
+- Reusable library API trapped in `internal/`, flat `internal/` sprawl, or grab-bag package names (`util`, `common`, `helpers`, `shared`, `misc`, `tools`)
 
 **Then ask (one at a time):**
 
@@ -195,6 +197,8 @@ Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pat
 - "The CLI calls [client/repo] directly. Why is the service skipped?"
 - "[hop] returns fmt.Errorf only. Wrap in a layer domain error with a code, or is a string error enough here?"
 - "This LLM entrypoint has no OTEL init / no client spans. Rely on the gateway alone, or wire process tracing?"
+- "Is this a reusable library with public API trapped in `internal/`, or should that surface move to `pkg/`?"
+- "This `cmd/<app>/main.go` does more than wiring. Should it be thinned to config, observability, and a run call?"
 
 For a full architecture pass, point at project `pipelines-x-review-architecture` (if present) instead of duplicating it.
 

@@ -183,13 +183,17 @@ module, err := stropdspy.CreateRLMModule(llm, rlmCfg) // llm already belongs on 
 NewClient(url, token, timeout, retries, logger, tracer, metrics) // no Config
 ```
 
+**CONSTRAINT 19 — Standard Go package layout.** Reusable libraries and provider kits MUST expose their public API from `pkg/<domain>/` (or an exported root package), keep hidden implementation details in `internal/`, and put runnable examples in `examples/` or focused integration tests in `tests/`. Application services MUST keep `cmd/<app>/main.go` thin, move business logic into `internal/<domain>/`, and avoid junk-drawer package names (`util`, `common`, `helpers`, `shared`, `misc`, `tools`). MUST NOT scatter loose implementation files at the repo root or turn `internal/` into a flat dumping ground with no domain boundaries.
+- Enforcement: Library roots surface reusable API in `pkg/`, apps keep the entrypoint as wiring only, and package names describe the domain instead of the implementation bucket.
+- Violation: STOP, move public API out of `internal/`, split the entrypoint from the service layer, and rename grab-bag packages to domain names.
+
 ---
 
 ## Steps
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
-2. **Implement** — Apply all 18 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? PASS or fix.
+2. **Implement** — Apply all 19 constraints during generation. First param on I/O functions: `ctx context.Context`.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout follows library/app rules (C19)? PASS or fix.
 4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
 
 ```bash
@@ -247,3 +251,4 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] LLM/inference entrypoints init OTEL; OTLP exporter when endpoint env set; client spans on generate/evaluate (not gateway-only)
 - [ ] AI work dumps (RLM TraceDir, runreport, inference-failure JSON) survive process exit; not only under `defer RemoveAll` scratch; path logged or returned
 - [ ] Multi-field construction uses config create (`cfg.Create*` / `CreateModule`); no long parallel arg lists beside a half-empty Config
+- [ ] Package layout follows library/app rules: reusable API in `pkg/`, app entrypoints thin in `cmd/`, domain packages over grab-bag names

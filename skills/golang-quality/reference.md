@@ -1083,15 +1083,43 @@ go run ./cmd --help
 ## Code Organization Best Practices
 
 ### 1. Package Structure
-```
+Keep one of these two shapes, and do not mix them casually:
+
+#### Reusable library or provider kit
+
+```text
+pkg/
+├── core/
+├── modules/
+└── llms/
 internal/
-├── cli/           # CLI commands and root logic
-├── config/        # Configuration management
-├── database/      # Database layer
-├── observability/ # Logging, metrics, tracing
-├── services/      # Business logic services
-└── models/        # Data models and DTOs
+├── cache/
+├── tracing/
+└── testutil/
+examples/
+tests/
 ```
+
+- Public API lives in `pkg/<domain>/` or an exported root package.
+- Hidden helpers stay in `internal/`.
+- Examples and blackbox tests show how to use the kit.
+- Avoid grab-bag package names like `util`, `common`, `helpers`, or `shared`.
+
+#### Application or host service
+
+```text
+cmd/app/main.go
+internal/
+├── cli/
+├── clients/
+├── config/
+└── domain/
+```
+
+- `cmd/<app>/main.go` should only wire config, observability, and the top-level run call.
+- Business logic lives under `internal/<domain>/`.
+- HTTP and external API calls stay in `internal/clients/<service>/`.
+- Keep the repo root free of loose `.go` implementation files.
 
 ### 2. Global Variables Pattern
 - **Rule**: Use global variables for cross-cutting concerns only
