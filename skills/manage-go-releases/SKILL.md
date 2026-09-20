@@ -86,6 +86,7 @@ Binary TRUE/FALSE:
 | Checkout matches tag | `git -C <dep> describe --tags --exact-match` | Equals `vX.Y.Z` | Dirty or wrong SHA |
 | go.mod require matches | `go list -m <module>` | Version is `vX.Y.Z` | Pseudo-version / drift |
 | Working tree clean for dep | `git -C <dep> status --short` | Empty | Uncommitted dep edits |
+| Parent status after pin | After gitlink bump: run **`sync-submodules-after-merge`** (`git submodule update --init --recursive`) | No `(new commits)` dirt; checkout SHA equals gitlink | Stale checkout; do not `git add` the submodule to “fix” it |
 
 ---
 
