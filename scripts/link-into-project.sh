@@ -69,6 +69,7 @@ SKILLS=(
   agent-smith
   author-ai-copilots
   image-to-webp
+  process-compose-docker
 )
 RULES=(
   golang.mdc
@@ -85,6 +86,7 @@ RULES=(
   always-rules-01-human-interaction.mdc
   image-to-webp.mdc
   repository-boundaries.mdc
+  process-compose-docker.mdc
 )
 PERSONAS=(
   intent-first.persona.md
