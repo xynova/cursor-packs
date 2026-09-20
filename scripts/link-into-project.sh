@@ -73,6 +73,7 @@ SKILLS=(
   image-to-webp
   process-compose-docker
   operator-config
+  explain-implementation
 )
 RULES=(
   golang.mdc
@@ -93,6 +94,7 @@ RULES=(
   repository-boundaries.mdc
   process-compose-docker.mdc
   operator-config.mdc
+  explain-implementation.mdc
 )
 PERSONAS=(
   intent-first.persona.md

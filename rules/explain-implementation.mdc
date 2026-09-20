@@ -1,0 +1,31 @@
+---
+description: >-
+  After an implementation that changed files, load explain-implementation and
+  give a short visual-friendly explain (lead line + numbered pseudocode-style
+  steps; a small diagram MAY help). Triggers: implementation done, what did
+  you do, how was it built, summarize the change, ready to commit.
+alwaysApply: true
+---
+
+# Explain implementation (cursor-packs)
+
+**CONSTRAINT:** When the agent finishes an implementation or fix that changed project files, or when the user asks what changed / how it was built, MUST Read and follow `.cursor/skills/explain-implementation/SKILL.md` before the final user-facing reply.
+
+- MUST: short lead + numbered pseudocode-style steps that stay concrete (one clear action or decision per step; small diagram MAY help).
+- MUST NOT: pack write/push/open into one vague line.
+- MUST NOT: end with only a file list / “want me to commit?” and no explain.
+- MUST NOT: ship a prose essay for the explain pass.
+- Enforcement: Before send on an implement/fix turn, confirm the skill was applied to the reply draft.
+- Violation: STOP, Read the skill, rewrite the reply, then send.
+
+CORRECT:
+```text
+Lead line + numbered IF/ELSE-style steps (optional mermaid when flow branches)
+```
+
+PROHIBITED:
+```text
+Multi-paragraph walkthrough, or “Done. Tests pass. Commit?”
+```
+
+Chat voice remains `.cursor/rules/always-rules-01-human-interaction.mdc` outside this explain pass. This rule requires a scannable step-by-step explain.
