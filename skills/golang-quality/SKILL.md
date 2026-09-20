@@ -3,9 +3,9 @@ name: golang-quality
 description: >-
   Go generation and completion workflow: resource cleanup, error wrapping, nil
   guards, context propagation, CLI-service-client layering, structured logging,
-  OpenTelemetry / OpenInference observability, config create constructors, and
-  quality gates. Use when generating, completing, or fixing Go code, or before
-  claiming a Go change is done.
+  OpenTelemetry / OpenInference observability, config create constructors,
+  quality gates, and self-documenting Makefile verb lists. Use when generating,
+  completing, or fixing Go code, or before claiming a Go change is done.
 ---
 
 # Go Quality
@@ -221,17 +221,49 @@ internal/ledger/
 internal/helpers/
 ```
 
+**CONSTRAINT 20 — Makefile verb list.** When a Go module has a `Makefile`, bare `make` (and `make help`) MUST print every operator-facing target (verb) with a one-line description. MUST set `.DEFAULT_GOAL := help`. Every phony verb operators run (`format`, `lint`, `vet`, `test`, `build`, `dev`, license helpers, and similar) MUST carry a `## description` on the target line so the help recipe can list it. Recipe-only helpers MAY omit `##` so they stay off the list. MUST NOT ship a Makefile whose first response is "No targets" or a silent first recipe when quality or dev verbs exist. See [reference-patterns.md](reference-patterns.md#makefile-verb-list).
+- Enforcement: From the module root, run `make` (or `make help`); every operator verb in `.PHONY` that humans run appears with a description; `.DEFAULT_GOAL` is `help`.
+- Violation: STOP, add `.DEFAULT_GOAL := help`, annotate missing verbs with `##`, wire the help recipe, re-run `make`.
+
+CORRECT:
+```makefile
+.DEFAULT_GOAL := help
+
+.PHONY: help test build
+
+help: ## List available make verbs
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | \
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  %-24s %s\n", $$1, $$2}'
+
+test: ## Run unit tests
+	go test ./...
+
+build: ## Build the binary into bin/
+	go build -o bin/app ./cmd/app
+```
+
+PROHIBITED:
+```makefile
+# No help, no DEFAULT_GOAL; bare `make` errors or runs an opaque first target.
+.PHONY: test build
+test:
+	go test ./...
+build:
+	go build -o bin/app ./cmd/app
+```
+
 ---
 
 ## Steps
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
-2. **Implement** — Apply all 19 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs app classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? PASS or fix.
+2. **Implement** — Apply all 20 constraints during generation. First param on I/O functions: `ctx context.Context`.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs app classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists every operator verb (C20)? PASS or fix.
 4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
 
 ```bash
 # Prefer (if Makefile defines them):
+make          # or: make help — lists verbs (CONSTRAINT 20)
 make format   # or: gofumpt -w . && goimports -w .
 make lint     # or: golangci-lint run ./...
 make vet      # or: go vet ./...
@@ -250,6 +282,7 @@ Do NOT complete while any of these fail. Fix, re-run, then complete.
 
 ### Tooling
 
+- [ ] Makefile help: if a `Makefile` exists, `make` / `make help` lists every operator verb (CONSTRAINT 20)
 - [ ] Format: `make format` if present, else `gofumpt`/`gofmt` + `goimports`
 - [ ] Lint: `make lint` if present, else `golangci-lint run` (gosec/godot via `.golangci.yml` when configured)
 - [ ] Vet: `make vet` if present, else `go vet ./...`

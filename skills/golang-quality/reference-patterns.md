@@ -622,3 +622,58 @@ import (
 
 - Group: stdlib → third-party → internal, blank lines between groups.
 - `make format` runs gofumpt + goimports.
+
+---
+
+## Makefile verb list
+
+LOAD-WHEN: authoring or editing a Go module `Makefile`; Stage 5 / golang-quality CONSTRAINT 20.
+
+### Rules
+
+- MUST set `.DEFAULT_GOAL := help` so bare `make` lists verbs.
+- MUST annotate every operator-facing target with `## description` on the target line.
+- MUST implement `help` by scanning those annotations (do not hand-maintain a second echo list that can drift).
+- MUST NOT require operators to open the Makefile to discover `test`, `lint`, `build`, `dev`, or license verbs.
+- Recipe-only helpers MAY omit `##` so they stay hidden.
+
+### Canonical help recipe
+
+```makefile
+.DEFAULT_GOAL := help
+
+.PHONY: help format lint vet test build
+
+help: ## List available make verbs
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | \
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  %-24s %s\n", $$1, $$2}'
+
+format: ## Format with gofumpt and goimports
+	gofumpt -w . && goimports -w .
+
+lint: ## Run golangci-lint
+	golangci-lint run --timeout 5m
+
+vet: ## Run go vet
+	go vet ./...
+
+test: ## Run unit tests
+	go test ./...
+
+build: ## Build the binary into bin/
+	mkdir -p bin
+	go build -o bin/app ./cmd/app
+
+# Hidden helper (no ##): not listed by `make help`.
+_ensure-bin:
+	mkdir -p bin
+```
+
+### Anti-pattern
+
+```makefile
+# Bare `make` fails with "No targets specified" / runs an opaque first recipe.
+.PHONY: test build
+test:
+	go test ./...
+```
