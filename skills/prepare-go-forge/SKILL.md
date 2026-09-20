@@ -4,7 +4,8 @@ description: >-
   Prepare GitLab or GitHub hosts for GoReleaser and Go quality via CLI:
   protected main, package/release job-token permissions, secret detection,
   and golang quality CI templates. Use when scaffolding a new Go module host,
-  fixing release 403 admin_packages, or enabling forge settings without the UI.
+  fixing release 403 admin_packages, CI_JOB_TOKEN changelog failures, or
+  enabling forge settings without the UI.
 ---
 
 # Prepare Go forge
@@ -25,6 +26,8 @@ Apply host settings and CI stubs so GoReleaser auto-patch, protected `main`, sec
 
 - New or existing Go module needs forge-ready release + quality
 - GitLab release upload fails with `admin_packages` / package registry 403
+- GitLab release fails with `necessary APIs are not available when using CI_JOB_TOKEN` (changelog)
+- Release job fails with `go.mod requires go >= X (running go Y)`
 - User asks to protect `main`, enable secret detection, or set job-token permissions via CLI
 - After `setup-goreleaser` scaffolds files and the host is not prepared yet
 
@@ -75,6 +78,50 @@ PROHIBITED:
 - Enforcement: check `.goreleaser.yaml` / release CI variables after prepare
 - Violation: STOP, align config; do not leave a PAT as the default path
 
+**CONSTRAINT:** On GitLab with `CI_JOB_TOKEN`, GoReleaser MUST set `changelog.use: git` (and CI `GIT_DEPTH: "0"` so tag history is complete). MUST NOT set `changelog.use: gitlab` while `GITLAB_TOKEN` is `$CI_JOB_TOKEN`.
+- Enforcement: read `.goreleaser.yaml` changelog block and release job variables; GoReleaser fails with `the necessary APIs are not available when using CI_JOB_TOKEN` if `use: gitlab`
+- Violation: STOP, switch changelog to `git`, keep job-token auth; do not mint a PAT only to unlock GitLab changelog mode
+
+CORRECT:
+```yaml
+# .goreleaser.yaml
+changelog:
+  use: git
+
+# .gitlab/ci/goreleaser-release.yml
+variables:
+  GIT_DEPTH: "0"
+  GITLAB_TOKEN: $CI_JOB_TOKEN
+```
+
+PROHIBITED:
+```yaml
+changelog:
+  use: gitlab   # with GITLAB_TOKEN: $CI_JOB_TOKEN
+```
+
+**CONSTRAINT:** The GitLab release job toolchain MUST satisfy `go.mod`'s `go` directive. When the official `goreleaser/goreleaser` image ships an older Go than `go.mod`, MUST run on `golang:<go.mod-version>-bookworm` and `go install` the pinned GoReleaser version in-job.
+- Enforcement: compare `go.mod` `go` line to the release job image; release log must not show `go.mod requires go >= X (running go Y)`
+- Violation: STOP, retarget the release job image / install path; do not lower `go.mod` below a dependency that requires the newer Go
+
+CORRECT:
+```yaml
+release:
+  image:
+    name: golang:1.27-bookworm
+    entrypoint: [""]
+  script:
+    - GOBIN=/usr/local/bin go install github.com/goreleaser/goreleaser/v2@v2.9.0
+    - goreleaser release --clean
+```
+
+PROHIBITED:
+```yaml
+# go.mod says go 1.27.0; image only has Go 1.24
+image:
+  name: goreleaser/goreleaser:v2.9.0
+```
+
 ---
 
 ## Steps
@@ -82,7 +129,7 @@ PROHIBITED:
 1. **Detect host** from `origin`.
 2. **Authenticate** (`glab` or `gh`) as Maintainer+.
 3. **Run prepare script** (`--project` / `--repo`).
-4. **Copy CI templates** from [templates/](templates/) when missing (GitLab quality + secret/SAST snippet; GitHub `ci.yml` + secret scan).
+4. **Copy CI templates** from [templates/](templates/) when missing (GitLab quality + secret/SAST snippet + `goreleaser-release.yml`; GitHub `ci.yml` + secret scan).
 5. **Cross-check** checklist below.
 6. **Hand off** to `setup-goreleaser` / `manage-go-releases` if release files or auto-patch are still missing.
 7. **Verify** (optional): re-run the last failed `release` / `auto_patch_release` job.
@@ -100,6 +147,8 @@ Binary TRUE/FALSE:
 | Job push allowed (GitLab) | `ci_push_repository_for_job_token_allowed` | true | false |
 | Fine-grained policies (GitLab) | Allowlist UI or GraphQL readback | Jobs Read; Packages/Releases/Repos R/W | Missing ADMIN_PACKAGES |
 | Protected main | Protected branches API / `gh api` | `main` protected, no force push | Unprotected |
+| GoReleaser changelog (GitLab job token) | `.goreleaser.yaml` | `changelog.use: git` | `use: gitlab` with `$CI_JOB_TOKEN` |
+| Release job Go version (GitLab) | Job image vs `go.mod` | Image Go >= `go.mod` | Older Go than `go.mod` |
 | Go quality CI present | File exists | `golang-quality.yml` or `.github/workflows/ci.yml` | Missing |
 | Secret scanning present | File / feature | GitLab Secret-Detection include or GitHub secret workflow | Missing |
 

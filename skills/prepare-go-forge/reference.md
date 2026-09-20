@@ -98,10 +98,12 @@ glab api --method POST "projects/behaviorengineering%2Fopsis/protected_tags" \
 
 ## GoReleaser alignment (GitLab)
 
-Keep release jobs on job token after prepare:
+Keep release jobs on job token after prepare. The fine-grained allowlist (Jobs read; Packages / Releases / Repositories R/W) plus `ci_push_repository_for_job_token_allowed` is what lets GoReleaser create releases and upload packages. It does **not** unlock GoReleaser's GitLab changelog API path.
 
 ```yaml
+# .gitlab/ci/goreleaser-release.yml
 variables:
+  GIT_DEPTH: "0"
   GITLAB_TOKEN: $CI_JOB_TOKEN
 ```
 
@@ -110,7 +112,37 @@ variables:
 gitlab_urls:
   use_job_token: true
   use_package_registry: true
+
+changelog:
+  use: git
 ```
+
+When `go.mod` requires a newer Go than `goreleaser/goreleaser:<tag>` ships, use the matching `golang` image and install GoReleaser in-job. Copy [templates/gitlab/goreleaser-release.yml](templates/gitlab/goreleaser-release.yml) and pin the image to the `go.mod` version:
+
+```yaml
+release:
+  stage: release
+  image:
+    name: golang:1.27-bookworm
+    entrypoint: [""]
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+/
+  variables:
+    GIT_DEPTH: "0"
+    GITLAB_TOKEN: $CI_JOB_TOKEN
+  script:
+    - GOBIN=/usr/local/bin go install github.com/goreleaser/goreleaser/v2@v2.9.0
+    - goreleaser release --clean
+  needs: []
+```
+
+Known failure if `changelog.use: gitlab` with job token:
+
+```text
+changelog: the necessary APIs are not available when using CI_JOB_TOKEN
+```
+
+Fix: `changelog.use: git` (preferred with job token). Do not mint a PAT solely for GitLab changelog mode.
 
 ## PAT fallback
 

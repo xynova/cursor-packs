@@ -46,6 +46,7 @@ Defaults: `project_name` = binary name; `main` = `./cmd/<binary>`; `binary` = `<
 - Ldflags: `-s -w -X main.version={{.Version}}` (package `main` in the build `main` path).
 - Archives: `tar.gz`; Windows override `zip`; checksums file `checksums.txt`.
 - Changelog: `use: github` with Features / Bug fixes / Docs / Others; exclude chore/ci.
+- On **GitLab** hosts: after `prepare-go-forge`, MUST use `changelog.use: git`, `GITLAB_TOKEN: $CI_JOB_TOKEN`, `gitlab_urls.use_job_token` / `use_package_registry`, and `GIT_DEPTH: "0"`. MUST NOT use `changelog.use: gitlab` with the job token (GoReleaser refuses those APIs). See `prepare-go-forge` reference for the release job image vs `go.mod` rule.
 - Workflow: on push tags `v*`; `permissions.contents: write`; `fetch-depth: 0`; Go from `go.mod`.
 - Ensure `var version = "dev"` in the main package (or the package named by `-X`) and a way to print it (`version` subcommand or equivalent).
 - MUST fall back to `runtime/debug.BuildInfo` when the ldflag is still `dev`, so `go install module/cmd/…@vX.Y.Z` prints the module tag. Plain `go install` does not apply GoReleaser/`make` ldflags.

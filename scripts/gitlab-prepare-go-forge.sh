@@ -177,4 +177,7 @@ print("ci_push_repository_for_job_token_allowed=", p.get("ci_push_repository_for
 
 echo "OK: GitLab forge prepared for ${PATH_NS}"
 echo "Next: copy skills/prepare-go-forge/templates/gitlab/* into the repo if CI stubs are missing."
+echo "      (golang-quality.yml, ci-root.snippet.yml, goreleaser-release.yml)."
 echo "Keep GITLAB_TOKEN=\$CI_JOB_TOKEN and gitlab_urls.use_job_token / use_package_registry in GoReleaser."
+echo "On GitLab with CI_JOB_TOKEN: set changelog.use: git (not gitlab) and GIT_DEPTH=0 on the release job."
+echo "If go.mod needs a newer Go than goreleaser/goreleaser ships, use golang:<ver>-bookworm and go install goreleaser."
