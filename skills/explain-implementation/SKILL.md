@@ -2,10 +2,10 @@
 name: explain-implementation
 description: >-
   After finishing an implementation that changed files, give a short
-  visual-friendly explain: one lead line, then compact bullets or numbered
-  steps (optional tiny diagram). Prefer scanability over prose. Use when
-  claiming work is done, summarizing an implementation, or when the user asks
-  what you did / how it was built.
+  visual-friendly explain: one lead line, then numbered step-by-step how it
+  fits together (a small diagram MAY replace or sit beside the steps). Prefer
+  scanability over prose. Use when claiming work is done, summarizing an
+  implementation, or when the user asks what you did / how it was built.
 ---
 
 # Explain implementation
@@ -40,15 +40,16 @@ asks you to explain a prior implementation).
 **CONSTRAINT:** The post-implementation explain MUST be visual-first and short:
 
 1. **Lead** — one line: what is different now.
-2. **How it fits** — compact numbered steps or bullets for the moving parts (inputs → decisions → outputs). Optional: one small mermaid or markdown table when it clarifies the flow better than a list.
-3. **Authorship** — one bullet only if LLM vs mechanical could be confused; otherwise omit.
+2. **How it fits** — numbered **step-by-step** for the moving parts (inputs → decisions → outputs). A small mermaid (or compact table) MAY replace the list or sit beside it when the flow is branching or easier to see as a diagram.
+3. **Authorship** — one line/bullet only if LLM vs mechanical could be confused; otherwise omit.
 4. **Evidence** — optional short path list last.
 
+- MUST: default to numbered steps; use a diagram when it makes the path clearer.
 - MUST: keep the explain scannable in a few seconds.
 - MUST NOT: write paragraph essays, restated task fluff, or empty ceremonial headings.
 - MUST NOT: replace the explain with only file names or SHAs.
-- Enforcement: Lead is ≤2 short sentences; body is mostly list/diagram/table, not prose blocks.
-- Violation: STOP, cut prose into lead + list (or tiny diagram), then send.
+- Enforcement: Lead is ≤2 short sentences; body is numbered steps and/or one small diagram, not prose blocks.
+- Violation: STOP, cut prose into lead + steps (and/or tiny diagram), then send.
 
 CORRECT:
 ```markdown
@@ -93,10 +94,10 @@ Tests pass.
 - Enforcement: Scan before send.
 - Violation: Rewrite without icons.
 
-**CONSTRAINT:** List items MUST name behavior (compare, write, skip, open), not only symbols. Paths MAY trail a behavior bullet.
+**CONSTRAINT:** Steps MUST name behavior (compare, write, skip, open), not only symbols. Paths MAY trail a behavior step.
 
-- Enforcement: Each bullet/step has a verb about what the system does.
-- Violation: STOP, rewrite as behavior bullets.
+- Enforcement: Each numbered step has a verb about what the system does.
+- Violation: STOP, rewrite as behavior steps.
 
 ---
 
@@ -104,7 +105,7 @@ Tests pass.
 
 1. **Detect** — File-changing implement/fix, or user asked what you did.
 2. **Lead line** — Outcome only.
-3. **List or tiny diagram** — How it is put together; cut anything that does not help scanning.
+3. **Numbered steps** — How it is put together; add or swap in a small diagram when the flow is clearer that way; cut anything that does not help scanning.
 4. **One authorship bullet** — Only if confusable.
 5. **Optional paths** — Last, short.
 6. **Stop** — No essay. One next-step question is fine.
@@ -113,16 +114,16 @@ Tests pass.
 
 ## Pre-completion checklist
 
-- [ ] **Visual-first:** Lead + list/diagram; not a prose wall
+- [ ] **Visual-first:** Lead + numbered steps (diagram optional); not a prose wall
       Method: Count long paragraphs in the explain
-      Pass: At most one short lead; body is list/diagram/table
-      Fail: STOP, convert to bullets or a tiny diagram
+      Pass: At most one short lead; body is steps and/or one small diagram
+      Fail: STOP, convert to numbered steps (and/or tiny diagram)
 - [ ] **Enough:** Cold reader gets what changed and how it fits
       Method: Skim-only test (~5 seconds)
       Pass: Both clear
-      Fail: STOP, add the missing beat as a bullet
+      Fail: STOP, add the missing beat as a step
 - [ ] **Not a file dump:** Behavior verbs present
-      Method: Read bullets
+      Method: Read steps
       Pass: System behavior first
       Fail: STOP, rewrite
 - [ ] **No icon template / no fluff**
