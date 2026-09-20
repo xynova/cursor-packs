@@ -26,7 +26,7 @@ Creating modules, enabling XML structured output, wiring interceptors, or choosi
 
 1. Always use modules (`NewPredict`, `NewChainOfThought`, …) with a signature.
 2. Signatures define contracts; attach behavior with `.WithInstruction()`.
-3. Configure LLM via `strop/dspy/factory` — never hardcode API keys.
+3. Configure LLM via `strop/pkg/dspy/factory` — never hardcode API keys.
 4. Structured output on **Predict**. For `ChainOfThought`, configure the **inner** `module.Predict`.
 5. Use `factory.InterceptorSetup.EnableStructuredOutput(cot)` — not stock `WithXMLOutput` alone. strop's parser needs raw XML passthrough on Predict.
 
@@ -55,7 +55,7 @@ Typical chain: Format → Parse (custom XML → `map[string]any`) → Validate m
 
 After `Process`, output keys MUST be top-level signature field names. A nested `response` string means interceptors are not active. Do not add nested-`response` fallbacks.
 
-**Code:** `strop/dspy/factory/interceptor_setup.go`.
+**Code:** `strop/pkg/dspy/factory/interceptor_setup.go`.
 
 ---
 
@@ -114,4 +114,4 @@ Prefer `cfg.CreateModule()` over `CreateRLMModule(llm, cfg)` at host call sites.
 
 - Mock LLMs and external APIs.
 - Assert **parsed maps** and typed structs, not substrings of raw prompts.
-- Parser changes: table-driven tests in `strop/dspy/structured_output/xml`.
+- Parser changes: table-driven tests in `strop/pkg/dspy/structured_output/xml`.

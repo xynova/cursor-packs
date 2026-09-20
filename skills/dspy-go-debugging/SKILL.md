@@ -48,7 +48,7 @@ Do **not** restate parser tables here. Load `.cursor/skills/dspy-xml-structured-
 2. Missing key: signature name ≠ XML tag, or phase filter dropped the field (app hook).
 3. Present empty: empty tags, whitespace only, or nested children under a **plain string** field.
 4. Check `raw_response_preview` in validation logs.
-5. Add a parser unit test with the failing XML snippet in `strop/dspy/structured_output/xml`.
+5. Add a parser unit test with the failing XML snippet in `strop/pkg/dspy/structured_output/xml`.
 
 **Do not** fix with `strings.Contains` on raw output or `outputs["response"]`.
 
@@ -56,7 +56,7 @@ Do **not** restate parser tables here. Load `.cursor/skills/dspy-xml-structured-
 
 ## 2. Interceptor wiring
 
-- `ChainOfThought` → `EnableStructuredOutput` on the **inner Predict** (`strop/dspy/factory/interceptor_setup.go`).
+- `ChainOfThought` → `EnableStructuredOutput` on the **inner Predict** (`strop/pkg/dspy/factory/interceptor_setup.go`).
 - Factory `Setup*` ran at registration.
 - After `Process`, keys MUST be top-level field names. A single `response` string means interceptors are not active.
 

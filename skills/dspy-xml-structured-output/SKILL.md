@@ -9,7 +9,7 @@ description: >-
 
 # DSPy XML structured output (strop)
 
-**Principle:** The LLM returns XML; **`github.com/behaviorengineering/strop/dspy/structured_output`** parses it into `map[string]any` before **`strop/dspy/validation`** runs. If prompts and parser disagree, fields can look full in logs but parse as **empty** and fail validation.
+**Principle:** The LLM returns XML; **`github.com/behaviorengineering/strop/pkg/dspy/structured_output`** parses it into `map[string]any` before **`strop/pkg/dspy/validation`** runs. If prompts and parser disagree, fields can look full in logs but parse as **empty** and fail validation.
 
 **Related:** `.cursor/skills/dspy-module-patterns/SKILL.md`, `.cursor/skills/dspy-prompt-engineering/SKILL.md`, `.cursor/skills/dspy-go-debugging/SKILL.md`, `.cursor/skills/strop-pipeline-pattern/SKILL.md`. Product-specific phase hooks (e.g. PostGenerator) may live in a **project overlay** skill if present.
 
@@ -28,7 +28,7 @@ FormatInterceptor  →  LLM  →  ParseInterceptor  →  ValidationInterceptor  
      (XML instructions)              (map[string]any)         (mandatory keys)
 ```
 
-**Code:** `strop/dspy/structured_output/interceptor.go`, `strop/dspy/factory/interceptor_setup.go` (`EnableStructuredOutput` + raw XML passthrough on inner Predict).
+**Code:** `strop/pkg/dspy/structured_output/interceptor.go`, `strop/pkg/dspy/factory/interceptor_setup.go` (`EnableStructuredOutput` + raw XML passthrough on inner Predict).
 
 ### Do this
 
@@ -92,7 +92,7 @@ out("cluster_proposal_md", "...") only
 - Mandatory field errors: `empty fields: [some_field]` while the raw response **seems** to contain content.
 - New generator output that is a **list**, **bullets**, or **repeated items**.
 - Changing **XML examples** or field descriptions in `*_modules.go` prompts.
-- After changing parser behavior in `strop/dspy/structured_output/xml/parser.go` (add table-driven tests in the same package).
+- After changing parser behavior in `strop/pkg/dspy/structured_output/xml/parser.go` (add table-driven tests in the same package).
 - Deciding whether to add **string/regex** logic — default answer is **no** for validation.
 
 ---
@@ -106,13 +106,13 @@ out("cluster_proposal_md", "...") only
 | **Array field** (`isArrayField` → true) | Repeated **child** elements → `[]interface{}`. Some fields may be **joined to a single string** in product hooks. |
 | **Map field** | Nested elements become keys/values (`isMapField`). |
 
-**Code:** `strop/dspy/structured_output/xml/parser.go` — `parseXML`, `isArrayField`, `isMapField`.
+**Code:** `strop/pkg/dspy/structured_output/xml/parser.go` — `parseXML`, `isArrayField`, `isMapField`.
 
 ---
 
 ## 3. Mandatory field validation
 
-**Code:** `strop/dspy/validation/validation_interceptor.go` — `ValidateMandatoryFields`.
+**Code:** `strop/pkg/dspy/validation/validation_interceptor.go` — `ValidateMandatoryFields`.
 
 - **Strings:** empty after `TrimSpace` → fails.
 - **`[]interface{}`:** length `0` → fails.
@@ -129,7 +129,7 @@ A field that parses as `""` or an **empty slice** trips validation even when the
    - Nested tags (`<item>`, `<li>`, etc.) → field MUST be an **array field** in `isArrayField` or have explicit product handling.
    - Flat text only → prompts MUST NOT rely on nested tags for mandatory content unless the parser collects them.
 3. **Update prompts** in `{job}_modules.go`: XML examples MUST match `WithXMLFormatting` / shared XML rules.
-4. **Add or extend tests** in `strop/dspy/structured_output/xml/*_test.go` for the shape you rely on.
+4. **Add or extend tests** in `strop/pkg/dspy/structured_output/xml/*_test.go` for the shape you rely on.
 5. **Interceptors:** Enable via factory; validation runs on parsed outputs — do not “fix” missing fields by reading nested `response` maps in application code.
 6. **Gate input:** If Go or another job will gate on the value, put it in its own field (§0.1); do not scrape `*_md`.
 
@@ -149,12 +149,12 @@ A field that parses as `""` or an **empty slice** trips validation even when the
 
 | Area | Path |
 |------|------|
-| XML parse + list/map heuristics | `strop/dspy/structured_output/xml/parser.go` |
-| Format + parse interceptors | `strop/dspy/structured_output/interceptor.go` |
-| Parser tests | `strop/dspy/structured_output/xml/*_test.go` |
-| Mandatory field validation | `strop/dspy/validation/validation_interceptor.go` |
-| Interceptor wiring + raw passthrough | `strop/dspy/factory/interceptor_setup.go` |
-| Global XML / prefix rules | `strop/dspy/signature_helpers.go` (`SharedInstructions.XMLFormatting`) |
+| XML parse + list/map heuristics | `strop/pkg/dspy/structured_output/xml/parser.go` |
+| Format + parse interceptors | `strop/pkg/dspy/structured_output/interceptor.go` |
+| Parser tests | `strop/pkg/dspy/structured_output/xml/*_test.go` |
+| Mandatory field validation | `strop/pkg/dspy/validation/validation_interceptor.go` |
+| Interceptor wiring + raw passthrough | `strop/pkg/dspy/factory/interceptor_setup.go` |
+| Global XML / prefix rules | `strop/pkg/dspy/signature_helpers.go` (`SharedInstructions.XMLFormatting`) |
 | Per-job signatures and prompts | App: `internal/pipelines/<pipeline>/clients/*_modules.go` |
 | Product parse/format hooks | App: register via `SetStructuredOutputHooks` at container startup |
 

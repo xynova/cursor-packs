@@ -207,9 +207,9 @@ Then continue with job-specific planning (action-chain bullets, structured label
 
 | Layer | Location |
 |-------|----------|
-| Global prompt block | `strop/dspy/signature_helpers.go` → `SharedInstructions.GeneratorObjectiveRecitation` (appended in `CreateGeneratorModule`) |
-| Rationale field descriptions | `strop/dspy/constants.go` → `rationaleActionChainRules`, `RationaleDescriptionWithContext` |
-| Default persona | `strop/dspy/persona.go` → `DefaultGeneratorPersona` |
+| Global prompt block | `strop/pkg/dspy/signature_helpers.go` → `SharedInstructions.GeneratorObjectiveRecitation` (appended in `CreateGeneratorModule`) |
+| Rationale field descriptions | `strop/pkg/dspy/constants.go` → `rationaleActionChainRules`, `RationaleDescriptionWithContext` |
+| Default persona | `strop/pkg/dspy/persona.go` → `DefaultGeneratorPersona` |
 
 **Job-specific longer plans:** Some jobs extend rationale after the three objective lines (e.g. sayings post skim: **12 lines** = VOICE/MUST/ANTI_PATTERN + nine scene-allocation labels in `postStructuredRationaleRules`). Do not duplicate the global block in `{job}_modules.go`; use `RationaleDescriptionWithExtra` only for emit-order or length exceptions.
 
@@ -225,7 +225,7 @@ Then continue with job-specific planning (action-chain bullets, structured label
 dspy.RationaleDescriptionWithExtra("Chapter boundaries", "Emit rationale only after </chapters>.")
 ```
 
-**Evaluators:** Chained evaluators MUST NOT use a task-field `rationale`. Reasoning for each FA/score step is `directives_ack` (`strop/dspy/modules/directives_protocol.go`). Combined outputs are `criterion_scores`, `feedback`, `directives_ack` (`DefaultChainedEvaluatorSignature`). FA job prompts MUST talk about the **feedback field**, never “output rationale”.
+**Evaluators:** Chained evaluators MUST NOT use a task-field `rationale`. Reasoning for each FA/score step is `directives_ack` (`strop/pkg/dspy/modules/directives_protocol.go`). Combined outputs are `criterion_scores`, `feedback`, `directives_ack` (`DefaultChainedEvaluatorSignature`). FA job prompts MUST talk about the **feedback field**, never “output rationale”.
 
 ## 3. DSPy Signature and Prompt Templates
 
@@ -1163,7 +1163,7 @@ Provide scores from 0.0 to 10.0, style analysis, and detailed feedback.`,
 4. **Organize prompts hierarchically** - Use clear structure (CORE REQUIREMENTS → STRUCTURE → STYLE → CONTENT PRIORITIES) to reduce cognitive load and improve maintainability
 5. **Implement bias mitigation** - Include strategies to prevent and detect biases in instructions
 6. **Leverage DSPy modules** - Use ChainOfThought, Predict, and other modules appropriately
-7. **Recite objectives in `directives_ack` first** - DirectivesCoT (`strop/dspy/modules/directives_protocol.go`) requires VOICE/MUST/ANTI_PATTERN in `<directives_ack>` before task fields. Generator task-field `<rationale>` is optional and only when the signature declares it. Chained evaluators MUST NOT emit evaluator `<rationale>`.
+7. **Recite objectives in `directives_ack` first** - DirectivesCoT (`strop/pkg/dspy/modules/directives_protocol.go`) requires VOICE/MUST/ANTI_PATTERN in `<directives_ack>` before task fields. Generator task-field `<rationale>` is optional and only when the signature declares it. Chained evaluators MUST NOT emit evaluator `<rationale>`.
 8. **Optimize automatically** - Use BootstrapFewShot, MIPRO, and other optimizers
 9. **Test comprehensively** - Validate modules with diverse scenarios and metrics
 10. **Compose workflows** - Chain modules together for complex tasks
