@@ -112,14 +112,58 @@ Tests pass.
 
 ---
 
+## Loop diagrams
+
+**CONSTRAINT:** When a mermaid (or similar) diagram includes one or more loops, it MUST show **what is inside each loop** versus what runs once outside.
+
+- MUST: draw each loop as a `subgraph` whose interior lists the repeated steps and the retry edge.
+- MUST: place once-only steps outside every loop subgraph.
+- MUST NOT: use a lone box labeled `Loop A` / `Loop B` on a straight line.
+- For Majordomo typology digest, MUST use domain names: **slice grouping**, **slice meaning** (once, between loops), **slice catalog** (see `.cursor/rules/typology-slice-domain.mdc`).
+- Enforcement: Every loop node has a subgraph + retry edge; once-only neighbors sit outside.
+- Violation: STOP, redraw, then send.
+
+CORRECT (boundaries clear: meaning is outside both loops):
+```mermaid
+flowchart TD
+  draft[draft catalog + roles]
+  draft --> groupingLoop
+  subgraph groupingLoop [Slice grouping attempts]
+    propose[typology_slice_grouping]
+    audit[typology_slice_grouping_audit]
+    propose --> audit
+    audit -->|reject under max| propose
+  end
+  groupingLoop --> meaning[slice meaning once]
+  meaning --> catalogLoop
+  subgraph catalogLoop [Slice catalog attempts]
+    write[typology_slice_catalog]
+    gates[gates plus quality eval]
+    write --> gates
+    gates -->|fail under max| write
+  end
+  catalogLoop -->|pass| out[refined snapshot]
+```
+
+PROHIBITED (ambiguous membership; jargon stage names):
+```mermaid
+flowchart TD
+  draft --> clusterLoop[Loop A: cluster]
+  clusterLoop --> ledger[slice objective ledger RLM]
+  ledger --> refineLoop[Loop B: refine]
+```
+
+---
+
 ## Agent procedure
 
 1. **Detect** — File-changing implement/fix, or user asked what you did.
 2. **Lead line** — Outcome only.
 3. **Pseudocode steps** — How it is put together; add or swap in a small diagram when the flow is clearer that way; cut anything that does not help scanning.
-4. **One authorship bullet** — Only if confusable.
-5. **Optional paths** — Last, short.
-6. **Stop** — No essay. One next-step question is fine.
+4. **If diagram has loops** — Subgraphs + in-loop retry; domain names for typology stages.
+5. **One authorship bullet** — Only if confusable.
+6. **Optional paths** — Last, short.
+7. **Stop** — No essay. One next-step question is fine.
 
 ---
 
@@ -141,6 +185,10 @@ Tests pass.
       Method: Teammate test on each step
       Pass: Action is obvious without decoding jargon
       Fail: STOP, split or reword
+- [ ] **Loop diagram clarity:** If the diagram names loops, each has a subgraph + retry edge; once-only steps sit outside
+      Method: Inspect mermaid for subgraphs and feedback arrows
+      Pass: Membership of each node is obvious
+      Fail: STOP, redraw
 - [ ] **No icon template / no fluff**
       Method: Scan
       Pass: Clean and short

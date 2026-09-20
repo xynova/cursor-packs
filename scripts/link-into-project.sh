@@ -95,6 +95,7 @@ RULES=(
   process-compose-docker.mdc
   operator-config.mdc
   explain-implementation.mdc
+  typology-slice-domain.mdc
 )
 PERSONAS=(
   intent-first.persona.md

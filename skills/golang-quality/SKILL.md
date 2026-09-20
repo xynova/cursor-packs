@@ -161,7 +161,7 @@ MAJORDOMO_LIVE_<TASK>_REPLAY=1 go test -run Live… → then rejoin JobRunner.
 
 PROHIBITED:
 ```text
-Edit typology_cluster instruction; only verification path is a 10-minute full digest reseed.
+Edit typology_slice_grouping instruction; only verification path is a 10-minute full digest reseed.
 Gate merge_ids by scraping cluster_proposal_md headings.
 ```
 

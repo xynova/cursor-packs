@@ -149,7 +149,7 @@ Related: golang-quality CONSTRAINT 16; Stage 5 Generation Gates checklist (C16);
 
 Prompt or signature edits to a pipeline CoT/Predict step that can only be verified by running the whole JobRunner chain (minutes of digest/reseed) hide regressions and make inner-loop tuning unreliable. Scraping `*_md` for machine contracts compounds the same problem.
 
-WRONG: Change `typology_cluster` instructions; only check is a full context-digest reseed. Gate `merge_ids` by regex on counsel markdown.
+WRONG: Change `typology_slice_grouping` instructions; only check is a full context-digest reseed. Gate `merge_ids` by regex on counsel markdown.
 
 RIGHT: Capture Process inputs from `module-traces/` (or TraceDir) into `testdata/`; offline zip/parse gates stay in default `go test`; env-gated live `Generate`/`Evaluate` for that task alone; discrete contracts are signature fields. See `dspy-pipeline-isolation`.
 
