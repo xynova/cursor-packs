@@ -52,7 +52,7 @@ Descriptions MUST match XML examples in `{job}_modules.go`.
 
 ## Generator DirectivesCoT vs task-field rationale
 
-DirectivesCoT (`strop/dspy/modules/directives_protocol.go`) prepends `directives_ack`. VOICE / MUST / ANTI_PATTERN for **that step** live there, not in a stock ChainOfThought `rationale`. `CreateGeneratorModule` MUST NOT append the old rationale-first recitation block.
+DirectivesCoT (`strop/pkg/dspy/modules/directives_protocol.go`) prepends `directives_ack`. VOICE / MUST / ANTI_PATTERN for **that step** live there, not in a stock ChainOfThought `rationale`. `CreateGeneratorModule` MUST NOT append the old rationale-first recitation block.
 
 A generator MAY still declare a **task-field** `rationale` when the signature includes it (helpers below). That field is job output, not evaluator XML.
 
@@ -60,7 +60,7 @@ A generator MAY still declare a **task-field** `rationale` when the signature in
 2. Plain text only inside that field — no XML/JSON nested in it.
 3. Fix drift in **task output fields**, not by rewriting rationale or `directives_ack` to match weak prose.
 
-Helpers (`strop/dspy`): `RationaleDescriptionWithContext(taskFocus)`, `RationaleDescriptionWithExtra(taskFocus, extraConstraints)`.
+Helpers (`strop/pkg/dspy`): `RationaleDescriptionWithContext(taskFocus)`, `RationaleDescriptionWithExtra(taskFocus, extraConstraints)`.
 
 Evaluators MUST use `CreateChainedEvaluatorModule` / `DefaultChainedEvaluatorSignature()`. They MUST NOT get generator recitation and MUST NOT copy generator `<rationale>` examples into Feedback Analysis prompts.
 
@@ -76,7 +76,7 @@ Evaluators MUST use `CreateChainedEvaluatorModule` / `DefaultChainedEvaluatorSig
 
 ## Evaluator prompts (chained)
 
-**Source of truth:** `strop/dspy/chained_evaluator.go` (`DefaultChainedEvaluatorSignature`, `CreateChainedEvaluatorModule`) and `strop/dspy/modules/directives_protocol.go`.
+**Source of truth:** `strop/pkg/dspy/chained_evaluator.go` (`DefaultChainedEvaluatorSignature`, `CreateChainedEvaluatorModule`) and `strop/pkg/dspy/modules/directives_protocol.go`.
 
 Combined workflow outputs: `criterion_scores`, `feedback`, `directives_ack`. NEVER `rationale`.
 Inputs: `generator_input`, `generator_output` (maps; inner keys are job-specific).
