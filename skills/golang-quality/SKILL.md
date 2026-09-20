@@ -183,9 +183,43 @@ module, err := stropdspy.CreateRLMModule(llm, rlmCfg) // llm already belongs on 
 NewClient(url, token, timeout, retries, logger, tracer, metrics) // no Config
 ```
 
-**CONSTRAINT 19 — Standard Go package layout.** Reusable libraries and provider kits MUST expose their public API from `pkg/<domain>/` (or an exported root package), keep hidden implementation details in `internal/`, and put runnable examples in `examples/` or focused integration tests in `tests/`. Application services MUST keep `cmd/<app>/main.go` thin, move business logic into `internal/<domain>/`, and avoid junk-drawer package names (`util`, `common`, `helpers`, `shared`, `misc`, `tools`). MUST NOT scatter loose implementation files at the repo root or turn `internal/` into a flat dumping ground with no domain boundaries.
-- Enforcement: Library roots surface reusable API in `pkg/`, apps keep the entrypoint as wiring only, and package names describe the domain instead of the implementation bucket.
-- Violation: STOP, move public API out of `internal/`, split the entrypoint from the service layer, and rename grab-bag packages to domain names.
+**CONSTRAINT 19 — Standard Go package layout.** Classify the module first, then place every new file. See [reference-patterns.md](reference-patterns.md#package-layout-library-vs-application). Host architecture rules (if present) take precedence for local forbids such as "this app module MUST NOT grow a mixed `pkg/`".
+- **Kit** (consumed by other modules): MUST expose public API from `pkg/<domain>/` (or one exported root package). MUST keep hidden implementation in `internal/` (domain folders when there is more than a handful of packages). MUST put runnable examples in `examples/` or focused integration tests in `tests/`. MUST NOT put types other modules need under `internal/` (importers cannot use them).
+- **App** (produces `cmd` binaries): MUST keep `cmd/<app>/main.go` as wiring only (flags, config/root, observability init, listen/`os.Exit`, one `Mount`/`Run` call). MUST put business logic and HTTP handlers under `internal/<domain>/`. MUST NOT put mux handlers, routing predicates, or domain logic in `package main`. MUST NOT add a mixed `pkg/` of host types unless this module is also a published kit. MUST publish reusable API from a kit module rather than mixing `pkg/` into an app.
+- **Placement:** MUST put new code in the domain directory that already owns that concern. MUST nest related packages under `internal/<domain>/` instead of adding another sibling at `internal/` root. MUST NOT create grab-bag packages (`util`, `common`, `helpers`, `shared`, `misc`, `tools`). MUST NOT scatter loose implementation `.go` files at the repo root. MUST NOT turn `internal/` into a flat dumping ground (dozens of sibling packages with no parent domain directories).
+- Enforcement: Before adding a file, name kit vs app; kits import from `pkg/`; app mains stay wiring-only; `ls internal/` (or the module's internal root) shows domain folders, not a sibling forest; no new grab-bag names. Stage 5 scores the same detects.
+- Violation: STOP, move the file to the owning domain (or `pkg/<domain>/` for kit API), thin `main`, nest siblings, rename grab-bags; do not add a new top-level `internal/<leaf>` to dodge the nest.
+
+CORRECT (kit):
+```text
+pkg/billing/           # other modules import this
+internal/ledger/       # hidden
+internal/validate/
+examples/invoice/
+```
+
+CORRECT (app):
+```text
+cmd/invoice-api/main.go          # flags + listen + invoiceapi.Mount
+internal/invoice/                # domain
+internal/invoice/invoiceapi/     # HTTP mount
+internal/pay/
+```
+
+PROHIBITED:
+```text
+# kit: public types only under internal/ (consumers cannot import)
+internal/billing/client.go
+
+# app: fat main + flat internal forest
+cmd/invoice-api/main.go          # mux, CORS, handlers, routing
+internal/util/
+internal/common/
+internal/invoiceapi/             # sibling dump, no domain parent
+internal/payapi/
+internal/ledger/
+internal/helpers/
+```
 
 ---
 
@@ -193,7 +227,7 @@ NewClient(url, token, timeout, retries, logger, tracer, metrics) // no Config
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
 2. **Implement** — Apply all 19 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout follows library/app rules (C19)? PASS or fix.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs app classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? PASS or fix.
 4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
 
 ```bash
@@ -251,4 +285,4 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] LLM/inference entrypoints init OTEL; OTLP exporter when endpoint env set; client spans on generate/evaluate (not gateway-only)
 - [ ] AI work dumps (RLM TraceDir, runreport, inference-failure JSON) survive process exit; not only under `defer RemoveAll` scratch; path logged or returned
 - [ ] Multi-field construction uses config create (`cfg.Create*` / `CreateModule`); no long parallel arg lists beside a half-empty Config
-- [ ] Package layout follows library/app rules: reusable API in `pkg/`, app entrypoints thin in `cmd/`, domain packages over grab-bag names
+- [ ] Package layout (C19): kit vs app classified; kit API in `pkg/<domain>/`; app `main` is wiring only; new files sit in the owning `internal/<domain>/` (not a new root sibling or grab-bag)

@@ -168,9 +168,9 @@ Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality
 - [ ] C16: AI work dumps (RLM TraceDir, runreport, inference-failure JSON) survive process exit; not only under `defer RemoveAll` scratch; durable path logged or returned
 - [ ] C17: when generators/evaluators/signatures change: discrete contracts are structured signature fields; env-gated live opt-in replay exists (or PR documents offline-only); full reseed is not the only exercise path — see `dspy-pipeline-isolation`
 - [ ] C18: multi-field construction uses config create (`cfg.Create*` / `CreateModule`); no long parallel arg lists beside a half-empty Config
-- [ ] C19: package layout follows library/app rules; reusable API in `pkg/`, app entrypoints thin in `cmd/`, domain packages over grab-bag names
+- [ ] C19: kit vs app classified; kit public API in `pkg/<domain>/` (not trapped in `internal/`); app `main` is wiring only (no mux/handlers/routing in `package main`); new files sit under `internal/<domain>/` rather than a new root sibling or grab-bag (`util`, `common`, `helpers`, `shared`, `misc`, `tools`); `internal/` is not a flat dumping ground; app modules do not grow a mixed host `pkg/` unless they are also a published kit. See appendix pattern 17.
 
-Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pattern 15 when TraceDir / runreport / failure dumps are in scope, and pattern 16 when generator/evaluator/signature diffs are in scope.
+Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pattern 15 when TraceDir / runreport / failure dumps are in scope, pattern 16 when generator/evaluator/signature diffs are in scope, and pattern 17 when package paths, `cmd` mains, or `internal/` layout are in scope.
 
 ---
 
@@ -188,7 +188,7 @@ Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pat
 - Request-path package that returns only `fmt.Errorf` / bare `error` with no layer-typed error
 - LLM/inference CLI or worker entrypoint with no `observability.Init` (or project OTEL bootstrap)
 - Generate/evaluate path with no client OpenInference (or project) spans; only an AI gateway is expected to show traces
-- Reusable library API trapped in `internal/`, flat `internal/` sprawl, or grab-bag package names (`util`, `common`, `helpers`, `shared`, `misc`, `tools`)
+- Reusable library API trapped in `internal/`, flat `internal/` sprawl (many sibling leaves, no domain parents), a new top-level `internal/<leaf>` that belongs under an existing domain, grab-bag names (`util`, `common`, `helpers`, `shared`, `misc`, `tools`), fat `cmd` mains, or an app module adding mixed host `pkg/`
 
 **Then ask (one at a time):**
 
@@ -199,6 +199,7 @@ Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pat
 - "This LLM entrypoint has no OTEL init / no client spans. Rely on the gateway alone, or wire process tracing?"
 - "Is this a reusable library with public API trapped in `internal/`, or should that surface move to `pkg/`?"
 - "This `cmd/<app>/main.go` does more than wiring. Should it be thinned to config, observability, and a run call?"
+- "This change adds `internal/<leaf>` at the internal root. Does an existing domain folder own it, or is a new domain parent the right nest?"
 
 For a full architecture pass, point at project `pipelines-x-review-architecture` (if present) instead of duplicating it.
 

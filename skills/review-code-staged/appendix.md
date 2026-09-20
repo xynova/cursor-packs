@@ -161,12 +161,19 @@ Related: golang-quality CONSTRAINT 17; Stage 5 Generation Gates checklist (C17);
 
 ## 17. Package layout sprawl and grab-bags
 
-Library roots and application roots drift in different ways, but both break when package names become junk drawers or when public API gets trapped behind `internal/`.
+Library roots and application roots drift in different ways. Both break when package names become junk drawers, when public kit API is trapped behind `internal/`, when `cmd` owns handlers, or when `internal/` is a flat sibling forest with no domain parents.
 
-WRONG: `cmd/server/main.go` loads config, builds clients, starts HTTP, and also owns business logic; `internal/util`, `internal/common`, and `internal/shared` hide unrelated helpers; reusable module types live only under `internal/`.
+WRONG: `cmd/server/main.go` loads config and also owns mux handlers and routing predicates; `internal/util`, `internal/common`, and `internal/shared` hide unrelated helpers; a kit's consumer types live only under `internal/`; a new feature adds `internal/<leaf>` beside 80 other siblings instead of nesting under the owning domain.
 
-RIGHT: reusable kits keep public API in `pkg/<domain>/`, hidden helpers in `internal/`, and runnable examples in `examples/`; application services keep `cmd/<app>/main.go` thin and push business logic into `internal/<domain>/`; HTTP lives in `internal/clients/<service>/`.
+RIGHT: kits keep public API in `pkg/<domain>/`, hidden helpers in `internal/` (still domain-named); apps keep `cmd/<app>/main.go` as wiring (flags, observability, one `Mount`/`Run`) and put handlers under `internal/<domain>/`; outbound HTTP stays in client packages (C10).
 
-Detect: loose `.go` files at the repo root, `cmd/<app>/main.go` with business logic or HTTP, flat `internal/` trees with no domain boundaries, or package names like `util`, `common`, `helpers`, `shared`, `misc`, or `tools`.
+Detect (Stage 5 / C19):
 
-Related: golang-quality CONSTRAINT 19; Stage 5 Generation Gates checklist (C19); Stage A architecture questions on library vs application layout.
+- Loose implementation `.go` at the repo root (not `doc.go` / `package` docs at module root when that is the kit's exported root).
+- `cmd/<app>/main.go` contains `HandleFunc`, domain calls beyond one `Mount`/`Run`, or routing predicates.
+- `ls <module>/internal` is a sibling forest (many leaves, no parent domain directories) or the diff *adds* a new top-level `internal/<leaf>` that belongs under an existing domain.
+- Package names `util`, `common`, `helpers`, `shared`, `misc`, `tools`.
+- Other modules need types that exist only under `internal/` (kit misclassified as hidden).
+- App module grows a mixed `pkg/` of host types without being a published kit (host architecture may forbid this).
+
+Related: golang-quality CONSTRAINT 19; Stage 5 Generation Gates checklist (C19); Stage A architecture questions on library vs application layout; `golang-quality/reference-patterns.md` package layout.
