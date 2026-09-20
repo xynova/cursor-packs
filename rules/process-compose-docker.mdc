@@ -1,0 +1,26 @@
+---
+description: >-
+  Process-compose stacks with Docker sidecars: timed Docker preflight on up,
+  confirm when the daemon is down, never remove named volumes on down. Load
+  skill process-compose-docker. Triggers: process-compose, pc-up, pc-down,
+  docker compose, serve-down, Phoenix, HyperDX, named volumes.
+globs: "**/process-compose*.{yaml,yml},**/pc-up.sh,**/pc-down.sh,**/docker-compose*.{yml,yaml}"
+alwaysApply: false
+---
+
+# Process-compose + Docker
+
+**Skill:** `.cursor/skills/process-compose-docker/SKILL.md` (MUST Read and follow when this rule loads).
+
+## MUST
+
+- Timed Docker daemon probe before optional container namespaces start
+- Ask before continuing without those containers when the probe fails on a TTY
+- Stop stacks without `-v` / `--volumes` / `docker volume rm` on the default down path
+- Keep durable sidecar state on named volumes
+
+## MUST NOT
+
+- Bare unbounded `docker info` in up scripts
+- Silent skip of Docker namespaces on an interactive TTY
+- Wipe volumes as part of normal `serve-down` / `process-compose down` / `docker compose down`

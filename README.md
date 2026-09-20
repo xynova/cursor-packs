@@ -14,6 +14,7 @@ Mount path in consumers: `.cursor/packs/shared`
 | `skills/agent-smith/` | Author/review Cursor skills and rules (Agent Smith standards) |
 | `skills/author-ai-copilots/` | Library-owned `ai-copilots/` harness + multi-IDE BOOTSTRAP (incl. Go module Dir resolve) |
 | `skills/image-to-webp/` | Portable PNG/HEIC→WebP via cwebp; ask/install tools only after user agrees |
+| `skills/process-compose-docker/` | Process-compose + Docker sidecars: timed preflight, confirm on daemon down, never wipe volumes on down |
 | `skills/golang-quality/` | Generation/completion constraints + quality gates; `reference.md` encyclopedia |
 | `skills/review-code-staged/` | Staged Go review (mechanical 1–5 / consultant A–C; Stage 5 = generation gates) |
 | `skills/setup-goreleaser/` | Scaffold GoReleaser v2 + GitHub Release workflow |
@@ -36,6 +37,7 @@ Mount path in consumers: `.cursor/packs/shared`
 | `rules/always-rules-0-ai.mdc` | Always-on model behavior: English identifiers, US spelling, no em dash, tmp clones |
 | `rules/always-rules-01-human-interaction.mdc` | Always-on fluent consultant + light tutor voice, implement gate, Intent-First / Consultant loaders |
 | `rules/image-to-webp.mdc` | `globs: **/*.{png,heic,heif}` — convert shipping rasters to WebP; load skill `image-to-webp` |
+| `rules/process-compose-docker.mdc` | process-compose / pc-up / pc-down / docker-compose — load `process-compose-docker` |
 | `personas/intent-first.persona.md` | Gated: confirm exploratory intent, then wait |
 | `personas/consultant.persona.md` | Gated: present real forks, wait for a pick |
 

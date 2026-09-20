@@ -232,6 +232,44 @@ module, err := cfg.CreateModule()
 - Concrete types are acceptable for a single stable adapter (see architecture DI notes).
 - MUST prefer config create over a long `NewFoo(a, b, c, d, e)` list when the same bundle is reused or will grow.
 
+## Package layout (library vs application)
+
+### Reusable library or provider kit
+
+```text
+pkg/
+├── core/
+├── modules/
+└── llms/
+internal/
+├── cache/
+├── tracing/
+└── testutil/
+examples/
+tests/
+```
+
+- Public API lives in `pkg/<domain>/` or an exported root package.
+- Hidden helpers stay in `internal/`.
+- Examples and blackbox tests show how to use the kit.
+- Avoid grab-bag package names like `util`, `common`, or `shared`.
+
+### Application or host service
+
+```text
+cmd/app/main.go
+internal/
+├── cli/
+├── clients/
+├── config/
+└── domain/
+```
+
+- `cmd/<app>/main.go` should only wire config, observability, and the top-level run call.
+- Business logic lives under `internal/<domain>/`.
+- HTTP and external API calls stay in `internal/clients/<service>/`.
+- Keep the repo root free of loose `.go` implementation files.
+
 PROHIBITED:
 
 ```go

@@ -15,6 +15,7 @@ When generating, completing, or fixing Go:
 2. For deep patterns / anti-patterns, load that skill's `reference.md` (compact examples: `reference-patterns.md`).
 3. Prefer project `make format` / `make lint` / `make vet` / `make test` when those targets exist; otherwise use `gofumpt`/`gofmt`, `golangci-lint`, `go vet`, `go test`.
 4. For multi-section markdown, reports, or TOC builders: follow `.cursor/rules/go-structured-strings.mdc` (`text/template` over WriteString spaghetti).
+5. For package layout, follow golang-quality C19: reusable API in `pkg/` for libraries, thin `cmd/` entrypoints for applications, domain names over grab-bags like `util` or `common`.
 
 When the user asks to review, audit, rate quality, check code, or production readiness of Go:
 
