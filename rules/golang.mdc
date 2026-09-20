@@ -3,7 +3,7 @@ description: >-
   Go coding workflow — load golang-quality for generation/completion and
   review-code-staged for reviews. Also covers existing-module skeleton safety
   (no go mod init / delete go.mod when a module already exists).
-globs: "**/*.go,**/go.mod,**/go.sum,**/go.work,**/go.work.sum"
+globs: "**/*.go,**/go.mod,**/go.sum,**/go.work,**/go.work.sum,**/Makefile"
 alwaysApply: false
 ---
 
@@ -13,7 +13,7 @@ When generating, completing, or fixing Go:
 
 1. Load `.cursor/skills/golang-quality/SKILL.md` and follow its constraints and quality gates.
 2. For deep patterns / anti-patterns, load that skill's `reference.md` (compact examples: `reference-patterns.md`).
-3. Prefer project `make format` / `make lint` / `make vet` / `make test` when those targets exist; otherwise use `gofumpt`/`gofmt`, `golangci-lint`, `go vet`, `go test`.
+3. Prefer project `make format` / `make lint` / `make vet` / `make test` when those targets exist; otherwise use `gofumpt`/`gofmt`, `golangci-lint`, `go vet`, `go test`. When a `Makefile` exists, bare `make` / `make help` MUST list every operator verb (golang-quality C20), and shared jobs MUST use shared names such as `serve` / `serve-down` (C21; not only `dev`).
 4. For multi-section markdown, reports, or TOC builders: follow `.cursor/rules/go-structured-strings.mdc` (`text/template` over WriteString spaghetti).
 5. For package layout, follow golang-quality C19: reusable API in `pkg/` for libraries, thin `cmd/` entrypoints for applications, domain names over grab-bags like `util` or `common`.
 

@@ -622,3 +622,117 @@ import (
 
 - Group: stdlib → third-party → internal, blank lines between groups.
 - `make format` runs gofumpt + goimports.
+
+---
+
+## Makefile verb list
+
+LOAD-WHEN: authoring or editing a Go module `Makefile`; Stage 5 / golang-quality CONSTRAINT 20.
+
+### Rules
+
+- MUST set `.DEFAULT_GOAL := help` so bare `make` lists verbs.
+- MUST annotate every operator-facing target with `## description` on the target line.
+- MUST implement `help` by scanning those annotations (do not hand-maintain a second echo list that can drift).
+- MUST NOT require operators to open the Makefile to discover `test`, `lint`, `build`, `serve`, or license verbs.
+- Recipe-only helpers MAY omit `##` so they stay hidden.
+
+### Canonical help recipe
+
+```makefile
+.DEFAULT_GOAL := help
+
+.PHONY: help format lint vet test build tidy serve serve-down
+
+help: ## List available make verbs
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | \
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  %-24s %s\n", $$1, $$2}'
+
+format: ## Format with gofumpt and goimports
+	gofumpt -w . && goimports -w .
+
+lint: ## Run golangci-lint
+	golangci-lint run --timeout 5m
+
+vet: ## Run go vet
+	go vet ./...
+
+test: ## Run unit tests
+	go test ./...
+
+tidy: ## go mod tidy
+	go mod tidy
+
+build: ## Build the binary into bin/
+	mkdir -p bin
+	go build -o bin/app ./cmd/app
+
+serve: ## process-compose TUI; rebuilds on file changes
+	./scripts/pc-up.sh
+
+serve-down: ## Stop this process-compose project
+	./scripts/pc-down.sh
+
+# Hidden helper (no ##): not listed by `make help`.
+_ensure-bin:
+	mkdir -p bin
+```
+
+### Anti-pattern
+
+```makefile
+# Bare `make` fails with "No targets specified" / runs an opaque first recipe.
+.PHONY: test build
+test:
+	go test ./...
+```
+
+---
+
+## Shared Make verbs
+
+LOAD-WHEN: choosing Makefile target names; Stage 5 / golang-quality CONSTRAINT 21; aligning hosts with process-compose-docker.
+
+### Shared core (use these names when the job exists)
+
+| Verb | Meaning |
+|------|---------|
+| `build` | Build Go binaries |
+| `test` | Run Go tests |
+| `vet` | `go vet ./...` |
+| `tidy` | `go mod tidy` |
+| `lint` | golangci-lint |
+| `format` | Project formatter |
+| `ci` | tidy + gofmt + vet + race tests + build |
+| `init` | Create `~/.config/<app>/...` config if missing |
+| `serve` | Long-running process-compose local stack |
+| `serve-down` | Stop this project's process-compose stack |
+
+### Host extras (stay in the host)
+
+`smoke`, `smoke-*`, `docker-build`, `sync`, license helpers, and similar product verbs stay in the host Makefile help. The pack MUST NOT require every consumer to define them.
+
+### Migration
+
+`dev` / `dev-down` MAY alias `serve` / `serve-down`. New Makefiles MUST NOT expose the long-running stack only as `dev`.
+
+CORRECT:
+```makefile
+serve: ## process-compose TUI (:1325); rebuilds on file changes
+	./scripts/pc-up.sh
+
+serve-down: ## Stop this process-compose project
+	./scripts/pc-down.sh
+
+init: ## Create $(CONFIG) if missing
+	./bin/app init -config $(CONFIG)
+```
+
+PROHIBITED:
+```makefile
+# Pack-required brand string, or serve job only under another name:
+serve: ## Start the AcmeCorp desktop forever-service
+	...
+dev-only-stack:
+	process-compose up
+```

@@ -3,9 +3,10 @@ name: golang-quality
 description: >-
   Go generation and completion workflow: resource cleanup, error wrapping, nil
   guards, context propagation, CLI-service-client layering, structured logging,
-  OpenTelemetry / OpenInference observability, config create constructors, and
-  quality gates. Use when generating, completing, or fixing Go code, or before
-  claiming a Go change is done.
+  OpenTelemetry / OpenInference observability, config create constructors,
+  quality gates, self-documenting Makefile verb lists, and shared Make verb
+  names (build, test, serve). Use when generating, completing, or fixing Go
+  code, authoring a Makefile, or before claiming a Go change is done.
 ---
 
 # Go Quality
@@ -221,17 +222,93 @@ internal/ledger/
 internal/helpers/
 ```
 
+**CONSTRAINT 20 — Makefile verb list.** When a Go module has a `Makefile`, bare `make` (and `make help`) MUST print every operator-facing target (verb) with a one-line description. MUST set `.DEFAULT_GOAL := help`. Every phony verb operators run (`format`, `lint`, `vet`, `test`, `build`, `serve`, license helpers, and similar) MUST carry a `## description` on the target line so the help recipe can list it. Recipe-only helpers MAY omit `##` so they stay off the list. MUST NOT ship a Makefile whose first response is "No targets" or a silent first recipe when quality or serve verbs exist. See [reference-patterns.md](reference-patterns.md#makefile-verb-list).
+- Enforcement: From the module root, run `make` (or `make help`); every operator verb in `.PHONY` that humans run appears with a description; `.DEFAULT_GOAL` is `help`.
+- Violation: STOP, add `.DEFAULT_GOAL := help`, annotate missing verbs with `##`, wire the help recipe, re-run `make`.
+
+CORRECT:
+```makefile
+.DEFAULT_GOAL := help
+
+.PHONY: help test build
+
+help: ## List available make verbs
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | \
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  %-24s %s\n", $$1, $$2}'
+
+test: ## Run unit tests
+	go test ./...
+
+build: ## Build the binary into bin/
+	go build -o bin/app ./cmd/app
+```
+
+PROHIBITED:
+```makefile
+# No help, no DEFAULT_GOAL; bare `make` errors or runs an opaque first target.
+.PHONY: test build
+test:
+	go test ./...
+build:
+	go build -o bin/app ./cmd/app
+```
+
+**CONSTRAINT 21 — Shared Make verbs.** When a Go module `Makefile` exposes operator verbs, MUST use the shared names below for those jobs. Help descriptions MUST be one short line. Product names and host paths MAY appear only in the host Makefile help text, never as pack-required brand strings. See [reference-patterns.md](reference-patterns.md#shared-make-verbs).
+
+| Verb | Job |
+|------|-----|
+| `build` | Build Go binaries |
+| `test` | Run Go tests |
+| `vet` | `go vet ./...` |
+| `tidy` | `go mod tidy` |
+| `lint` | golangci-lint (skip or `go run` when not installed, per host) |
+| `format` | gofumpt / goimports (or project formatter) |
+| `ci` | When present: tidy + gofmt check + vet + race tests + build |
+| `init` | When the app has a config file: create it under `~/.config/<app>/` (or `$XDG_CONFIG_HOME`) if missing |
+| `serve` | Long-running local stack via process-compose (TUI; rebuild on change when air/hot-reload is wired) |
+| `serve-down` | Stop this project's process-compose stack (preserve Docker named volumes; see process-compose-docker) |
+
+- MUST: name the long-running local stack `serve` / `serve-down` when process-compose (or equivalent) is the up path
+- MUST: keep host-only verbs (`smoke-*`, `docker-build`, `sync`, license helpers, and similar) in the host Makefile; MUST NOT invent pack constraints that require every host to ship them
+- MUST NOT: use `dev` / `dev-down` as the only names for the long-running stack on a new or rewritten Makefile
+- MAY: keep `dev` / `dev-down` as thin aliases that invoke `serve` / `serve-down` during migration
+- Enforcement: Read `.PHONY` and `##` help lines; shared jobs use the table names; process-compose up/down are `serve` / `serve-down` (aliases optional)
+- Violation: STOP, rename to shared verbs (add aliases if needed), re-run `make help`
+
+CORRECT:
+```makefile
+serve: ## process-compose TUI; rebuilds on file changes
+	./scripts/pc-up.sh
+
+serve-down: ## Stop this process-compose project
+	./scripts/pc-down.sh
+
+# Optional migration alias (hidden or listed):
+dev: serve
+```
+
+PROHIBITED:
+```makefile
+# Long-running stack only under a non-shared name:
+dev: ## Start local stack
+	process-compose up
+dev-down:
+	process-compose down
+# no serve / serve-down
+```
+
 ---
 
 ## Steps
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
-2. **Implement** — Apply all 19 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs app classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? PASS or fix.
+2. **Implement** — Apply all 21 constraints during generation. First param on I/O functions: `ctx context.Context`.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs app classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists every operator verb (C20) and shared jobs use shared names (C21)? PASS or fix.
 4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
 
 ```bash
 # Prefer (if Makefile defines them):
+make          # or: make help — lists verbs (CONSTRAINT 20)
 make format   # or: gofumpt -w . && goimports -w .
 make lint     # or: golangci-lint run ./...
 make vet      # or: go vet ./...
@@ -250,6 +327,8 @@ Do NOT complete while any of these fail. Fix, re-run, then complete.
 
 ### Tooling
 
+- [ ] Makefile help: if a `Makefile` exists, `make` / `make help` lists every operator verb (CONSTRAINT 20)
+- [ ] Makefile shared verbs: shared jobs use `build` / `test` / `vet` / `tidy` / `lint` / `serve` / `serve-down` (and `init` / `ci` when applicable); no serve-only-as-`dev` (CONSTRAINT 21)
 - [ ] Format: `make format` if present, else `gofumpt`/`gofmt` + `goimports`
 - [ ] Lint: `make lint` if present, else `golangci-lint run` (gosec/godot via `.golangci.yml` when configured)
 - [ ] Vet: `make vet` if present, else `go vet ./...`
@@ -286,3 +365,5 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] AI work dumps (RLM TraceDir, runreport, inference-failure JSON) survive process exit; not only under `defer RemoveAll` scratch; path logged or returned
 - [ ] Multi-field construction uses config create (`cfg.Create*` / `CreateModule`); no long parallel arg lists beside a half-empty Config
 - [ ] Package layout (C19): kit vs app classified; kit API in `pkg/<domain>/`; app `main` is wiring only; new files sit in the owning `internal/<domain>/` (not a new root sibling or grab-bag)
+- [ ] Makefile verbs (C20–C21): help lists operators; shared jobs use shared names (`serve` not only `dev`)
+- [ ] Makefile verbs (C20–C21): help lists operators; shared jobs use shared names (`serve` not only `dev`)
