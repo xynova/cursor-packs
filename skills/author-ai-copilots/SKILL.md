@@ -143,7 +143,12 @@ cp -R "$(go env GOMODCACHE)/.../skills/" .cursor/skills/lib-operator
 | Pure Go dependency | `go get` → module cache / vendor | `go list -m -f '{{.Dir}}'` → BOOTSTRAP symlink |
 | Skills only in cursor-packs | N/A for library-specific ops | Wrong place for a single library's operator pack; move into that library's `ai-copilots/` |
 
-Cross-product shared skills (for example generic Go quality) MAY stay in cursor-packs. Library-specific operate/author skills MUST live in that library's `ai-copilots/`.
+Cross-product shared skills (for example generic Go quality) MAY stay in cursor-packs. Library-specific operate/author skills and domain vocabulary MUST live in that library's `ai-copilots/` and reach the host by **link** (BOOTSTRAP), never by adding them to cursor-packs.
+
+**CONSTRAINT:** MUST NOT create or expand cursor-packs skills/rules/personas for a single library's operator content. Load `edit-cursor-packs` membership gate; if question (2) is yes, write under `ai-copilots/` only.
+
+- Enforcement: Proposed path is under `<module>/ai-copilots/` or fails the pack gate
+- Violation: STOP, move out of cursor-packs, wire via BOOTSTRAP
 
 ---
 

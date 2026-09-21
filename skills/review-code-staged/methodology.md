@@ -132,7 +132,6 @@ Also load [appendix.md](appendix.md) for this stage.
 - [ ] Logging uses injected `*observability.Logger` (or project equivalent); no ad-hoc `logrus.New()` in services
 - [ ] Log lines include discriminator fields (IDs, job/task names)
 - [ ] Names are specific (not `process` / `handle` / `do` unless the package already uses them)
-- [ ] Typology slice stages use domain language (`typology_slice_grouping` / `_meaning` / `_catalog`); uses of retired ids `typology_cluster` / `typology_refine` / `typology_objective_grounding` → clarity finding (see `.cursor/rules/typology-slice-domain.mdc`)
 - [ ] Only essential symbols exported — if unsure, run `.cursor/skills/review-member-visibility/SKILL.md`
 - [ ] No TODO/FIXME without explanation
 - [ ] String literals used 3+ times extracted as constants (`goconst`)

@@ -44,7 +44,7 @@ CORRECT:
 
 PROHIBITED:
 ```text
-Change typology_slice_grouping instruction → only way to verify is a 10-minute context digest reseed.
+Change a single pipeline-step instruction → only way to verify is a 10-minute full-chain reseed.
 ```
 
 Host example (Majordomo): `internal/contextdigest/cluster_replay_live_test.go` + `testdata/cluster_replay/`.
