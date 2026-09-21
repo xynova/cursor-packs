@@ -21,6 +21,32 @@ Before editing any path under `.cursor/skills/`, `.cursor/rules/`, or `.cursor/p
 2. If it is a **symlink** into `packs/shared/`, it is **pack-owned**.
 3. If it is a **real directory or file**, it is a **consumer overlay** (edit in the consumer repo).
 
+## Pack membership gate (ask before creating)
+
+**CONSTRAINT:** Before creating or expanding any skill, rule, or persona in **cursor-packs**, MUST pass the membership gate in `.cursor/rules/cursor-packs.mdc` (same questions live there).
+
+Ask yourself:
+
+1. Would **every** cursor-packs consumer need this even if they never depend on one named library or host product?
+2. Is this operator knowledge for **one** Go module or CLI?
+3. Is this one host's brand, private layout, or product-only workflow?
+
+- Pass → only when (1) is yes and (2)/(3) are no.
+- If (2) is yes → library `ai-copilots/` + host link (see `author-ai-copilots`). MUST NOT add it to the pack.
+- If (3) is yes → consumer overlay under that host's `.cursor/`.
+- Enforcement: Answer the three questions in chat or the PR body before the first new pack path.
+- Violation: STOP, move the content to `ai-copilots` or the host; do not merge pack spill.
+
+CORRECT:
+```text
+Shared Go quality / dspy-go debugging / pack link script → pack
+```
+
+PROHIBITED:
+```text
+Typology (or any single-library) slice vocabulary rule → cursor-packs/rules/
+```
+
 ## Pack-owned edits (MUST)
 
 1. MUST work inside the pack git checkout: `.cursor/packs/shared` (or the resolved real path).
@@ -30,6 +56,7 @@ Before editing any path under `.cursor/skills/`, `.cursor/rules/`, or `.cursor/p
 5. MUST bump the consumer submodule pointer to the new pack SHA after the pack change lands (or to the PR tip for pilot).
 6. MUST re-run `.cursor/packs/shared/scripts/link-into-project.sh --project .` when new skill, rule, or persona **names** are added to the pack allow-lists.
 7. MUST load this skill whenever the soft-linked rule `cursor-packs.mdc` fires.
+8. MUST run the **Pack membership gate** before any new pack skill, rule, or persona name.
 
 ## Consumer overlays (MUST NOT confuse)
 
@@ -96,4 +123,19 @@ git submodule update --init --recursive -- .cursor/packs/shared
 
 ## Link script
 
-Allow-lists live in `scripts/link-into-project.sh` (`SKILLS=(...)`, `RULES=(...)`, `PERSONAS=(...)`). New shared skills, rules, or personas MUST be appended there or consumers will not get symlinks.
+Allow-lists live in `scripts/link-into-project.sh` (`SKILLS=(...)`, `RULES=(...)`, `PERSONAS=(...)`). New shared skills, rules, or personas MUST be appended there or consumers will not get symlinks. MUST NOT append a name that failed the membership gate.
+
+## Pre-completion checklist
+
+- [ ] **Ownership:** Edits are inside the pack git checkout, not committed as consumer file bytes
+      Method: `git -C .cursor/packs/shared rev-parse --show-toplevel`
+      Pass: toplevel is cursor-packs
+      Fail: STOP, move work into the pack checkout
+- [ ] **Membership gate:** New or expanded pack artifacts passed the three questions
+      Method: Re-read answers in PR/chat; (1) yes, (2)/(3) no
+      Pass: Portable shared practice only
+      Fail: STOP, relocate to library `ai-copilots/` or host overlay
+- [ ] **Allow-list:** New names appear in `scripts/link-into-project.sh` only after the gate passes
+      Method: Diff the script
+      Pass: Names match gated artifacts
+      Fail: STOP, remove allow-list entry or relocate artifact

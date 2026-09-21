@@ -161,8 +161,8 @@ MAJORDOMO_LIVE_<TASK>_REPLAY=1 go test -run Live… → then rejoin JobRunner.
 
 PROHIBITED:
 ```text
-Edit typology_slice_grouping instruction; only verification path is a 10-minute full digest reseed.
-Gate merge_ids by scraping cluster_proposal_md headings.
+Edit one pipeline-step instruction; only verification path is a 10-minute full-chain reseed.
+Gate merge_ids by scraping markdown headings from a free-text field.
 ```
 
 **CONSTRAINT 18 — Config create.** When a type needs several construction inputs (deps, budgets, prompts, optional hooks), MUST put them on a typed `Config` (or `*Config`) and expose `CreateX` / `CreateModule` that takes no construction args beyond what the method signature already needs for runtime (`ctx` only when creation itself performs I/O). Call sites MUST fill the config, then call create. MUST NOT pass a long parallel argument list beside a half-empty config. Prefer this over ad-hoc `NewFoo(a, b, c, d, e)` when the same bundle is reused or will grow. Package-level `CreateFoo(cfg)` MAY wrap `cfg.CreateFoo()` for discoverability.
