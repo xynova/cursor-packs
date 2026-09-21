@@ -42,24 +42,28 @@ asks you to explain a prior implementation).
 **CONSTRAINT:** The post-implementation explain MUST be visual-first and short:
 
 1. **Lead** — one line: what is different now.
-2. **How it fits** — numbered **pseudocode-style steps** for the moving parts (`IF` / `ELSE` / skip / write / open). A small mermaid (or compact table) MAY replace the list or sit beside it when the flow is branching or easier to see as a diagram.
+2. **How it fits** — numbered **pseudocode-style steps** for the moving parts (`ON` / `IF` / `ELSE` / skip / write / open). A small mermaid (or compact table) MAY replace the list or sit beside it when the flow is branching or easier to see as a diagram.
 3. **Authorship** — one line/bullet only if LLM vs mechanical could be confused; otherwise omit.
 4. **Evidence** — optional short path list last.
 
 - MUST: default to numbered pseudocode steps; use a diagram when it makes the path clearer.
 - MUST: keep the explain scannable in a few seconds.
 - MUST: keep each step concrete enough that a cold reader knows what happens without decoding jargon (split packed phrases into two steps when needed).
+- MUST: use **`ON <moment>:`** for always-on wiring or when a call runs (construction, each request, each turn). That names *when*, not a branch.
+- MUST: use **`IF` / `ELSE`** only for real branches (two different outcomes).
 - MUST NOT: write paragraph essays, restated task fluff, or empty ceremonial headings.
 - MUST NOT: replace the explain with only file names or SHAs.
 - MUST NOT: pack several actions into one vague line (for example “open/restack PR base=default writing X”).
-- Enforcement: Lead is ≤2 short sentences; body is numbered steps and/or one small diagram, not prose blocks; each step states one clear action or decision.
+- MUST NOT: chain always-on and conditional work with arrows (`A → B → C if missing`) so a reader cannot tell statement from branch.
+- MUST NOT: join nouns with `/` to mean “all of these” (reads as OR). Write `and`, a comma list, or separate steps.
+- Enforcement: Lead is ≤2 short sentences; body is numbered steps and/or one small diagram, not prose blocks; each step states one clear action or decision; skim for `ON` vs `IF` and for `/`-joined noun lists.
 - Violation: STOP, cut prose into lead + concrete steps (and/or tiny diagram), then send.
 
 CORRECT:
 ```markdown
 Digest can promote a drifted confirmed typology catalog onto default via a product PR.
 
-1. Finish context digest (proposal stays on `majordomo-context/…`).
+1. ON context digest finish: proposal stays on `majordomo-context/…`.
 2. IF survey mode ≠ reuse → skip.
 3. IF refined catalog == confirmed `.typology/typology.yaml` (normalized) → skip.
 4. ELSE write refined YAML into `.typology/typology.yaml` on branch `majordomo-typology/<repo>-update`.
@@ -69,11 +73,31 @@ Digest can promote a drifted confirmed typology catalog onto default via a produ
 - Mechanical Go only (no new LLM); PR body reuses existing findings markdown.
 ```
 
+CORRECT (wiring with `ON` and one real deadline branch):
+```markdown
+Host chat adapter builds a portable runtime; product policy stays on the host.
+
+1. ON `NewFacade`: build runtime (store, model, clock, and host system prompt).
+2. ON each owner-scoped call: map host principal → runtime owner.
+3. ON each turn into the runtime: IF `ctx` has a deadline → keep it; ELSE wrap with a fixed timeout.
+4. ON turn: IF intent gate requires lock and stage is not locked → fail; ELSE run the turn.
+```
+
 PROHIBITED (vague packed step):
 ```markdown
 4. ELSE push `majordomo-typology/…-update` and open/restack PR base=default with `.typology/typology.yaml`.
 ```
 
+PROHIBITED (arrow chain hides whether a step is always or conditional):
+```markdown
+3. Host Facade → builds Runtime → maps Principal to Owner → injects deadline if missing.
+```
+
+PROHIBITED (`/` between nouns reads as OR, not the portable bundle):
+```markdown
+1. IF the work is portable turn / store / assemble / harness → put it under the library.
+```
+Use instead: `IF the work is the portable turn, store, assemble, and harness bundle → …` (all of them).
 CORRECT (flow diagram when steps alone are muddy):
 ```markdown
 Promote runs after the context PR:
@@ -109,6 +133,13 @@ Tests pass.
 
 - Enforcement: Read each step; ask whether a new teammate would know what git/forge action just happened.
 - Violation: STOP, split or reword the step.
+
+**CONSTRAINT:** `ON` vs `IF` must stay distinct.
+
+- `ON <moment>:` = this always runs at that moment (constructor, each call, each turn).
+- `IF` / `ELSE` = choose one path; two different outcomes.
+- Enforcement: Re-read steps; if a line mixes always wiring with a maybe, split into `ON` plus nested `IF`.
+- Violation: STOP, rewrite with `ON` and `IF` separate.
 
 ---
 
@@ -159,7 +190,7 @@ flowchart TD
 
 1. **Detect** — File-changing implement/fix, or user asked what you did.
 2. **Lead line** — Outcome only.
-3. **Pseudocode steps** — How it is put together; add or swap in a small diagram when the flow is clearer that way; cut anything that does not help scanning.
+3. **Pseudocode steps** — How it is put together; prefer `ON` for when, `IF`/`ELSE` for branches; add or swap in a small diagram when the flow is clearer that way; cut anything that does not help scanning.
 4. **If diagram has loops** — Subgraphs + in-loop retry; domain names for typology stages.
 5. **One authorship bullet** — Only if confusable.
 6. **Optional paths** — Last, short.
@@ -185,6 +216,14 @@ flowchart TD
       Method: Teammate test on each step
       Pass: Action is obvious without decoding jargon
       Fail: STOP, split or reword
+- [ ] **ON vs IF:** Always-on moments use `ON`; only real branches use `IF`/`ELSE`
+      Method: Skim for arrow chains and “if missing” packed into a statement
+      Pass: When vs branch is obvious
+      Fail: STOP, split into `ON` + `IF`
+- [ ] **No `/` as AND:** Noun lists use `and` or commas, not slash joins that read as OR
+      Method: Grep steps for ` / `
+      Pass: Bundle membership is unambiguous
+      Fail: STOP, reword
 - [ ] **Loop diagram clarity:** If the diagram names loops, each has a subgraph + retry edge; once-only steps sit outside
       Method: Inspect mermaid for subgraphs and feedback arrows
       Pass: Membership of each node is obvious
