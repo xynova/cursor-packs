@@ -12,6 +12,7 @@ alwaysApply: true
 **CONSTRAINT:** When the agent finishes an implementation or fix that changed project files, or when the user asks what changed / how it was built, MUST Read and follow `.cursor/skills/explain-implementation/SKILL.md` before the final user-facing reply.
 
 - MUST: short lead + numbered pseudocode-style steps that stay concrete (one clear action or decision per step; small diagram MAY help).
+- MUST: use `ON <moment>:` for when a step always runs; use `IF`/`ELSE` only for real branches (see skill).
 - MUST NOT: pack write/push/open into one vague line.
 - MUST NOT: end with only a file list / “want me to commit?” and no explain.
 - MUST NOT: ship a prose essay for the explain pass.
@@ -20,7 +21,7 @@ alwaysApply: true
 
 CORRECT:
 ```text
-Lead line + numbered IF/ELSE-style steps (optional mermaid when flow branches)
+Lead line + numbered ON / IF / ELSE-style steps (optional mermaid when flow branches)
 ```
 
 PROHIBITED:
