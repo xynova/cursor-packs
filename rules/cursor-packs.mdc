@@ -1,9 +1,9 @@
 ---
 description: >-
   Routes edits of soft-linked Cursor skills, rules, and personas to the
-  cursor-packs submodule workflow. Apply when changing .cursor/skills,
-  .cursor/rules, or .cursor/personas, or when paths resolve into
-  .cursor/packs/shared.
+  cursor-packs submodule workflow, and gates what may be added to the pack.
+  Apply when changing .cursor/skills, .cursor/rules, or .cursor/personas, or
+  when paths resolve into .cursor/packs/shared.
 globs:
   - .cursor/skills/**
   - .cursor/rules/**
@@ -18,3 +18,42 @@ alwaysApply: false
 - If it is pack-linked: MUST follow `.cursor/skills/edit-cursor-packs/SKILL.md` (branch/commit in **cursor-packs**, then bump the consumer submodule). MUST NOT treat the path as a normal consumer-owned file.
 - If it is a real file/directory: it is a consumer overlay; edit and commit in the consumer repo.
 - New shared skill, rule, or persona names MUST be added to `.cursor/packs/shared/scripts/link-into-project.sh` allow-lists and the link script re-run in consumers.
+
+## Pack membership gate (ask before creating)
+
+**CONSTRAINT:** Before creating or expanding any skill, rule, or persona in **cursor-packs**, MUST answer the membership questions below. MUST NOT add the artifact to the pack unless it passes.
+
+Ask yourself:
+
+1. Would **every** cursor-packs consumer need this even if they never depend on one named library or host product?
+2. Is this operator knowledge for **one** Go module or CLI (task ids, domain vocabulary, digest stages, library-specific diagrams)?
+3. Is this one host's brand, private layout, case workflow, or product-only rule?
+
+Pass (MAY add to the pack) only when: **yes** to (1), and **no** to (2) and (3).
+
+Fail (MUST NOT add to the pack):
+
+- (2) is yes → put it in that module's `ai-copilots/`, then **link** (or copy only as approved fallback) into the host `.cursor/` via that library's BOOTSTRAP. MUST NOT paste it into cursor-packs.
+- (3) is yes → put it in the **host** overlay (real file under the consumer `.cursor/`).
+- (1) is no → same as (2) or (3); do not "share" it through the pack.
+
+Enforcement: Write the three answers in the PR/commit body (or chat) before the first new pack path; re-read `author-ai-copilots` when (2) is in doubt.
+Violation: STOP, delete or move the draft out of cursor-packs, wire via `ai-copilots` or host overlay instead.
+
+CORRECT:
+```text
+Q1 yes (all Go hosts): golang-quality, always-rules, edit-cursor-packs
+→ pack
+```
+
+CORRECT:
+```text
+Q2 yes: Typology slice grouping/meaning/catalog vocabulary
+→ providers/typology/ai-copilots/ (+ host symlink); not cursor-packs
+```
+
+PROHIBITED:
+```text
+Library digest stage names / task ids land as rules/*.mdc inside cursor-packs
+"so every consumer gets them"
+```

@@ -173,38 +173,38 @@ PROHIBITED (bare verbs hide fact vs action, so both look like decisions):
 - MUST: draw each loop as a `subgraph` whose interior lists the repeated steps and the retry edge.
 - MUST: place once-only steps outside every loop subgraph.
 - MUST NOT: use a lone box labeled `Loop A` / `Loop B` on a straight line.
-- For Majordomo typology digest, MUST use domain names: **slice grouping**, **slice meaning** (once, between loops), **slice catalog** (see `.cursor/rules/typology-slice-domain.mdc`).
+- Library-specific stage names belong in that library's `ai-copilots/`, not in this skill.
 - Enforcement: Every loop node has a subgraph + retry edge; once-only neighbors sit outside.
 - Violation: STOP, redraw, then send.
 
-CORRECT (boundaries clear: meaning is outside both loops):
+CORRECT (boundaries clear: once-only step sits between two loops):
 ```mermaid
 flowchart TD
-  draft[draft catalog + roles]
-  draft --> groupingLoop
-  subgraph groupingLoop [Slice grouping attempts]
-    propose[typology_slice_grouping]
-    audit[typology_slice_grouping_audit]
+  draft[draft input]
+  draft --> loopA
+  subgraph loopA [Propose attempts]
+    propose[propose]
+    audit[audit]
     propose --> audit
     audit -->|reject under max| propose
   end
-  groupingLoop --> meaning[slice meaning once]
-  meaning --> catalogLoop
-  subgraph catalogLoop [Slice catalog attempts]
-    write[typology_slice_catalog]
-    gates[gates plus quality eval]
+  loopA --> once[once-only middle step]
+  once --> loopB
+  subgraph loopB [Assemble attempts]
+    write[write]
+    gates[gates]
     write --> gates
     gates -->|fail under max| write
   end
-  catalogLoop -->|pass| out[refined snapshot]
+  loopB -->|pass| out[output]
 ```
 
-PROHIBITED (ambiguous membership; jargon stage names):
+PROHIBITED (ambiguous membership):
 ```mermaid
 flowchart TD
-  draft --> clusterLoop[Loop A: cluster]
-  clusterLoop --> ledger[slice objective ledger RLM]
-  ledger --> refineLoop[Loop B: refine]
+  draft --> loopA[Loop A]
+  loopA --> middle[middle]
+  middle --> loopB[Loop B]
 ```
 
 ---
@@ -214,7 +214,7 @@ flowchart TD
 1. **Detect** — File-changing implement/fix, or user asked what you did.
 2. **Lead line** — Outcome only.
 3. **Pseudocode steps** — How it is put together; `ON` for when, `IF`/`ELSE` for branches, `IS` for facts, `DO` for non-branch actions; add or swap in a small diagram when the flow is clearer that way; cut anything that does not help scanning.
-4. **If diagram has loops** — Subgraphs + in-loop retry; domain names for typology stages.
+4. **If diagram has loops** — Subgraphs + in-loop retry; once-only steps outside.
 5. **One authorship bullet** — Only if confusable.
 6. **Optional paths** — Last, short.
 7. **Stop** — No essay. One next-step question is fine.
