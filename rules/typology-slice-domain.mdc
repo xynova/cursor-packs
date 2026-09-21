@@ -17,19 +17,23 @@ alwaysApply: false
 | 1 | Slice grouping | `typology_slice_grouping` | `slice_grouping_proposal.yaml` |
 | 1b | Slice grouping audit | `typology_slice_grouping_audit` | `slice_grouping_verdicts.yaml` |
 | 2 | Slice meaning | `typology_slice_meaning` | `slice_meaning_ledger.yaml` |
-| 3 | Slice catalog | `typology_slice_catalog` | refined catalog / snapshot |
+| 3 | Slice catalog | `typology_slice_catalog` | refined catalog / snapshot (per-slice RLM + Go join) |
 
 Orchestrator: `JudgeTypologySlicePipeline.Assemble` (not a method named Refine).
 
 CLI resume stage: `catalog`.
+
+Catalog assemble writer: Go applies `accept` folds, then a **per-slice strop RLM** emits one fragment each (parallel workers); Go joins fragments. MUST NOT emit the whole catalog from one CoT call.
 
 ## Constraints
 
 **CONSTRAINT:** Code, comments, logs, docs, and explain diagrams for these stages MUST use grouping / meaning / catalog (and the task ids above).
 
 - MUST: label loops as subgraphs with in-loop retry edges; place meaning **outside** both loops (runs once between them).
+- MUST: draw catalog assemble as per-slice RLM containment (not one opaque `Loop B: refine catalog` box).
 - MUST NOT: use `typology_cluster`, `typology_refine`, or `typology_objective_grounding` for these stages.
 - MUST NOT: call the whole pipeline “refine” when you mean only catalog assemble.
+- MUST NOT: describe catalog assemble as a single whole-catalog CoT writer.
 - Enforcement: Grep new diffs for those retired task ids or opaque Loop A/B boxes.
 - Violation: STOP, rename to the vocabulary table, then continue.
 
