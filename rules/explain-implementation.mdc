@@ -1,9 +1,9 @@
 ---
 description: >-
   After an implementation that changed files, load explain-implementation and
-  give a short visual-friendly explain (lead line + numbered pseudocode-style
-  steps; a small diagram MAY help). Triggers: implementation done, what did
-  you do, how was it built, summarize the change, ready to commit.
+  give a short visual-friendly explain (Objective, past-tense Trajectory,
+  Outcome, Explanation; optional Proposal). Triggers: implementation done, what
+  did you do, how was it built, summarize the change, ready to commit.
 alwaysApply: true
 ---
 
@@ -11,9 +11,10 @@ alwaysApply: true
 
 **CONSTRAINT:** When the agent finishes an implementation or fix that changed project files, or when the user asks what changed / how it was built, MUST Read and follow `.cursor/skills/explain-implementation/SKILL.md` before the final user-facing reply.
 
-- MUST: short lead + numbered pseudocode-style steps that stay concrete (one clear action or decision per step; small diagram MAY help).
+- MUST: start with `Objective` (why the work existed and what success meant).
+- MUST: short outcome + numbered pseudocode-style steps that stay concrete (one clear action or decision per step; small diagram MAY help).
 - MUST: use `ON <moment>:` for when a step always runs; use `IF`/`ELSE` only for real branches; use `IS` for a fact and `DO` for a non-branch action (see skill).
-- MUST: separate the response into `Trajectory`, `Explanation`, and optional `Proposal` channels.
+- MUST: separate the response into `Objective`, `Trajectory`, `Explanation`, and optional `Proposal` channels.
 - MUST: write every `Trajectory` action in past tense and include only completed work.
 - MUST: put not-yet-done changes in `Proposal`, never in `Trajectory`.
 - MUST: describe current code behavior in `Explanation`, never as if it were an execution event.
@@ -21,12 +22,15 @@ alwaysApply: true
 - MUST NOT: end with only a file list / “want me to commit?” and no explain.
 - MUST NOT: ship a prose essay for the explain pass.
 - Enforcement: Before send on an implement/fix turn, confirm the skill was applied to the reply draft.
-- Enforcement: Check the three channel labels and scan every `Trajectory` verb for past tense.
+- Enforcement: Confirm `Objective` is first, then check the remaining channel labels and scan every `Trajectory` verb for past tense.
 - Violation: STOP, Read the skill, move future work to `Proposal`, rewrite the reply, then send.
 
 CORRECT:
 
 ```text
+Objective
+Separate completed work from proposed changes for cold readers.
+
 Trajectory
 - Updated the response contract.
 

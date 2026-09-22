@@ -2,11 +2,10 @@
 name: explain-implementation
 description: >-
   After finishing an implementation that changed files, give a short
-  visual-friendly explain: one lead line, then numbered pseudocode-style steps
-  for how it fits together (a small diagram MAY replace or sit beside the
-  steps). Prefer scanability over prose. Use when claiming work is done,
-  summarizing an implementation, or when the user asks what you did / how it
-  was built.
+  visual-friendly explain: Objective first, then past-tense Trajectory,
+  Outcome, numbered Explanation steps, and optional Proposal. Prefer
+  scanability over prose. Use when claiming work is done, summarizing an
+  implementation, or when the user asks what you did / how it was built.
 ---
 
 # Explain implementation
@@ -24,10 +23,36 @@ pass only, MUST prefer scannable structure over fluent multi-sentence prose.
 
 ## Response channels
 
-The explain pass MUST keep completed work, not-yet-done work, and code behavior
-in separate response channels. This prevents a proposed change from reading as
-if it already happened, and prevents an execution history from being mistaken
-for the code's design.
+The explain pass MUST keep purpose, completed work, not-yet-done work, and code
+behavior in separate response channels. This gives a cold reader the destination
+first, then prevents a proposed change from reading as if it already happened,
+and prevents an execution history from being mistaken for the code's design.
+
+**CONSTRAINT:** An `Objective` channel MUST be first. It MUST state why the work
+existed and what success meant for a cold reader. `Objective` MUST NOT list
+completed actions, current code behavior, or proposed follow-up.
+
+- Enforcement: Confirm `Objective` is the first labeled channel and that it
+  names purpose and success criteria only.
+- Violation: STOP, move history to `Trajectory`, behavior to `Explanation`, and
+  unfinished work to `Proposal`, then re-read the channel.
+
+CORRECT:
+
+```text
+Objective
+Separate completed work from proposed changes so a cold reader can tell what
+already happened from what is still open.
+```
+
+PROHIBITED:
+
+```text
+Objective
+- Updated the renderer.
+- Add a migration for older responses.
+1. ON each response: the renderer writes three channels.
+```
 
 **CONSTRAINT:** A `Trajectory` channel MUST contain only actions and
 observations that already happened during the current work. Every action MUST
@@ -81,6 +106,10 @@ description.
 CORRECT:
 
 ```text
+Objective
+Separate completed work from proposed changes so a cold reader can tell what
+already happened from what is still open.
+
 Trajectory
 - Updated the renderer to emit three labeled channels.
 
@@ -124,18 +153,22 @@ asks you to explain a prior implementation).
 
 **CONSTRAINT:** The post-implementation explain MUST be visual-first and short:
 
-1. **Trajectory** — a short `Trajectory` section containing only completed work
+1. **Objective** — a short `Objective` section stating why the work existed and
+   what success meant.
+2. **Trajectory** — a short `Trajectory` section containing only completed work
    in past tense.
-2. **Outcome** — one line stating what is different now.
-3. **Explanation** — a short `Explanation` section with numbered
+3. **Outcome** — one line stating what is different now.
+4. **Explanation** — a short `Explanation` section with numbered
    pseudocode-style steps for current behavior (`ON` / `IF` / `ELSE` / `IS` /
    `DO`). A small mermaid (or compact table) MAY replace the list or sit beside
    it when the flow is branching.
-4. **Proposal** — an optional `Proposal` section for not-yet-done follow-up.
-5. **Authorship** — one line/bullet only if LLM vs mechanical could be
+5. **Proposal** — an optional `Proposal` section for not-yet-done follow-up.
+6. **Authorship** — one line/bullet only if LLM vs mechanical could be
    confused; otherwise omit.
-6. **Evidence** — optional short path list last.
+7. **Evidence** — optional short path list last.
 
+- MUST: put purpose and success criteria in `Objective` before any other
+  channel.
 - MUST: put the actual work history in `Trajectory`, not in `Explanation` or
   `Proposal`.
 - MUST: default `Explanation` to numbered pseudocode steps; use a diagram when
@@ -305,24 +338,31 @@ flowchart TD
 ## Agent procedure
 
 1. **Detect** — File-changing implement/fix, or user asked what you did.
-2. **Lead line** — Outcome only.
-3. **Pseudocode steps** — How it is put together; `ON` for when, `IF`/`ELSE` for branches, `IS` for facts, `DO` for non-branch actions; add or swap in a small diagram when the flow is clearer that way; cut anything that does not help scanning.
-4. **If diagram has loops** — Subgraphs + in-loop retry; once-only steps outside.
-5. **One authorship bullet** — Only if confusable.
-6. **Optional paths** — Last, short.
-7. **Stop** — No essay. One next-step question is fine.
+2. **Objective** — Purpose and success criteria only.
+3. **Trajectory** — Completed work in past tense.
+4. **Outcome** — One line stating what is different now.
+5. **Explanation** — How it fits; `ON` for when, `IF`/`ELSE` for branches, `IS` for facts, `DO` for non-branch actions; add or swap in a small diagram when the flow is clearer that way; cut anything that does not help scanning.
+6. **If diagram has loops** — Subgraphs + in-loop retry; once-only steps outside.
+7. **Proposal** — Optional unfinished follow-up.
+8. **One authorship bullet** — Only if confusable.
+9. **Optional paths** — Last, short.
+10. **Stop** — No essay. One next-step question is fine.
 
 ---
 
 ## Pre-completion checklist
 
-- [ ] **Visual-first:** Lead + numbered steps (diagram optional); not a prose wall
+- [ ] **Objective first:** Purpose and success criteria appear before trajectory
+      Method: Confirm the first labeled channel is `Objective`
+      Pass: Cold reader knows why the work existed before reading history
+      Fail: STOP, add or move purpose into `Objective`
+- [ ] **Visual-first:** Objective + trajectory + numbered explanation steps (diagram optional); not a prose wall
       Method: Count long paragraphs in the explain
-      Pass: At most one short lead; body is steps and/or one small diagram
+      Pass: At most one short objective and one short outcome; body is steps and/or one small diagram
       Fail: STOP, convert to numbered steps (and/or tiny diagram)
-- [ ] **Enough:** Cold reader gets what changed and how it fits
+- [ ] **Enough:** Cold reader gets why it mattered, what changed, and how it fits
       Method: Skim-only test (~5 seconds)
-      Pass: Both clear
+      Pass: All three clear
       Fail: STOP, add the missing beat as a step
 - [ ] **Not a file dump:** Behavior verbs present
       Method: Read steps
@@ -348,3 +388,7 @@ flowchart TD
       Method: Scan
       Pass: Clean and short
       Fail: STOP, cut
+- [ ] **Past-tense trajectory:** Every `Trajectory` action uses past tense and is completed
+      Method: Read each trajectory verb
+      Pass: No imperative, present-behavior, or future commitments in `Trajectory`
+      Fail: STOP, move unfinished items to `Proposal`
