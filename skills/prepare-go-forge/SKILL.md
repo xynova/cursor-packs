@@ -2,10 +2,11 @@
 name: prepare-go-forge
 description: >-
   Prepare GitLab or GitHub hosts for GoReleaser and Go quality via CLI:
-  protected main, package/release job-token permissions, secret detection,
-  and golang quality CI templates. Use when scaffolding a new Go module host,
-  fixing release 403 admin_packages, CI_JOB_TOKEN changelog failures, or
-  enabling forge settings without the UI.
+  protected main (GitHub rulesets with required status checks; GitLab
+  protected branches), package/release job-token permissions, secret
+  detection, and golang quality CI templates. Use when scaffolding a new
+  Go module host, fixing release 403 admin_packages, CI_JOB_TOKEN
+  changelog failures, or enabling forge settings without the UI.
 ---
 
 # Prepare Go forge
@@ -146,7 +147,7 @@ Binary TRUE/FALSE:
 | Packages enabled (GitLab) | Project API `packages_enabled` | true | false |
 | Job push allowed (GitLab) | `ci_push_repository_for_job_token_allowed` | true | false |
 | Fine-grained policies (GitLab) | Allowlist UI or GraphQL readback | Jobs Read; Packages/Releases/Repos R/W | Missing ADMIN_PACKAGES |
-| Protected main | Protected branches API / `gh api` | `main` protected, no force push | Unprotected |
+| Protected main | GitHub ruleset / GitLab protected branches | Ruleset has PR + required_status_checks (or GitLab protected) | Unprotected / no status checks |
 | GoReleaser changelog (GitLab job token) | `.goreleaser.yaml` | `changelog.use: git` | `use: gitlab` with `$CI_JOB_TOKEN` |
 | Release job Go version (GitLab) | Job image vs `go.mod` | Image Go >= `go.mod` | Older Go than `go.mod` |
 | Go quality CI present | File exists | `golang-quality.yml` or `.github/workflows/ci.yml` | Missing |
@@ -157,7 +158,7 @@ Binary TRUE/FALSE:
 ## Pre-completion verification
 
 - [ ] Host prepare script ran successfully
-- [ ] Canonical GitLab job-token profile applied (or GitHub branch protection + Actions ready)
+- [ ] Canonical GitLab job-token profile applied (or GitHub **ruleset** with required status checks + Actions ready)
 - [ ] CI templates copied only when missing (or user confirmed replace)
 - [ ] No token values printed
 - [ ] Operator pointed at setup-goreleaser / manage-go-releases if still needed
