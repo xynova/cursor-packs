@@ -22,6 +22,89 @@ pass only, MUST prefer scannable structure over fluent multi-sentence prose.
 
 ---
 
+## Response channels
+
+The explain pass MUST keep completed work, not-yet-done work, and code behavior
+in separate response channels. This prevents a proposed change from reading as
+if it already happened, and prevents an execution history from being mistaken
+for the code's design.
+
+**CONSTRAINT:** A `Trajectory` channel MUST contain only actions and
+observations that already happened during the current work. Every action MUST
+use past tense (`inspected`, `added`, `changed`, `verified`, `skipped`, or an
+equivalent past-tense verb). `Trajectory` MUST NOT contain a recommendation,
+an instruction, a present-tense claim about code behavior, or a future-tense
+commitment.
+
+- Enforcement: Read every `Trajectory` item as a standalone sentence and
+  check its verb tense and completion status.
+- Violation: STOP, move unfinished work to `Proposal` or remove it, then
+  re-read the channel.
+
+CORRECT:
+
+```text
+Trajectory
+- Inspected the response formatter.
+- Added separate proposal and explanation sections.
+- Verified the past-tense examples.
+```
+
+PROHIBITED:
+
+```text
+Trajectory
+- Add a proposal section.
+- The formatter routes explanations separately.
+- We will verify the examples.
+```
+
+**CONSTRAINT:** A `Proposal` channel MUST contain only work that has not
+finished. Proposed work MUST use future or imperative wording and MUST remain
+outside `Trajectory`, even when it is the next obvious step.
+
+- Enforcement: For each proposal, confirm that no corresponding completed
+  change or verification appears in the current result.
+- Violation: STOP, label the item as completed only when evidence exists;
+  otherwise keep it under `Proposal`.
+
+**CONSTRAINT:** An `Explanation` channel MUST describe the behavior of code
+that exists after the completed work. It MUST NOT present a design suggestion
+as an implemented fact or mix the execution history into the behavior
+description.
+
+- Enforcement: Check that each explanation names current behavior, data flow,
+  or a real branch, and that completed work remains in `Trajectory`.
+- Violation: STOP, rewrite the sentence as current behavior or move it to
+  `Proposal`.
+
+CORRECT:
+
+```text
+Trajectory
+- Updated the renderer to emit three labeled channels.
+
+Proposal
+- Add a migration for older unlabeled responses.
+
+Explanation
+1. ON each response: the renderer writes `Trajectory`, `Proposal`, and
+   `Explanation` independently.
+2. IF an item describes unfinished work → IS that item under `Proposal`.
+3. ELSE → IS the item under `Trajectory` or `Explanation` according to
+   whether it records an event or describes behavior.
+```
+
+PROHIBITED:
+
+```text
+Trajectory
+- The renderer separates future work from current behavior.
+- Add a migration for older responses.
+```
+
+---
+
 ## When to load
 
 Load and follow this skill before the final user-facing reply when **any** of:
@@ -41,12 +124,22 @@ asks you to explain a prior implementation).
 
 **CONSTRAINT:** The post-implementation explain MUST be visual-first and short:
 
-1. **Lead** — one line: what is different now.
-2. **How it fits** — numbered **pseudocode-style steps** for the moving parts (`ON` / `IF` / `ELSE` / `IS` / `DO`). A small mermaid (or compact table) MAY replace the list or sit beside it when the flow is branching or easier to see as a diagram.
-3. **Authorship** — one line/bullet only if LLM vs mechanical could be confused; otherwise omit.
-4. **Evidence** — optional short path list last.
+1. **Trajectory** — a short `Trajectory` section containing only completed work
+   in past tense.
+2. **Outcome** — one line stating what is different now.
+3. **Explanation** — a short `Explanation` section with numbered
+   pseudocode-style steps for current behavior (`ON` / `IF` / `ELSE` / `IS` /
+   `DO`). A small mermaid (or compact table) MAY replace the list or sit beside
+   it when the flow is branching.
+4. **Proposal** — an optional `Proposal` section for not-yet-done follow-up.
+5. **Authorship** — one line/bullet only if LLM vs mechanical could be
+   confused; otherwise omit.
+6. **Evidence** — optional short path list last.
 
-- MUST: default to numbered pseudocode steps; use a diagram when it makes the path clearer.
+- MUST: put the actual work history in `Trajectory`, not in `Explanation` or
+  `Proposal`.
+- MUST: default `Explanation` to numbered pseudocode steps; use a diagram when
+  it makes the path clearer.
 - MUST: keep the explain scannable in a few seconds.
 - MUST: keep each step concrete enough that a cold reader knows what happens without decoding jargon (split packed phrases into two steps when needed).
 - MUST: use **`ON <moment>:`** for always-on wiring or when a call runs (construction, each request, each turn). That names *when*, not a branch.

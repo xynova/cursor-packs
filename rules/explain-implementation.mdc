@@ -13,20 +13,37 @@ alwaysApply: true
 
 - MUST: short lead + numbered pseudocode-style steps that stay concrete (one clear action or decision per step; small diagram MAY help).
 - MUST: use `ON <moment>:` for when a step always runs; use `IF`/`ELSE` only for real branches; use `IS` for a fact and `DO` for a non-branch action (see skill).
+- MUST: separate the response into `Trajectory`, `Explanation`, and optional `Proposal` channels.
+- MUST: write every `Trajectory` action in past tense and include only completed work.
+- MUST: put not-yet-done changes in `Proposal`, never in `Trajectory`.
+- MUST: describe current code behavior in `Explanation`, never as if it were an execution event.
 - MUST NOT: pack write/push/open into one vague line.
 - MUST NOT: end with only a file list / “want me to commit?” and no explain.
 - MUST NOT: ship a prose essay for the explain pass.
 - Enforcement: Before send on an implement/fix turn, confirm the skill was applied to the reply draft.
-- Violation: STOP, Read the skill, rewrite the reply, then send.
+- Enforcement: Check the three channel labels and scan every `Trajectory` verb for past tense.
+- Violation: STOP, Read the skill, move future work to `Proposal`, rewrite the reply, then send.
 
 CORRECT:
+
 ```text
-Lead line + numbered ON / IF / ELSE / IS / DO steps (optional mermaid when flow branches)
+Trajectory
+- Updated the response contract.
+
+Explanation
+1. ON each response: the renderer separates completed work from code behavior.
+2. IF follow-up work is unfinished → IS it under `Proposal`.
+
+Proposal
+- Add a migration for older responses.
 ```
 
 PROHIBITED:
+
 ```text
-Multi-paragraph walkthrough, or “Done. Tests pass. Commit?”
+Trajectory
+- Add a proposal section.
+- The renderer separates future work from current behavior.
 ```
 
 Chat voice remains `.cursor/rules/always-rules-01-human-interaction.mdc` outside this explain pass. This rule requires a scannable step-by-step explain.
