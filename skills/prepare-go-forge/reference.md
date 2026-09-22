@@ -153,28 +153,60 @@ Use only when GraphQL `ciJobTokenScopeUpdatePolicies` is unavailable or errors o
 3. NEVER print the token value.
 4. Prefer returning to job-token policies when GraphQL works.
 
-## GitHub: branch protection (main)
+## GitHub: ruleset (default branch)
+
+Prefer a **repository ruleset** over classic branch protection. The prepare script upserts ruleset `main` on `~DEFAULT_BRANCH` with PR required, required status checks, linear history, and no force-push / deletion.
 
 ```bash
-gh api -X PUT "repos/OWNER/REPO/branches/main/protection" \
-  --input - <<'EOF'
+# Discover check name from ci.yml, or pass explicitly:
+./scripts/github-prepare-go-forge.sh --repo OWNER/REPO
+./scripts/github-prepare-go-forge.sh --repo OWNER/REPO --contexts quality
+```
+
+Required status-check context must match the Actions job `name:` (or job id) in [templates/github/ci.yml](templates/github/ci.yml) (default `quality`). After the first green run, re-run prepare if the check was missing when the ruleset was created.
+
+Manual upsert (same shape the script writes):
+
+```bash
+gh api -X PUT "repos/OWNER/REPO/rulesets/RULESET_ID" --input - <<'EOF'
 {
-  "required_status_checks": {
-    "strict": true,
-    "contexts": ["go-quality"]
+  "name": "main",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] }
   },
-  "enforce_admins": true,
-  "required_pull_request_reviews": {
-    "required_approving_review_count": 0
-  },
-  "restrictions": null,
-  "allow_force_pushes": false,
-  "allow_deletions": false
+  "rules": [
+    { "type": "deletion" },
+    { "type": "non_fast_forward" },
+    { "type": "required_linear_history" },
+    {
+      "type": "pull_request",
+      "parameters": {
+        "required_approving_review_count": 0,
+        "dismiss_stale_reviews_on_push": true,
+        "require_code_owner_review": false,
+        "require_last_push_approval": false,
+        "required_review_thread_resolution": false,
+        "allowed_merge_methods": ["squash"]
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": true,
+        "do_not_enforce_on_create": false,
+        "required_status_checks": [
+          { "context": "quality", "integration_id": 15368 }
+        ]
+      }
+    }
+  ]
 }
 EOF
 ```
 
-Adjust `contexts` to match the workflow job `name:` in [templates/github/ci.yml](templates/github/ci.yml) after first green run (GitHub may require the check to exist once).
+Do not layer classic `branches/main/protection` on top of an equivalent ruleset. The prepare script deletes classic protection after the ruleset upsert.
 
 ## GitHub: secret scanning
 
