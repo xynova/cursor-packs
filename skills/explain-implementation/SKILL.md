@@ -2,9 +2,9 @@
 name: explain-implementation
 description: >-
   After finishing an implementation that changed files, give a short
-  visual-friendly explain: one lead line, then numbered pseudocode-style steps
-  for how it fits together (a small diagram MAY replace or sit beside the
-  steps). Prefer scanability over prose. Use when claiming work is done,
+  visual-friendly explain: past-tense Objective first, then past-tense
+  Trajectory, past-tense Outcome, numbered Explanation steps, and optional
+  Proposal. Prefer scanability over prose. Use when claiming work is done,
   summarizing an implementation, or when the user asks what you did / how it
   was built.
 ---
@@ -19,6 +19,157 @@ over paragraphs. Numbered steps MUST read like readable **pseudocode**
 **Voice:** Still follow `.cursor/rules/always-rules-01-human-interaction.mdc`
 for the rest of the turn (no icon-prefixed reply headings). For this explain
 pass only, MUST prefer scannable structure over fluent multi-sentence prose.
+
+---
+
+## Response channels
+
+The explain pass MUST keep purpose, completed work, not-yet-done work, and code
+behavior in separate response channels. This gives a cold reader the destination
+first, then prevents a proposed change from reading as if it already happened,
+and prevents an execution history from being mistaken for the code's design.
+
+**CONSTRAINT:** An `Objective` channel MUST be first. It MUST state why the work
+existed and what success meant for a cold reader. Every sentence in `Objective`
+MUST use past tense. `Objective` MUST NOT list completed actions (that is
+`Trajectory`), current code behavior, or proposed follow-up.
+
+- Enforcement: Confirm `Objective` is the first labeled channel, that it names
+  purpose and success criteria only, and that every verb is past tense.
+- Violation: STOP, move history to `Trajectory`, behavior to `Explanation`, and
+  unfinished work to `Proposal`, then rewrite `Objective` in past tense.
+
+CORRECT:
+
+```text
+Objective
+The work needed to separate completed work from proposed changes so a cold
+reader could tell what already happened from what was still open.
+```
+
+PROHIBITED:
+
+```text
+Objective
+Separate completed work from proposed changes so a cold reader can tell what
+already happened from what is still open.
+```
+
+PROHIBITED:
+
+```text
+Objective
+- Updated the renderer.
+- Add a migration for older responses.
+1. ON each response: the renderer writes three channels.
+```
+
+**CONSTRAINT:** A `Trajectory` channel MUST contain only the action log of what
+we did: actions and observations that already happened during the current work.
+Every action MUST use past tense (`inspected`, `added`, `changed`, `verified`,
+`skipped`, or an equivalent past-tense verb). `Trajectory` MUST NOT contain a
+recommendation, an instruction, a present-tense claim about code behavior, a
+purpose statement (that is `Objective`), a landed-result summary (that is
+`Outcome`), or a future-tense commitment.
+
+- Enforcement: Read every `Trajectory` item as a standalone sentence and
+  check its verb tense and completion status.
+- Violation: STOP, move unfinished work to `Proposal` or remove it, then
+  re-read the channel.
+
+CORRECT:
+
+```text
+Trajectory
+- Inspected the response formatter.
+- Added separate proposal and explanation sections.
+- Verified the past-tense examples.
+```
+
+PROHIBITED:
+
+```text
+Trajectory
+- Add a proposal section.
+- The formatter routes explanations separately.
+- We will verify the examples.
+```
+
+**CONSTRAINT:** An `Outcome` channel MUST state what landed after the completed
+work. Every sentence in `Outcome` MUST use past tense. `Outcome` MUST NOT list
+the step-by-step action log (that is `Trajectory`), current code behavior (that
+is `Explanation`), or unfinished follow-up (that is `Proposal`).
+
+- Enforcement: Read the outcome as a standalone sentence and check past tense
+  plus “what landed” content.
+- Violation: STOP, rewrite in past tense or move content to the correct channel.
+
+CORRECT:
+
+```text
+Outcome
+The response contract landed with separate past-tense history and current
+behavior channels.
+```
+
+PROHIBITED:
+
+```text
+Outcome
+The response is different now because channels are separated.
+```
+
+**CONSTRAINT:** A `Proposal` channel MUST contain only work that has not
+finished. Proposed work MUST use future or imperative wording and MUST remain
+outside `Trajectory`, even when it is the next obvious step.
+
+- Enforcement: For each proposal, confirm that no corresponding completed
+  change or verification appears in the current result.
+- Violation: STOP, label the item as completed only when evidence exists;
+  otherwise keep it under `Proposal`.
+
+**CONSTRAINT:** An `Explanation` channel MUST describe the behavior of code
+that exists after the completed work. It MUST NOT present a design suggestion
+as an implemented fact or mix the execution history into the behavior
+description.
+
+- Enforcement: Check that each explanation names current behavior, data flow,
+  or a real branch, and that completed work remains in `Trajectory`.
+- Violation: STOP, rewrite the sentence as current behavior or move it to
+  `Proposal`.
+
+CORRECT:
+
+```text
+Objective
+The work needed to separate completed work from proposed changes so a cold
+reader could tell what already happened from what was still open.
+
+Trajectory
+- Updated the renderer to emit three labeled channels.
+
+Outcome
+The response contract landed with separate past-tense history and current
+behavior channels.
+
+Proposal
+- Add a migration for older unlabeled responses.
+
+Explanation
+1. ON each response: the renderer writes `Trajectory`, `Proposal`, and
+   `Explanation` independently.
+2. IF an item describes unfinished work → IS that item under `Proposal`.
+3. ELSE → IS the item under `Trajectory` or `Explanation` according to
+   whether it records an event or describes behavior.
+```
+
+PROHIBITED:
+
+```text
+Trajectory
+- The renderer separates future work from current behavior.
+- Add a migration for older responses.
+```
 
 ---
 
@@ -41,12 +192,28 @@ asks you to explain a prior implementation).
 
 **CONSTRAINT:** The post-implementation explain MUST be visual-first and short:
 
-1. **Lead** — one line: what is different now.
-2. **How it fits** — numbered **pseudocode-style steps** for the moving parts (`ON` / `IF` / `ELSE` / `IS` / `DO`). A small mermaid (or compact table) MAY replace the list or sit beside it when the flow is branching or easier to see as a diagram.
-3. **Authorship** — one line/bullet only if LLM vs mechanical could be confused; otherwise omit.
-4. **Evidence** — optional short path list last.
+1. **Objective**: a short past-tense `Objective` section stating why the work
+   existed and what success meant.
+2. **Trajectory**: a short past-tense `Trajectory` section containing only the
+   action log of what we did.
+3. **Outcome**: one past-tense line stating what landed.
+4. **Explanation**: a short `Explanation` section with numbered
+   pseudocode-style steps for current behavior (`ON` / `IF` / `ELSE` / `IS` /
+   `DO`). A small mermaid (or compact table) MAY replace the list or sit beside
+   it when the flow is branching.
+5. **Proposal**: an optional `Proposal` section for not-yet-done follow-up.
+6. **Authorship**: one line/bullet only if LLM vs mechanical could be
+   confused; otherwise omit.
+7. **Evidence**: optional short path list last.
 
-- MUST: default to numbered pseudocode steps; use a diagram when it makes the path clearer.
+- MUST: put purpose and success criteria in past-tense `Objective` before any
+  other channel.
+- MUST: put the actual work history in past-tense `Trajectory`, not in
+  `Explanation` or `Proposal`.
+- MUST: write `Outcome` in past tense as what landed, not as present-tense
+  “what is different now.”
+- MUST: default `Explanation` to numbered pseudocode steps; use a diagram when
+  it makes the path clearer.
 - MUST: keep the explain scannable in a few seconds.
 - MUST: keep each step concrete enough that a cold reader knows what happens without decoding jargon (split packed phrases into two steps when needed).
 - MUST: use **`ON <moment>:`** for always-on wiring or when a call runs (construction, each request, each turn). That names *when*, not a branch.
@@ -211,25 +378,32 @@ flowchart TD
 
 ## Agent procedure
 
-1. **Detect** — File-changing implement/fix, or user asked what you did.
-2. **Lead line** — Outcome only.
-3. **Pseudocode steps** — How it is put together; `ON` for when, `IF`/`ELSE` for branches, `IS` for facts, `DO` for non-branch actions; add or swap in a small diagram when the flow is clearer that way; cut anything that does not help scanning.
-4. **If diagram has loops** — Subgraphs + in-loop retry; once-only steps outside.
-5. **One authorship bullet** — Only if confusable.
-6. **Optional paths** — Last, short.
-7. **Stop** — No essay. One next-step question is fine.
+1. **Detect**: File-changing implement/fix, or user asked what you did.
+2. **Objective**: Past-tense purpose and success criteria only.
+3. **Trajectory**: Past-tense action log of what we did.
+4. **Outcome**: One past-tense line stating what landed.
+5. **Explanation**: How it fits now; `ON` for when, `IF`/`ELSE` for branches, `IS` for facts, `DO` for non-branch actions; add or swap in a small diagram when the flow is clearer that way; cut anything that does not help scanning.
+6. **If diagram has loops**: Subgraphs + in-loop retry; once-only steps outside.
+7. **Proposal**: Optional unfinished follow-up.
+8. **One authorship bullet**: Only if confusable.
+9. **Optional paths**: Last, short.
+10. **Stop**: No essay. One next-step question is fine.
 
 ---
 
 ## Pre-completion checklist
 
-- [ ] **Visual-first:** Lead + numbered steps (diagram optional); not a prose wall
+- [ ] **Objective first (past tense):** Purpose and success criteria appear before trajectory, written in past tense
+      Method: Confirm the first labeled channel is `Objective` and skim every verb
+      Pass: Cold reader knows why the work existed before reading history; no present/imperative objective
+      Fail: STOP, add or move purpose into past-tense `Objective`
+- [ ] **Visual-first:** Objective + trajectory + numbered explanation steps (diagram optional); not a prose wall
       Method: Count long paragraphs in the explain
-      Pass: At most one short lead; body is steps and/or one small diagram
+      Pass: At most one short objective and one short outcome; body is steps and/or one small diagram
       Fail: STOP, convert to numbered steps (and/or tiny diagram)
-- [ ] **Enough:** Cold reader gets what changed and how it fits
+- [ ] **Enough:** Cold reader gets why it mattered, what changed, and how it fits
       Method: Skim-only test (~5 seconds)
-      Pass: Both clear
+      Pass: All three clear
       Fail: STOP, add the missing beat as a step
 - [ ] **Not a file dump:** Behavior verbs present
       Method: Read steps
@@ -255,3 +429,11 @@ flowchart TD
       Method: Scan
       Pass: Clean and short
       Fail: STOP, cut
+- [ ] **Past-tense trajectory:** Every `Trajectory` action uses past tense and is completed action-log only
+      Method: Read each trajectory verb; confirm no purpose, outcome, or behavior claims
+      Pass: No imperative, present-behavior, purpose, or future commitments in `Trajectory`
+      Fail: STOP, move unfinished items to `Proposal`; move purpose to `Objective` and landed result to `Outcome`
+- [ ] **Past-tense outcome:** `Outcome` states what landed in past tense
+      Method: Read the outcome verb
+      Pass: Past-tense landed result; not present “is different now” or unfinished follow-up
+      Fail: STOP, rewrite `Outcome` in past tense or move unfinished work to `Proposal`

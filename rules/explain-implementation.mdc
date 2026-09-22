@@ -1,9 +1,10 @@
 ---
 description: >-
   After an implementation that changed files, load explain-implementation and
-  give a short visual-friendly explain (lead line + numbered pseudocode-style
-  steps; a small diagram MAY help). Triggers: implementation done, what did
-  you do, how was it built, summarize the change, ready to commit.
+  give a short visual-friendly explain (past-tense Objective, past-tense
+  Trajectory, past-tense Outcome, Explanation; optional Proposal). Triggers:
+  implementation done, what did you do, how was it built, summarize the change,
+  ready to commit.
 alwaysApply: true
 ---
 
@@ -11,22 +12,47 @@ alwaysApply: true
 
 **CONSTRAINT:** When the agent finishes an implementation or fix that changed project files, or when the user asks what changed / how it was built, MUST Read and follow `.cursor/skills/explain-implementation/SKILL.md` before the final user-facing reply.
 
-- MUST: short lead + numbered pseudocode-style steps that stay concrete (one clear action or decision per step; small diagram MAY help).
+- MUST: start with past-tense `Objective` (why the work existed and what success meant).
+- MUST: short past-tense outcome + numbered pseudocode-style steps that stay concrete (one clear action or decision per step; small diagram MAY help).
 - MUST: use `ON <moment>:` for when a step always runs; use `IF`/`ELSE` only for real branches; use `IS` for a fact and `DO` for a non-branch action (see skill).
+- MUST: separate the response into `Objective`, `Trajectory`, `Outcome`, `Explanation`, and optional `Proposal` channels.
+- MUST: write every `Trajectory` action in past tense and include only the action log of what we did.
+- MUST: write `Outcome` in past tense as what landed.
+- MUST: put not-yet-done changes in `Proposal`, never in `Trajectory`.
+- MUST: describe current code behavior in `Explanation`, never as if it were an execution event.
 - MUST NOT: pack write/push/open into one vague line.
 - MUST NOT: end with only a file list / “want me to commit?” and no explain.
 - MUST NOT: ship a prose essay for the explain pass.
 - Enforcement: Before send on an implement/fix turn, confirm the skill was applied to the reply draft.
-- Violation: STOP, Read the skill, rewrite the reply, then send.
+- Enforcement: Confirm `Objective` is first and past tense, then check the remaining channel labels and scan every `Trajectory` and `Outcome` verb for past tense.
+- Violation: STOP, Read the skill, move future work to `Proposal`, rewrite the reply, then send.
 
 CORRECT:
+
 ```text
-Lead line + numbered ON / IF / ELSE / IS / DO steps (optional mermaid when flow branches)
+Objective
+The work needed to separate completed work from proposed changes for cold readers.
+
+Trajectory
+- Updated the response contract.
+
+Outcome
+The explain pass landed with labeled past-tense history and current behavior.
+
+Explanation
+1. ON each response: the renderer separates completed work from code behavior.
+2. IF follow-up work is unfinished → IS it under `Proposal`.
+
+Proposal
+- Add a migration for older responses.
 ```
 
 PROHIBITED:
+
 ```text
-Multi-paragraph walkthrough, or “Done. Tests pass. Commit?”
+Trajectory
+- Add a proposal section.
+- The renderer separates future work from current behavior.
 ```
 
 Chat voice remains `.cursor/rules/always-rules-01-human-interaction.mdc` outside this explain pass. This rule requires a scannable step-by-step explain.
