@@ -825,22 +825,41 @@ func SafeDivide(a, b float64) (float64, error) {
     return a / b, nil
 }
 
-func Retry(ctx context.Context, fn func() error, maxRetries int) error {
-    for i := 0; i < maxRetries; i++ {
-        if err := fn(); err == nil {
-            return nil
-        }
-        
-        select {
-        case <-ctx.Done():
-            return ctx.Err()
-        case <-time.After(time.Duration(i+1) * time.Second):
-            continue
-        }
-    }
-    return fmt.Errorf("max retries exceeded")
+```
+
+### Outbound resilience (failsafe-go)
+
+House stack for outbound process exec and HTTP (CONSTRAINT 22). Prefer one shared seam (exec runner / HTTP client package) so call sites stay thin.
+
+```go
+import (
+    "context"
+    "time"
+
+    "github.com/failsafe-go/failsafe-go"
+    "github.com/failsafe-go/failsafe-go/circuitbreaker"
+    "github.com/failsafe-go/failsafe-go/retrypolicy"
+)
+
+func runOutbound(ctx context.Context, name string, once func() ([]byte, error)) ([]byte, error) {
+    retry := retrypolicy.Builder[[]byte]().
+        HandleIf(func(_ []byte, err error) bool { return isTransient(err) }).
+        WithBackoff(100*time.Millisecond, time.Second).
+        WithJitterFactor(0.2).
+        WithMaxRetries(2).
+        Build()
+    breaker := circuitbreaker.Builder[[]byte]().
+        HandleIf(func(_ []byte, err error) bool { return isTransient(err) }).
+        WithFailureThreshold(5).
+        WithDelay(30 * time.Second).
+        Build()
+    return failsafe.NewExecutor[[]byte](retry, breaker).
+        WithContext(ctx).
+        Get(func() ([]byte, error) { return once() })
 }
 ```
+
+MUST NOT hand-roll sleep loops for the same hop; classify transient vs permanent errors before retrying.
 
 ## 📦 **IMPORT ORGANIZATION**
 

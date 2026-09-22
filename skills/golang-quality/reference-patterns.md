@@ -229,6 +229,7 @@ module, err := cfg.CreateModule()
 
 - MUST inject ALL dependencies via constructor.
 - MUST use interfaces for external dependencies (HTTP, DB, APIs).
+- Outbound HTTP `Do` and process `exec.Command*` MUST use failsafe-go (CONSTRAINT 22); see [reference.md](reference.md#outbound-resilience-failsafe-go).
 - Concrete types are acceptable for a single stable adapter (see architecture DI notes).
 - MUST prefer config create over a long `NewFoo(a, b, c, d, e)` list when the same bundle is reused or will grow.
 

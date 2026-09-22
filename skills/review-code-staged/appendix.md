@@ -196,3 +196,21 @@ Detect (Stage 5 when CLI in scope; Stage A consult):
 - Help text marks discovery flags as required when resolvers already default them.
 
 Related: `.cursor/skills/cli-command-surface/SKILL.md`; Stage 5 CLI command surface checklist; Stage A question on implicit start.
+
+---
+
+## 19. Bare outbound exec/HTTP without failsafe-go
+
+Forge CLIs (`gh`, `glab`) and HTTP clients that run once under load produce `signal: killed` / timeout storms and cascade into board or poll failures. Ad-hoc sleep loops hide the same gap.
+
+WRONG: `exec.CommandContext(ctx, "glab", ...).Run()` or `httpClient.Do(req)` in a client/exec package with no failsafe-go retry + breaker; or `for i := 0; i < n; i++ { time.Sleep(...); retry }`.
+
+RIGHT: Shared exec/HTTP seam wraps the hop with failsafe-go (exponential backoff + jitter, circuit breaker keyed by dependency); retries only classified transients (timeout, killed, transport, 429/5xx); honors caller `ctx`.
+
+Detect (Stage 5 / C22):
+
+- New or changed `Command` / `CommandContext` / `http.Client.Do` in client or exec packages without a failsafe `Run` / `Get` (or project wrapper that embeds those policies).
+- Hand-rolled sleep/retry around outbound I/O.
+- Blind retry of every non-zero exit or every HTTP status.
+
+Related: golang-quality CONSTRAINT 22; Stage 5 Generation Gates checklist (C22); `golang-quality/reference.md` outbound resilience.
