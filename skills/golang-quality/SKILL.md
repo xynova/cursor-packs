@@ -4,9 +4,10 @@ description: >-
   Go generation and completion workflow: resource cleanup, error wrapping, nil
   guards, context propagation, CLI-service-client layering, structured logging,
   OpenTelemetry / OpenInference observability, config create constructors,
-  quality gates, self-documenting Makefile verb lists, and shared Make verb
-  names (build, test, serve). Use when generating, completing, or fixing Go
-  code, authoring a Makefile, or before claiming a Go change is done.
+  outbound failsafe-go resilience, quality gates, self-documenting Makefile
+  verb lists, and shared Make verb names (build, test, serve). Use when
+  generating, completing, or fixing Go code, authoring a Makefile, or before
+  claiming a Go change is done.
 ---
 
 # Go Quality
@@ -297,13 +298,33 @@ dev-down:
 # no serve / serve-down
 ```
 
+**CONSTRAINT 22 — Outbound resilience (failsafe-go).** Outbound process execution (`exec.Command`, `exec.CommandContext`, or a project exec wrapper) and outbound HTTP client calls (`http.Client.Do`, or equivalent) MUST run under [failsafe-go](https://pkg.go.dev/github.com/failsafe-go/failsafe-go) policies: retry with exponential backoff and jitter, plus a circuit breaker for shared network-backed dependencies (forge CLIs such as `gh`/`glab`, HTTP APIs, LLM endpoints). MUST honor the caller `context.Context` (stop when canceled or the deadline fires; MUST NOT invent a longer deadline than remaining budget). MUST classify retryable failures (timeout, process killed, transport errors, HTTP 429/5xx) versus permanent failures (bad argv, auth/config misuse, most other 4xx); MUST NOT blind-retry every non-zero exit or every HTTP status. MUST NOT scatter ad-hoc `time.Sleep` retry loops for outbound I/O. Local-only lookups that do not call a remote dependency (for example `exec.LookPath`) MAY stay unretriable. Test fakes that implement the exec/HTTP interface MAY omit failsafe. See [reference.md](reference.md#outbound-resilience-failsafe-go).
+- Enforcement: Stage 5 scans client/exec packages for bare `Do` / `Command` / `CommandContext` hops without a failsafe `Run` / `Get` (or project wrapper that embeds those policies); generation places policies at the shared exec/HTTP seam.
+- Violation: STOP, wrap the hop with failsafe-go (retry + breaker where the dep is shared/networked), classify retryable errors, re-check.
+
+CORRECT:
+```go
+out, err := failsafe.With(breakerFor(name), retryPolicy).
+    WithContext(ctx).
+    Get(func() ([]byte, error) {
+        return runOnce(ctx, name, args...)
+    })
+```
+
+PROHIBITED:
+```go
+cmd := exec.CommandContext(ctx, "glab", args...)
+err := cmd.Run() // bare outbound; no retry, no breaker
+// or: for i := 0; i < 3; i++ { time.Sleep(...); if err := do(); err == nil { return } }
+```
+
 ---
 
 ## Steps
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
-2. **Implement** — Apply all 21 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs app classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists every operator verb (C20) and shared jobs use shared names (C21)? PASS or fix.
+2. **Implement** — Apply all 22 constraints during generation. First param on I/O functions: `ctx context.Context`.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs app classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists every operator verb (C20) and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? PASS or fix.
 4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
 
 ```bash
@@ -366,4 +387,4 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] Multi-field construction uses config create (`cfg.Create*` / `CreateModule`); no long parallel arg lists beside a half-empty Config
 - [ ] Package layout (C19): kit vs app classified; kit API in `pkg/<domain>/`; app `main` is wiring only; new files sit in the owning `internal/<domain>/` (not a new root sibling or grab-bag)
 - [ ] Makefile verbs (C20–C21): help lists operators; shared jobs use shared names (`serve` not only `dev`)
-- [ ] Makefile verbs (C20–C21): help lists operators; shared jobs use shared names (`serve` not only `dev`)
+- [ ] Outbound resilience (C22): exec/HTTP hops use failsafe-go (retry + breaker); no bare Do/Command; no ad-hoc sleep retry loops
