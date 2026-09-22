@@ -29,6 +29,40 @@ behavior in separate response channels. This gives a cold reader the destination
 first, then prevents a proposed change from reading as if it already happened,
 and prevents an execution history from being mistaken for the code's design.
 
+**CONSTRAINT:** Channel headings (`Objective`, `Trajectory`, `Outcome`,
+`Explanation`, `Proposal`) MUST be readable as separate blocks. MUST put one
+blank line after each channel heading before its body. MUST put one blank line
+between the end of one channel's body and the next channel heading. MUST NOT
+run a heading flush against the previous channel's last line, and MUST NOT run
+the body flush against the heading.
+
+- Enforcement: Before send, scan the draft for each channel label; confirm a
+  blank line immediately after the heading and a blank line before the next
+  heading (except after the final channel).
+- Violation: STOP, insert the missing blank lines, then send.
+
+CORRECT:
+
+```text
+Objective
+
+The work needed to separate completed work from proposed changes so a cold
+reader could tell what already happened from what was still open.
+
+Trajectory
+
+- Updated the renderer to emit labeled channels.
+```
+
+PROHIBITED (no blank line after heading / between channels):
+
+```text
+Objective
+The work needed to separate completed work from proposed changes.
+Trajectory
+- Updated the renderer.
+```
+
 **CONSTRAINT:** An `Objective` channel MUST be first. It MUST state why the work
 existed and what success meant for a cold reader. Every sentence in `Objective`
 MUST use past tense. `Objective` MUST NOT list completed actions (that is
@@ -43,6 +77,7 @@ CORRECT:
 
 ```text
 Objective
+
 The work needed to separate completed work from proposed changes so a cold
 reader could tell what already happened from what was still open.
 ```
@@ -51,6 +86,7 @@ PROHIBITED:
 
 ```text
 Objective
+
 Separate completed work from proposed changes so a cold reader can tell what
 already happened from what is still open.
 ```
@@ -59,6 +95,7 @@ PROHIBITED:
 
 ```text
 Objective
+
 - Updated the renderer.
 - Add a migration for older responses.
 1. ON each response: the renderer writes three channels.
@@ -81,6 +118,7 @@ CORRECT:
 
 ```text
 Trajectory
+
 - Inspected the response formatter.
 - Added separate proposal and explanation sections.
 - Verified the past-tense examples.
@@ -90,6 +128,7 @@ PROHIBITED:
 
 ```text
 Trajectory
+
 - Add a proposal section.
 - The formatter routes explanations separately.
 - We will verify the examples.
@@ -108,6 +147,7 @@ CORRECT:
 
 ```text
 Outcome
+
 The response contract landed with separate past-tense history and current
 behavior channels.
 ```
@@ -116,6 +156,7 @@ PROHIBITED:
 
 ```text
 Outcome
+
 The response is different now because channels are separated.
 ```
 
@@ -142,20 +183,25 @@ CORRECT:
 
 ```text
 Objective
+
 The work needed to separate completed work from proposed changes so a cold
 reader could tell what already happened from what was still open.
 
 Trajectory
+
 - Updated the renderer to emit three labeled channels.
 
 Outcome
+
 The response contract landed with separate past-tense history and current
 behavior channels.
 
 Proposal
+
 - Add a migration for older unlabeled responses.
 
 Explanation
+
 1. ON each response: the renderer writes `Trajectory`, `Proposal`, and
    `Explanation` independently.
 2. IF an item describes unfinished work → IS that item under `Proposal`.
@@ -167,6 +213,7 @@ PROHIBITED:
 
 ```text
 Trajectory
+
 - The renderer separates future work from current behavior.
 - Add a migration for older responses.
 ```
@@ -379,12 +426,12 @@ flowchart TD
 ## Agent procedure
 
 1. **Detect**: File-changing implement/fix, or user asked what you did.
-2. **Objective**: Past-tense purpose and success criteria only.
-3. **Trajectory**: Past-tense action log of what we did.
-4. **Outcome**: One past-tense line stating what landed.
+2. **Objective**: Past-tense purpose and success criteria only (blank line after the heading).
+3. **Trajectory**: Past-tense action log of what we did (blank line after the heading; blank line before this channel).
+4. **Outcome**: One past-tense line stating what landed (same spacing).
 5. **Explanation**: How it fits now; `ON` for when, `IF`/`ELSE` for branches, `IS` for facts, `DO` for non-branch actions; add or swap in a small diagram when the flow is clearer that way; cut anything that does not help scanning.
 6. **If diagram has loops**: Subgraphs + in-loop retry; once-only steps outside.
-7. **Proposal**: Optional unfinished follow-up.
+7. **Proposal**: Optional unfinished follow-up (same spacing).
 8. **One authorship bullet**: Only if confusable.
 9. **Optional paths**: Last, short.
 10. **Stop**: No essay. One next-step question is fine.
@@ -397,6 +444,10 @@ flowchart TD
       Method: Confirm the first labeled channel is `Objective` and skim every verb
       Pass: Cold reader knows why the work existed before reading history; no present/imperative objective
       Fail: STOP, add or move purpose into past-tense `Objective`
+- [ ] **Channel spacing:** Blank line after each channel heading; blank line between channels
+      Method: Scan for `Objective` / `Trajectory` / `Outcome` / `Explanation` / `Proposal`
+      Pass: Heading, blank line, body; blank line before the next heading
+      Fail: STOP, insert the missing blank lines
 - [ ] **Visual-first:** Objective + trajectory + numbered explanation steps (diagram optional); not a prose wall
       Method: Count long paragraphs in the explain
       Pass: At most one short objective and one short outcome; body is steps and/or one small diagram
