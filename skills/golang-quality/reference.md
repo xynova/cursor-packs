@@ -842,18 +842,19 @@ import (
 )
 
 func runOutbound(ctx context.Context, name string, once func() ([]byte, error)) ([]byte, error) {
-    retry := retrypolicy.Builder[[]byte]().
+    retry := retrypolicy.NewBuilder[[]byte]().
         HandleIf(func(_ []byte, err error) bool { return isTransient(err) }).
         WithBackoff(100*time.Millisecond, time.Second).
         WithJitterFactor(0.2).
         WithMaxRetries(2).
         Build()
-    breaker := circuitbreaker.Builder[[]byte]().
+    breaker := circuitbreaker.NewBuilder[[]byte]().
         HandleIf(func(_ []byte, err error) bool { return isTransient(err) }).
         WithFailureThreshold(5).
         WithDelay(30 * time.Second).
         Build()
-    return failsafe.NewExecutor[[]byte](retry, breaker).
+    // Breaker outermost so an open circuit fails fast without spending retry budget.
+    return failsafe.With(breaker, retry).
         WithContext(ctx).
         Get(func() ([]byte, error) { return once() })
 }

@@ -304,9 +304,9 @@ dev-down:
 
 CORRECT:
 ```go
-out, err := failsafe.NewExecutor[any](retryPolicy, breakerFor(name)).
+out, err := failsafe.With(breakerFor(name), retryPolicy).
     WithContext(ctx).
-    Get(func() (any, error) {
+    Get(func() ([]byte, error) {
         return runOnce(ctx, name, args...)
     })
 ```
