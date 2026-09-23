@@ -14,9 +14,9 @@ Eight stages in **two groups**. MUST present the menu as those groups first, the
 
 | Selection | Expands to | Meaning |
 |-----------|------------|---------|
-| `mechanical` | `1, 2, 3, 4, 5` | Detect-only: tools, types, errors, clarity, generation gates. No dialogue mid-stage. |
-| `consultant` | `A, B, C` | Architecture / robustness / testability questions. Dialogue mid-stage. |
-| `both` or `all` | `1`–`5`, `A`–`C` | Mechanical then consultant (`A`–`C` still ask mid-pass). |
+| `mechanical` | `1, 2, 3, 4, 5` | Detect-only: tools, types, errors, clarity, generation gates. No dialogue mid-stage; no pause between stages. |
+| `consultant` | `A, B, C` | Architecture / robustness / testability questions. Dialogue mid-stage; pause only here. |
+| `both` or `all` | `1`–`5`, `A`–`C` | Mechanical batch runs without pause, then consultant (`A`–`C`) asks mid-pass. |
 
 Also accept stage IDs, ranges (`1-3`, `A-C`), or mixes (`mechanical, A` → mechanical plus Architecture).
 
@@ -46,7 +46,23 @@ Which stages? (numbers, ranges, or 'all')
 | 4 | Code Clarity | naming, godot periods, structured logs, over-export |
 | 5 | Generation Gates | `golang-quality` constraints 1–22 (templates, OTEL, durable AI dumps, resources, layering, config create, package layout, Makefile verb list + shared Make verbs, outbound failsafe-go resilience); `go-structured-strings` for report builders. External Uber / Code Review Comments are citations only. |
 
-AI finds issues, reports them with code pairs in the plan file. No user input required mid-stage.
+AI finds issues, reports them with code pairs in the plan file. No user input required mid-stage or between mechanical stages.
+
+**CONSTRAINT:** When two or more mechanical stages are selected, MUST run them as one continuous batch. After each mechanical stage, append findings and print the per-stage chat summary, then start the next mechanical stage in the same turn chain without asking "Continue?" or waiting.
+- Enforcement: No "Continue?" between stages `1`–`5`; only the consultant protocol and the completion handoff wait for the user.
+- Violation: STOP asking for Continue on mechanical; finish the remaining mechanical batch, then enter consultant or handoff.
+
+CORRECT:
+```text
+Stage 1 summary → Stage 2 → … → Stage 5 summary → (if selected) consultant A first question
+```
+
+PROHIBITED:
+```text
+Stage 1 summary
+Next: Stage 2. Continue?
+→ wait for the user before Stage 2
+```
 
 For a full write-time quality story without consultant dialogue, prefer **`mechanical`** (same as `1, 2, 3, 4, 5`).
 
@@ -79,6 +95,7 @@ If a plan file still lists old IDs, map with this table, then continue.
 - MUST ask which group(s) or stages (`mechanical`, `consultant`, `both`/`all`, `1`–`5`, `A`–`C`, or ranges) and wait.
 - MUST NOT begin stage execution without explicit selection.
 - MUST expand group aliases to stage IDs, then run in order `1`–`5` then `A`–`C` (skipping unselected).
+- MUST run the selected mechanical batch without mid-batch "Continue?" waits; MUST pause for user input only on consultant stages (`A`–`C`) and at completion handoff.
 - MUST NOT invent a third group; omit stages by ID if the user wants a subset of mechanical or consultant.
 
 ---
@@ -372,15 +389,19 @@ Is [specific question]?
 - MUST create the plan file before the first selected stage.
 - MUST tick `[x]` only after findings are appended.
 - MUST NOT delete previous stage findings.
-- Resume: list `tmp/review-*.md`, read the file, next unchecked stage, confirm, then run.
+- Resume: list `tmp/review-*.md`, read the file, run from the first unchecked stage. Remaining mechanical stages continue as a batch (no confirm); consultant stages resume the ask/wait protocol.
 
 ---
 
 ## Per-stage chat summary
 
+### Mechanical stages (`1`–`5`)
+
+Print the score block after each mechanical stage. Do **not** ask "Continue?". If another mechanical stage remains, continue into it. If the next selected stage is consultant, say that consultant dialogue starts next, then begin Stage A (or the first selected letter) with its first question in a following turn after the mechanical batch is fully written to the plan file.
+
 ```
 ---
-**Stage <ID>: <Name>** [Mechanical / Consultant] — Score: X/10
+**Stage <ID>: <Name>** [Mechanical] — Score: X/10
 
 critical: <count>  medium: <count>  low: <count>  open questions: <count>
 
@@ -392,12 +413,41 @@ critical: <count>  medium: <count>  low: <count>  open questions: <count>
 (or "No issues found." if clean)
 
 ---
-Next: Stage <ID> — <Name>. Continue?
+Continuing: Stage <ID> — <Name>.
+```
+
+(or, after the last mechanical stage when consultant is selected:)
+
+```
+---
+Mechanical batch complete. Starting consultant Stage <ID> — <Name>.
+```
+
+### Consultant stages (`A`–`C`)
+
+Same score block after the stage’s inspect pass when the stage completes. Between concerns, use the consultant question shape (observation + question + Why this matters) and **wait**. When a consultant stage finishes (all concerns answered or logged open) and another consultant stage remains, start that stage’s first concern without a separate "Continue?" prompt.
+
+```
+---
+**Stage <ID>: <Name>** [Consultant] — Score: X/10
+
+critical: <count>  medium: <count>  low: <count>  open questions: <count>
+
+- critical: <one-line>
+- medium: <one-line>
+- low: <one-line>
+- open: <one-line>
+
+(or "No issues found." if clean)
+
+---
+Next: Stage <ID> — <Name>. (consultant — will ask before verdicts)
 ```
 
 - MUST include score even if 10/10.
 - MUST NOT paste full code blocks in chat — those go in the plan file.
-- MUST wait for reply before the next stage.
+- MUST NOT wait for "Continue?" between mechanical stages.
+- MUST wait for user replies during consultant questions (and at completion handoff).
 - Severity: critical = architecture / security / resource leaks; medium = missing handling / robustness / testability; low = naming / clarity.
 - MUST record Low findings in the plan file the same way as Medium/High. Severity is priority order, not a license to skip.
 
