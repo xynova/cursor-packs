@@ -65,6 +65,7 @@ SKILLS=(
   setup-go-binary-license
   manage-go-releases
   prepare-go-forge
+  setup-gitlab-runner
   resolve-pr-merge-conflicts
   sync-submodules-after-merge
   edit-cursor-packs
