@@ -26,6 +26,21 @@ System-mode: `/etc/gitlab-runner/config.toml` (often requires sudo)
 
 ## Background vs foreground
 
+### Darwin + Homebrew (preferred on Mac)
+
+```bash
+brew services start gitlab-runner
+brew services stop gitlab-runner
+brew services restart gitlab-runner
+brew services list | grep gitlab-runner
+pgrep -lf 'gitlab-runner run'   # must be exactly one process
+```
+
+Config still lives at `~/.gitlab-runner/config.toml`. Docker Desktop MUST be
+running while docker-executor jobs can be scheduled.
+
+### Other hosts (no Homebrew)
+
 | Mode | Commands | When |
 |------|----------|------|
 | Service | `gitlab-runner install` then `gitlab-runner start` | Normal; survives terminal close |
@@ -33,7 +48,47 @@ System-mode: `/etc/gitlab-runner/config.toml` (often requires sudo)
 | Stop | `gitlab-runner stop` | Maintenance |
 | Foreground | `gitlab-runner run` | Temporary debug only |
 
-Docker Desktop (or dockerd) MUST be running while docker-executor jobs can be scheduled.
+### One process only
+
+Two managers (for example `brew services` plus a manual `gitlab-runner run`, or
+two LaunchAgents) share builds directories and cause:
+
+```text
+could not lock config file .../.gitlab-runner.ext.conf: File exists
+error adding trust anchors from file: .../CI_SERVER_TLS_CA_FILE
+```
+
+Jobs may also show empty logs while GitLab still says “running”
+(`server_timeout_running` after ~1h).
+
+Fix: stop extras, keep a single `brew services` (or single `run`), pause unused
+runners in GitLab, optionally set `limit = 0` on unused `[[runners]]` entries.
+
+If a stale lock remains, remove **only** the lock file in
+`pre_get_sources_script` (never delete the whole `.tmp` dir; that removes
+`CI_SERVER_TLS_CA_FILE`):
+
+```toml
+pre_get_sources_script = """
+if [ -n "${CI_PROJECT_DIR:-}" ]; then
+  rm -f "${CI_PROJECT_DIR}.tmp/.gitlab-runner.ext.conf.lock" 2>/dev/null || true
+fi
+"""
+```
+
+---
+
+## Docker pull hangs on Desktop
+
+Symptom: job log stops at `Using effective pull policy of [always]` / Pulling
+image, then fails with `server_timeout_running`.
+
+```toml
+[runners.docker]
+  pull_policy = ["if-not-present"]
+```
+
+Then `brew services restart gitlab-runner` (or restart the single `run`).
 
 ---
 
@@ -62,7 +117,7 @@ Group runners may not appear in the project’s shared-runner table; fetch by ru
 
 ---
 
-## Docker Desktop checkout / Go caches
+## Docker Desktop checkout / Go caches / SAST
 
 Symptom in job log (before any compile script):
 
@@ -78,6 +133,8 @@ Consumer CI fix (product repo, not this pack):
 # .gitlab-ci.yml (pipeline-wide)
 variables:
   GIT_CLEAN_FLAGS: -ffdx -e .gomodcache -e .gocache -e .go
+  SAST_EXCLUDED_PATHS: "spec, test, tests, tmp, .gomodcache, .gocache, .go"
+  SECRET_DETECTION_EXCLUDED_PATHS: ".gomodcache, .gocache, .go"
 
 # Go job base
 variables:
@@ -85,6 +142,9 @@ variables:
   GOMODCACHE: $CI_PROJECT_DIR/.gomodcache
   GOCACHE: $CI_PROJECT_DIR/.gocache
 ```
+
+Also add a `.semgrepignore` with `.gomodcache/`, `.gocache/`, `.go/` so Semgrep
+does not scan module caches left by `GIT_CLEAN_FLAGS`.
 
 Also pause older shell runners on the same machine so they do not steal jobs.
 
@@ -99,4 +159,4 @@ Running with gitlab-runner …
   on <runner-name> <short-token>, system ID: …
 ```
 
-If jobs stay pending: online status, untagged flag, `group_runners_enabled` on the project, Docker daemon, and whether shared runners are the only ones listed (minutes may still queue SaaS runners that never start).
+If jobs stay pending: online status, untagged flag, `group_runners_enabled` on the project, Docker daemon, single runner process, and whether shared runners are the only ones listed (minutes may still queue SaaS runners that never start).
