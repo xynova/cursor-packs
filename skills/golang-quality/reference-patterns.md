@@ -88,6 +88,20 @@ if err != nil {
 - MUST NOT return `err` bare.
 - MUST NOT stringify with `err.Error()` and drop `errors.Is` / `As`.
 - `fmt.Errorf("%w")` MAY wrap a stdlib cause at the leaf, then MUST convert to a domain error before leaving the package.
+- Inbound HTTP / CLI entry packages MUST map **service-layer** errors (CONSTRAINT 23). MUST NOT import a deeper kit package solely to `errors.Is` that kit’s sentinel when the service hop owns the call.
+
+CORRECT (entry maps service helper):
+```go
+if dashboard.IsMutationCanceled(err) {
+    http.Error(w, err.Error(), http.StatusGatewayTimeout)
+}
+```
+
+PROHIBITED (entry imports kit leaf for the same check):
+```go
+import "…/pkg/localgit"
+if errors.Is(err, localgit.ErrMutationCanceled) { /* … */ }
+```
 
 PROHIBITED:
 ```go
@@ -229,6 +243,7 @@ module, err := cfg.CreateModule()
 
 - MUST inject ALL dependencies via constructor.
 - MUST use interfaces for external dependencies (HTTP, DB, APIs).
+- Outbound HTTP `Do` and process `exec.Command*` MUST use failsafe-go (CONSTRAINT 22); see [reference.md](reference.md#outbound-resilience-failsafe-go).
 - Concrete types are acceptable for a single stable adapter (see architecture DI notes).
 - MUST prefer config create over a long `NewFoo(a, b, c, d, e)` list when the same bundle is reused or will grow.
 

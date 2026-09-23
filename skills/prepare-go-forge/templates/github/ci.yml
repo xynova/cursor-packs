@@ -12,8 +12,8 @@ permissions:
   contents: read
 
 jobs:
-  go-quality:
-    name: go-quality
+  quality:
+    name: quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
