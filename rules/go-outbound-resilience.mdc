@@ -36,6 +36,11 @@ When the user asks to review Go changes that touch outbound I/O: staged review *
 - Enforcement: Failsafe `WithContext(ctx)`; no unbounded Background on network hops that already received a deadline.
 - Violation: STOP, thread `ctx` through the seam; fail closed when a required deadline is missing (see review Stage B).
 
+**CONSTRAINT:** MUST NOT substitute `context.Background()` when a context parameter or Options `Context` field is nil. IF nil → return an error and MUST NOT proceed with LLM/network work. Callers MUST pass a non-nil context (golang-quality **CONSTRAINT 8**).
+
+- Enforcement: Grep for `if ctx == nil` / `if opts.Context == nil` followed by `context.Background()` on cancelable or outbound paths.
+- Violation: STOP, fail closed on nil; thread a real ctx from the job entrypoint.
+
 **CONSTRAINT:** Outbound hops that need a caller-supplied bound MUST fail closed when `ctx` (or `req.Context()`) has **no** deadline: return an error and NEVER call the downstream. MUST NOT invent a fallback duration, `http.Client.Timeout`, or leaf `WithTimeout` to paper over a missing deadline (golang-quality **CONSTRAINT 8**). Process entrypoints MAY set the job budget once with `WithTimeout` / `WithDeadline`; that is the caller bound.
 
 - Enforcement: Shared HTTP/exec seam checks `Deadline()` before `Do` / `Run` / failsafe `Get`; Stage 5 and Stage B flag leaf timeouts used as a substitute for a missing deadline.
@@ -55,6 +60,10 @@ out, err := failsafe.With(breakerFor(name), retryPolicy).
 
 PROHIBITED:
 ```go
+ctx := opts.Context
+if ctx == nil {
+    ctx = context.Background()
+}
 cmd := exec.CommandContext(ctx, "glab", args...)
 err := cmd.Run() // bare outbound
 // or: for i := 0; i < 3; i++ { time.Sleep(...); if err := do(); err == nil { return } }

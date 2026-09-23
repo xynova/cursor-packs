@@ -40,8 +40,12 @@ if err := client.SendMessage(ctx, agentID, msgs); err != nil {
 
 - MUST defer `cancel()` immediately after `WithTimeout` / `WithCancel` / `WithDeadline`.
 - Outbound hops that need a caller bound MUST fail closed when `ctx` has no deadline (golang-quality CONSTRAINT 8 / `go-outbound-resilience.mdc`). MUST NOT invent a leaf `http.Client.Timeout` or `WithTimeout` to cover a missing deadline; set the budget at the process/job entrypoint instead.
+- MUST NOT substitute `context.Background()` when a context parameter or `opts.Context` is nil. Fail closed with an error; callers pass a non-nil (usually deadline-bearing) context.
 
 ```go
+if opts.Context == nil {
+    return fmt.Errorf("run: context is required")
+}
 if _, ok := ctx.Deadline(); !ok {
     return fmt.Errorf("outbound: missing deadline")
 }

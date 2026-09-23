@@ -185,7 +185,7 @@ When the review target includes a command-line runner (`cmd/`, daemon `main`, CL
 - [ ] C3: every `Begin` has `defer tx.Rollback` after the error check
 - [ ] C4 / C6 (only if Stage 3 not selected): no `_ =` except defer cleanup; no log-without-return; persistence errors returned
 - [ ] C7: constructor nil panics; public pointer params nil-checked
-- [ ] C8: no replacing received `ctx` with `context.Background()`; `ctx.Done()` before expensive work; outbound hops fail closed when `ctx`/`req.Context()` has no deadline (no leaf `Timeout` / `WithTimeout` fallback) — see `go-outbound-resilience.mdc`
+- [ ] C8: no replacing received `ctx` with `context.Background()`; nil `opts.Context` / context params fail closed (no Background substitute); `ctx.Done()` before expensive work; outbound hops fail closed when `ctx`/`req.Context()` has no deadline (no leaf `Timeout` / `WithTimeout` fallback) — see `go-outbound-resilience.mdc`
 - [ ] C9: no unused work; no N+1 when a batch exists
 - [ ] C10: HTTP / external API only in client packages; CLI has no business logic
 - [ ] C11: comments end with period; format/lint gates known for the project (Stage 1 already ran tools when selected)

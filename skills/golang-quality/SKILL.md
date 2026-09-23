@@ -82,20 +82,27 @@ return fmt.Errorf("post /run: %s", err.Error())
 
 **CONSTRAINT 7 — Nil guards.** Constructors MUST panic on nil required dependencies. Public API pointer inputs MUST return an error on nil (do not panic at the call site).
 
-**CONSTRAINT 8 — Context propagated; outbound deadlines fail closed.** NEVER replace a received `ctx` with `context.Background()`. Check `ctx.Done()` before expensive work. Outbound hops that need a caller-supplied bound (HTTP `Do`, forge CLI / network `exec`, LLM/gateway calls, remote `git` push/fetch) MUST require `ctx.Deadline()` (or the request’s context deadline) **before** the call: IF missing → return an error and MUST NOT call the downstream. MUST NOT invent a fallback `time.Duration` / `http.Client.Timeout` / `WithTimeout` at the leaf to “save” a missing deadline. Process entrypoints and gateways MAY call `context.WithTimeout` / `WithDeadline` once to set the job budget; that is the caller bound, not a leaf fallback. See `.cursor/rules/go-outbound-resilience.mdc` and review Stage B.
-- Enforcement: Stage 5 / Stage B greps outbound packages for `Timeout:` / `WithTimeout` next to bare `Do` / `Command` when the hop’s `ctx` is unchecked; generation places `if _, ok := ctx.Deadline(); !ok { return … }` (or equivalent) at the shared seam.
-- Violation: STOP, fail closed on missing deadline, move any budget `WithTimeout` to the caller/entrypoint, re-check.
+**CONSTRAINT 8 — Context propagated; nil and outbound deadlines fail closed.** NEVER replace a received `ctx` with `context.Background()`. Check `ctx.Done()` before expensive work. When a function or Options struct takes a `context.Context` (including optional `opts.Context` fields) for work that can cancel, time out, or call the network/LLM: IF that context is **nil** → return an error and MUST NOT substitute `context.Background()`. Callers MUST pass a non-nil context (usually with a deadline from the job entrypoint). Outbound hops that need a caller-supplied bound (HTTP `Do`, forge CLI / network `exec`, LLM/gateway calls, remote `git` push/fetch) MUST require `ctx.Deadline()` (or the request’s context deadline) **before** the call: IF missing → return an error and MUST NOT call the downstream. MUST NOT invent a fallback `time.Duration` / `http.Client.Timeout` / `WithTimeout` at the leaf to “save” a missing deadline. Process entrypoints and gateways MAY call `context.WithTimeout` / `WithDeadline` once to set the job budget; that is the caller bound, not a leaf fallback. See `.cursor/rules/go-outbound-resilience.mdc` and review Stage B.
+- Enforcement: Stage 5 / Stage B greps for `if ctx == nil` / `if opts.Context == nil` followed by `context.Background()`; greps outbound packages for leaf `Timeout:` / `WithTimeout` when the hop’s `ctx` is unchecked; generation fails closed on nil and on missing deadline.
+- Violation: STOP, return an error on nil context (no Background substitute), fail closed on missing deadline, move any budget `WithTimeout` to the caller/entrypoint, re-check.
 
 CORRECT:
 ```go
-if _, ok := ctx.Deadline(); !ok {
+if opts.Context == nil {
+    return fmt.Errorf("dispatch: context is required")
+}
+if _, ok := opts.Context.Deadline(); !ok {
     return fmt.Errorf("outbound: missing deadline")
 }
-return client.Do(req.WithContext(ctx))
+return client.Do(req.WithContext(opts.Context))
 ```
 
 PROHIBITED:
 ```go
+ctx := opts.Context
+if ctx == nil {
+    ctx = context.Background() // papers over a missing caller bound
+}
 timeout := 60 * time.Second
 if d, ok := ctx.Deadline(); ok {
     timeout = time.Until(d)
@@ -458,7 +465,7 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] Typed domain error at each layer (code, op, Unwrap); persistence errors returned
 - [ ] HTTP/CLI map service-layer errors (C23); entry packages do not import kit/leaf packages only for `errors.Is` on leaf sentinels
 - [ ] Constructor nil panics; pointer params nil-checked
-- [ ] No `context.Background()` inside a function that already has `ctx`; outbound hops fail closed without `ctx.Deadline()` (C8; no leaf Timeout fallback)
+- [ ] No `context.Background()` inside a function that already has `ctx`; nil `opts.Context` / param fails closed (no Background substitute); outbound hops fail closed without `ctx.Deadline()` (C8; no leaf Timeout fallback)
 - [ ] No HTTP outside client packages; no `logrus.New()` / `database.NewClient()` inside business logic
 
 ### Quality
