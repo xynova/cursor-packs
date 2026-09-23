@@ -258,9 +258,10 @@ Classify the module, then place the file. Host architecture rules (if present) w
 | Kind | Signal | Public API |
 |------|--------|------------|
 | Kit | Other modules import this `go.mod` | `pkg/<domain>/` (or one exported root package) |
-| App | This module's `cmd/` is the product | `internal/<domain>/` only; no mixed host `pkg/` unless this module is also a published kit |
+| Product kit | Ships `cmd/` **and** hosts/CI/smoke import this module | `pkg/<product>/` for Serve/Smoke/client surfaces; `internal/` for implementation and quality runners |
+| App-only | This module's `cmd/` is the product; nothing outside imports it | `internal/<domain>/` only; no mixed `pkg/` “for cleanliness” |
 
-MUST NOT treat an app as a kit by adding `pkg/` "for cleanliness." MUST publish reusable API from a kit module rather than mixing `pkg/` into an app.
+MUST NOT invent a side-car helper in `pkg/` while the real product stays under `internal/` when consumers need the product. MUST NOT treat a product kit as scripts-plus-binary with no importable package when CI or hosts need one. MUST NOT treat an app-only module as a kit by adding unused `pkg/` “for cleanliness.”
 
 ### Kit tree
 
@@ -273,7 +274,19 @@ tests/
 
 MUST export what consumers import from `pkg/<domain>/`. MUST NOT put those types only under `internal/`. Hidden `internal/` MUST still use domain folder names when there is more than a handful of packages.
 
-### App tree
+### Product kit tree
+
+```text
+pkg/<product>/          # stable public contract (Serve, Smoke, …)
+cmd/<product>/
+cmd/<product>-smoke/    # thin CLI over pkg
+internal/<domain>/      # gateway, router, extensions
+internal/smoke/         # quality probes (implementation)
+```
+
+MUST keep `cmd/` as wiring only. Quality and smoke **runners** stay in `internal/`; the **product** façade they serve sits in `pkg/<product>/`.
+
+### App-only tree
 
 ```text
 cmd/<app>/main.go
@@ -289,12 +302,29 @@ MUST put a new file in the domain directory that already owns that concern. MUST
 
 A **dumping ground** is `internal/` as a flat forest: many sibling packages, no parent domain directories. MUST nest before the listing becomes a scroll of unrelated leaves. Dozens of siblings is already a fail; do not wait for a hard count.
 
-CORRECT (app):
+CORRECT (product kit):
+
+```text
+pkg/product/
+internal/gateway/
+internal/smoke/
+cmd/product/
+cmd/product-smoke/
+```
+
+CORRECT (app-only):
 
 ```text
 cmd/invoice-api/main.go
 internal/invoice/invoiceapi/
 internal/pay/
+```
+
+PROHIBITED (product kit side-car / stuck internal):
+
+```text
+pkg/smokehelper/       # helper-only pkg while product is not importable
+internal/product/      # Serve only here; CI cannot import
 ```
 
 PROHIBITED (app dumping ground + fat main):

@@ -185,12 +185,13 @@ module, err := stropdspy.CreateRLMModule(llm, rlmCfg) // llm already belongs on 
 NewClient(url, token, timeout, retries, logger, tracer, metrics) // no Config
 ```
 
-**CONSTRAINT 19 — Standard Go package layout.** Classify the module first, then place every new file. See [reference-patterns.md](reference-patterns.md#package-layout-library-vs-application). Host architecture rules (if present) take precedence for local forbids such as "this app module MUST NOT grow a mixed `pkg/`".
+**CONSTRAINT 19 — Standard Go package layout.** Classify the module first, then place every new file. See [reference-patterns.md](reference-patterns.md#package-layout-library-vs-application). Host architecture rules (if present) take precedence for local forbids.
 - **Kit** (consumed by other modules): MUST expose public API from `pkg/<domain>/` (or one exported root package). MUST keep hidden implementation in `internal/` (domain folders when there is more than a handful of packages). MUST put runnable examples in `examples/` or focused integration tests in `tests/`. MUST NOT put types other modules need under `internal/` (importers cannot use them).
-- **App** (produces `cmd` binaries): MUST keep `cmd/<app>/main.go` as wiring only (flags, config/root, observability init, listen/`os.Exit`, one `Mount`/`Run` call). MUST put business logic and HTTP handlers under `internal/<domain>/`. MUST NOT put mux handlers, routing predicates, or domain logic in `package main`. MUST NOT add a mixed `pkg/` of host types unless this module is also a published kit. MUST publish reusable API from a kit module rather than mixing `pkg/` into an app.
+- **Product kit** (ships `cmd/` binaries **and** is imported by hosts, CI, or smoke tools): MUST treat the **module as the product package**. MUST expose the stable public contract (`Serve`, `Smoke`, client helpers, and similar) from `pkg/<product>/` (or clearly named `pkg/...` packages). MUST keep thin entrypoints in `cmd/<bin>/`. MUST keep implementation, wiring, extension guts, and quality/smoke **runners** in `internal/`. MUST NOT invent a side-car “helper product” in `pkg/` while leaving the real product surface stuck under `internal/` forever when consumers need it. MUST NOT treat the module as scripts-plus-binary with no importable package when CI or hosts need one.
+- **App-only** (produces `cmd` binaries; nothing outside the module imports it): MUST keep `cmd/<app>/main.go` as wiring only (flags, config/root, observability init, listen/`os.Exit`, one `Mount`/`Run` call). MUST put business logic and HTTP handlers under `internal/<domain>/`. MUST NOT put mux handlers, routing predicates, or domain logic in `package main`. MUST NOT add a mixed `pkg/` of host types “for cleanliness” when nothing imports this module. Prefer publishing reusable API from a kit or product-kit module rather than pretending an app-only tree is a library.
 - **Placement:** MUST put new code in the domain directory that already owns that concern. MUST nest related packages under `internal/<domain>/` instead of adding another sibling at `internal/` root. MUST NOT create grab-bag packages (`util`, `common`, `helpers`, `shared`, `misc`, `tools`). MUST NOT scatter loose implementation `.go` files at the repo root. MUST NOT turn `internal/` into a flat dumping ground (dozens of sibling packages with no parent domain directories).
-- Enforcement: Before adding a file, name kit vs app; kits import from `pkg/`; app mains stay wiring-only; `ls internal/` (or the module's internal root) shows domain folders, not a sibling forest; no new grab-bag names. Stage 5 scores the same detects.
-- Violation: STOP, move the file to the owning domain (or `pkg/<domain>/` for kit API), thin `main`, nest siblings, rename grab-bags; do not add a new top-level `internal/<leaf>` to dodge the nest.
+- Enforcement: Before adding a file, name kit vs product kit vs app-only; kits and product kits import from `pkg/`; app mains stay wiring-only; `ls internal/` shows domain folders, not a sibling forest; no new grab-bag names. Stage 5 scores the same detects.
+- Violation: STOP, move the file to the owning domain (or `pkg/<domain>/` for kit/product-kit API), thin `main`, nest siblings, rename grab-bags; do not add a new top-level `internal/<leaf>` to dodge the nest.
 
 CORRECT (kit):
 ```text
@@ -200,7 +201,16 @@ internal/validate/
 examples/invoice/
 ```
 
-CORRECT (app):
+CORRECT (product kit):
+```text
+pkg/product/           # Serve, Smoke — hosts and CI import this
+internal/gateway/      # implementation
+internal/smoke/        # quality probes (not the public product name)
+cmd/product/
+cmd/product-smoke/
+```
+
+CORRECT (app-only):
 ```text
 cmd/invoice-api/main.go          # flags + listen + invoiceapi.Mount
 internal/invoice/                # domain
@@ -210,10 +220,17 @@ internal/pay/
 
 PROHIBITED:
 ```text
-# kit: public types only under internal/ (consumers cannot import)
+# kit / product kit: public types only under internal/ (consumers cannot import)
 internal/billing/client.go
 
-# app: fat main + flat internal forest
+# product kit: side-car helper in pkg/ while the real product stays stuck under internal/
+pkg/smokehelper/
+internal/product/serve.go
+
+# product kit: scripts+binary only when CI/hosts need an importable package
+cmd/product/ + scripts/ only; no pkg/
+
+# app-only: fat main + flat internal forest
 cmd/invoice-api/main.go          # mux, CORS, handlers, routing
 internal/util/
 internal/common/
@@ -354,7 +371,7 @@ if errors.Is(err, localgit.ErrMutationCanceled) {
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
 2. **Implement** — Apply all 23 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs app classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists every operator verb (C20) and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? PASS or fix.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists every operator verb (C20) and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? PASS or fix.
 4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
 
 ```bash
@@ -366,7 +383,7 @@ make vet      # or: go vet ./...
 make test     # or: go test ./...
 ```
 
-Scope to `./cmd/...` `./internal/...` (or the packages the project uses) when that is the local convention. If dependencies changed: `go mod tidy`.
+Scope to `./cmd/...` `./internal/...` `./pkg/...` (or the packages the project uses) when that is the local convention. If dependencies changed: `go mod tidy`.
 
 Do NOT complete while any of these fail. Fix, re-run, then complete.
 
@@ -414,9 +431,9 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] Multi-line reports/diagrams use `text/template` (not chained `WriteString`)
 - [ ] Injected structured logger; no `fmt.Print*` / ad-hoc logger in services
 - [ ] LLM/inference entrypoints init OTEL; OTLP exporter when endpoint env set; client spans on generate/evaluate (not gateway-only)
+- [ ] Package layout (C19): kit vs product kit vs app-only classified; kit/product-kit API in `pkg/<domain>/`; thin `cmd/`; implementation and quality/smoke runners in `internal/`; no grab-bags or flat `internal/` forest
 - [ ] AI work dumps (RLM TraceDir, runreport, inference-failure JSON) survive process exit; not only under `defer RemoveAll` scratch; path logged or returned
 - [ ] Multi-field construction uses config create (`cfg.Create*` / `CreateModule`); no long parallel arg lists beside a half-empty Config
-- [ ] Package layout (C19): kit vs app classified; kit API in `pkg/<domain>/`; app `main` is wiring only; new files sit in the owning `internal/<domain>/` (not a new root sibling or grab-bag)
 - [ ] Makefile verbs (C20–C21): help lists operators; shared jobs use shared names (`serve` not only `dev`)
 - [ ] Outbound resilience (C22): exec/HTTP hops use failsafe-go (retry + breaker); no bare Do/Command; no ad-hoc sleep retry loops
 - [ ] Error boundary (C23): inbound HTTP/CLI map service-package errors; no leaf-kit import only for sentinel checks
