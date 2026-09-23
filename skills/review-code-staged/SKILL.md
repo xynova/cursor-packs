@@ -28,12 +28,15 @@ User asks to "review", "audit", "rate quality", "check code", or "production rea
 1. **Ask for target** — file, package, or directory. Default: changed files in the current work.
 2. **Present the group menu** (from methodology) and wait. MUST offer `mechanical`, `consultant`, and `both` as first-class choices, plus optional stage IDs. MUST NOT start a stage until the user picks a group, IDs, a range, or `all`/`both`. `mechanical` = `1, 2, 3, 4, 5`. `consultant` = `A, B, C`. `both`/`all` = `1`–`5` then `A`–`C`.
 3. **Create** `tmp/review-<slug>-<YYYY-MM-DD>.md` before the first selected stage (`tmp/` is gitignored). If it does not exist, create it.
-4. **Expand aliases**, then **run one stage at a time** in order `1`–`5` then `A`–`C` (skip unselected). After each stage: write findings into the plan file, print the per-stage chat summary, ask "Continue?".
-5. **Consultant stages (A–C):** ask one question at a time, with a short Why this matters in the same turn (see methodology consultant protocol). Do not verdict before the user replies. User says `explain` → expand in the same agent; do not spawn an explain subagent. Unanswered → open question, move on.
+4. **Expand aliases**, then run selected stages in order `1`–`5` then `A`–`C` (skip unselected).
+   - **Mechanical (`1`–`5`):** run the whole selected mechanical batch in one go. After each mechanical stage, write findings and print the per-stage chat summary, then continue immediately to the next mechanical stage. MUST NOT ask "Continue?" and MUST NOT wait between mechanical stages.
+   - **Handoff to consultant:** when any of `A`–`C` is still selected after the mechanical batch (or when starting consultant-only), print a short note that consultant dialogue begins, then start the first consultant stage.
+   - **Consultant (`A`–`C`):** these are the only stages that pause for the user (one question at a time; see step 5).
+5. **Consultant stages (A–C):** ask one question at a time, with a short Why this matters in the same turn (see methodology consultant protocol). Do not verdict before the user replies. User says `explain` → expand in the same agent; do not spawn an explain subagent. Unanswered → open question, move on. MUST wait for the user’s reply before the next consultant question or stage.
 6. **Stage 5 (Generation Gates):** MUST Read `golang-quality` Core constraints and apply them; for multi-section builders also apply `go-structured-strings.mdc` (see methodology Stage 5). When a CLI / daemon entrypoint is in scope, MUST also Read and apply `cli-command-surface` binary checks. MUST NOT score raw Uber / Code Review Comments items unless they map to a Core constraint.
 7. **When all selected stages are done:** completion handoff (fix with agent / fix here / stop). Wait for the user. Open questions are NEVER auto-fixed. Fixable Low findings MUST NOT be skipped when fixing.
 
-Resume: if the user says "continue" / "resume" / "next stage" without context, list `tmp/review-*.md`, pick the file, run the first unchecked stage after confirmation. Map legacy IDs via methodology if needed.
+Resume: if the user says "continue" / "resume" / "next stage" without context, list `tmp/review-*.md`, pick the file, and run from the first unchecked stage. If that stage is mechanical, finish the remaining mechanical batch without further confirmation; if it is consultant, resume the dialogue protocol. Map legacy IDs via methodology if needed.
 
 ---
 
@@ -58,6 +61,8 @@ Pre-flight: confirm lint and vet can run. If lint fails because golangci-lint is
 
 - MUST wait for stage or group selection (`mechanical`, `consultant`, `both`/`all`, `1`–`5`, `A`–`C`, or ranges).
 - MUST expand group aliases before running stages.
+- MUST run selected mechanical stages (`1`–`5`) back-to-back without "Continue?" or other mid-batch waits.
+- MUST pause for user input only during consultant stages (`A`–`C`) and at the final completion handoff.
 - MUST write findings to the plan file (code pairs live there, not in the chat summary).
 - MUST use [appendix.md](appendix.md) on stages 3, A, B, and 5 (pattern 14 when LLM paths are in scope).
 - MUST load `golang-quality` when running Stage 5; MUST NOT treat Stage 4 as a substitute for generation gates.
