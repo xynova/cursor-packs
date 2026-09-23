@@ -5,9 +5,9 @@ description: >-
   guards, context propagation, CLI-service-client layering, structured logging,
   OpenTelemetry / OpenInference observability, config create constructors,
   outbound failsafe-go resilience, quality gates, self-documenting Makefile
-  verb lists, and shared Make verb names (build, test, serve). Use when
-  generating, completing, or fixing Go code, authoring a Makefile, or before
-  claiming a Go change is done.
+  verb lists, shared Make verb names (build, test, serve), and HTTP/CLI
+  service-layer error boundaries. Use when generating, completing, or fixing
+  Go code, authoring a Makefile, or before claiming a Go change is done.
 ---
 
 # Go Quality
@@ -318,13 +318,43 @@ err := cmd.Run() // bare outbound; no retry, no breaker
 // or: for i := 0; i < 3; i++ { time.Sleep(...); if err := do(); err == nil { return } }
 ```
 
+**CONSTRAINT 23 — HTTP and app entry map service-layer errors.** Inbound HTTP handlers, CLI command wiring, and other app entry packages (`internal/server`, `cmd/...` thin mains, gateway mux) MUST map status and operator messages from the **service / commands** package they call (typed domain error, `errors.Is` / `As` on that package’s sentinels or helpers). MUST NOT import a deeper kit or leaf package (`pkg/<kit>`, another domain’s internals) solely to `errors.Is` that leaf’s sentinel when the service hop already (or should) own the operation. The service layer MUST wrap or re-export leaf causes (`fmt.Errorf("%w", leafErr)` with a service sentinel, or `IsFoo(err) bool` on the service package) so entry code depends on one public error surface. Leaf packages MAY still define sentinels for their own callers; entry code reaches them only through `Unwrap` / `errors.Is` on the service-wrapped value, not by importing the leaf. See [reference-patterns.md](reference-patterns.md#error-wrapping-and-domain-errors) and CONSTRAINT 5.
+- Enforcement: Stage 5 / Architecture scan entry packages for new imports of kit/leaf packages used only in `errors.Is`/`As` beside HTTP status mapping; generation wraps at the service hop first.
+- Violation: STOP, add a service-layer sentinel or `Is*` helper, map that in HTTP/CLI, drop the leaf import from the entry package.
+
+CORRECT:
+```go
+// pkg/dashboard (service/commands)
+var ErrMutationCanceled = localgit.ErrMutationCanceled // or wrap with a dashboard sentinel
+
+func IsMutationCanceled(err error) bool {
+    return errors.Is(err, ErrMutationCanceled)
+}
+
+// internal/server
+if dashboard.IsMutationCanceled(err) {
+    http.Error(w, err.Error(), http.StatusGatewayTimeout)
+    return true
+}
+```
+
+PROHIBITED:
+```go
+// internal/server imports pkg/localgit only to map a sentinel the dashboard already returns
+import "…/pkg/localgit"
+
+if errors.Is(err, localgit.ErrMutationCanceled) {
+    http.Error(w, err.Error(), http.StatusGatewayTimeout)
+}
+```
+
 ---
 
 ## Steps
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
-2. **Implement** — Apply all 22 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs app classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists every operator verb (C20) and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? PASS or fix.
+2. **Implement** — Apply all 23 constraints during generation. First param on I/O functions: `ctx context.Context`.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs app classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists every operator verb (C20) and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? PASS or fix.
 4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
 
 ```bash
@@ -369,6 +399,7 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 
 - [ ] No `_ =` except defer cleanup
 - [ ] Typed domain error at each layer (code, op, Unwrap); persistence errors returned
+- [ ] HTTP/CLI map service-layer errors (C23); entry packages do not import kit/leaf packages only for `errors.Is` on leaf sentinels
 - [ ] Constructor nil panics; pointer params nil-checked
 - [ ] No `context.Background()` inside a function that already has `ctx`
 - [ ] No HTTP outside client packages; no `logrus.New()` / `database.NewClient()` inside business logic
@@ -388,3 +419,4 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] Package layout (C19): kit vs app classified; kit API in `pkg/<domain>/`; app `main` is wiring only; new files sit in the owning `internal/<domain>/` (not a new root sibling or grab-bag)
 - [ ] Makefile verbs (C20–C21): help lists operators; shared jobs use shared names (`serve` not only `dev`)
 - [ ] Outbound resilience (C22): exec/HTTP hops use failsafe-go (retry + breaker); no bare Do/Command; no ad-hoc sleep retry loops
+- [ ] Error boundary (C23): inbound HTTP/CLI map service-package errors; no leaf-kit import only for sentinel checks

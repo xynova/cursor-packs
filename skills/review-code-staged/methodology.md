@@ -44,7 +44,7 @@ Which stages? (numbers, ranges, or 'all')
 | 2 | Type Safety | `any` / `interface{}`, type assertions, nil before dereference |
 | 3 | Error Handling | typed wrap-chain, `_ =`, log-without-return, persistence, DB fallback |
 | 4 | Code Clarity | naming, godot periods, structured logs, over-export |
-| 5 | Generation Gates | `golang-quality` constraints 1–22 (templates, OTEL, durable AI dumps, resources, layering, config create, package layout, Makefile verb list + shared Make verbs, outbound failsafe-go resilience); `go-structured-strings` for report builders. External Uber / Code Review Comments are citations only. |
+| 5 | Generation Gates | `golang-quality` constraints 1–23 (templates, OTEL, durable AI dumps, resources, layering, config create, package layout, Makefile verb list + shared Make verbs, outbound failsafe-go resilience, HTTP/CLI service-layer error mapping); `go-structured-strings` for report builders. External Uber / Code Review Comments are citations only. |
 
 AI finds issues, reports them with code pairs in the plan file. No user input required mid-stage.
 
@@ -142,7 +142,7 @@ Clarity only. Templates, resource defers, CLI→service→client layering, and p
 
 ## Stage 5: Generation Gates — Detect
 
-Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality/SKILL.md` **Core constraints** (1–22) and apply them as a checklist against the review target. For multi-section markdown, reports, TOC, or similar human layout builders, also Read and apply `.cursor/rules/go-structured-strings.mdc`. Go Code Review Comments and Uber Go Style Guide are the external taste baseline cited in `golang-quality`; MUST NOT invent Stage 5 findings from those guides unless they map to a Core constraint.
+Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality/SKILL.md` **Core constraints** (1–23) and apply them as a checklist against the review target. For multi-section markdown, reports, TOC, or similar human layout builders, also Read and apply `.cursor/rules/go-structured-strings.mdc`. Go Code Review Comments and Uber Go Style Guide are the external taste baseline cited in `golang-quality`; MUST NOT invent Stage 5 findings from those guides unless they map to a Core constraint.
 
 ### CLI command surface (when a binary / CLI entrypoint is in scope)
 
@@ -158,7 +158,7 @@ When the review target includes a command-line runner (`cmd/`, daemon `main`, CL
 ### Ownership vs Stage 3
 
 - **Stage 3** keeps error-handling depth (typed wrap-chain, `_ =`, log-without-return, persistence, named returns, DB fallback).
-- **Stage 5** owns generation-specific gates Stage 3 does not cover: C1–3 (HTTP/cancel/txn defers), C7–22 (nil, ctx, unused/N+1, layering, format/godot overlap, interfaces, templates, structured logging, OTEL, durable AI dumps, AI module isolation, config create, package layout, Makefile verbs, outbound failsafe-go resilience).
+- **Stage 5** owns generation-specific gates Stage 3 does not cover: C1–3 (HTTP/cancel/txn defers), C7–23 (nil, ctx, unused/N+1, layering, format/godot overlap, interfaces, templates, structured logging, OTEL, durable AI dumps, AI module isolation, config create, package layout, Makefile verbs, outbound failsafe-go resilience, HTTP/CLI service-layer error mapping).
 - Apply **C4** and **C6** in Stage 5 **only when Stage 3 was not selected** for this review. If Stage 3 already ran, do not duplicate those findings under Stage 5.
 
 ### Checklist (map to golang-quality)
@@ -182,6 +182,7 @@ When the review target includes a command-line runner (`cmd/`, daemon `main`, CL
 - [ ] C19: kit vs app classified; kit public API in `pkg/<domain>/` (not trapped in `internal/`); app `main` is wiring only (no mux/handlers/routing in `package main`); new files sit under `internal/<domain>/` rather than a new root sibling or grab-bag (`util`, `common`, `helpers`, `shared`, `misc`, `tools`); `internal/` is not a flat dumping ground; app modules do not grow a mixed host `pkg/` unless they are also a published kit. See appendix pattern 17.
 - [ ] C20 / C21: if a Makefile is in scope, help lists operator verbs; shared jobs use shared names (`serve` / `serve-down`, not only `dev`)
 - [ ] C22: outbound process exec and HTTP client hops use failsafe-go (retry with exponential backoff + jitter, circuit breaker for shared network-backed deps); flag bare `Do` / `Command` / `CommandContext` in client/exec packages; no ad-hoc sleep retry loops; classify retryable vs permanent errors — see appendix pattern 19
+- [ ] C23: inbound HTTP / CLI entry packages map service-layer errors (`errors.Is` / `As` / `Is*` on the commands/service package); MUST NOT import a kit/leaf package solely to check that leaf’s sentinel when the service hop owns the operation
 
 Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pattern 15 when TraceDir / runreport / failure dumps are in scope, pattern 16 when generator/evaluator/signature diffs are in scope, pattern 17 when package paths, `cmd` mains, or `internal/` layout are in scope, pattern 18 when CLI argv / `serve` / `version` / bare-binary start paths are in scope, and pattern 19 when outbound exec/HTTP or forge CLI wrappers are in scope.
 
@@ -200,6 +201,7 @@ Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pat
 - Domain models mixed with infrastructure DTOs
 - Direct `NewClient` / `logrus.New` inside a service
 - Request-path package that returns only `fmt.Errorf` / bare `error` with no layer-typed error
+- HTTP / CLI entry package imports a kit or leaf package solely to `errors.Is` that leaf’s sentinel (C23; service should wrap or re-export)
 - LLM/inference CLI or worker entrypoint with no `observability.Init` (or project OTEL bootstrap)
 - Daemon or long-running CLI whose default argv path Listen/Serves without an explicit start command → command-surface violation (also Stage 5 detect; ask naming / migration here)
 - Generate/evaluate path with no client OpenInference (or project) spans; only an AI gateway is expected to show traces
@@ -211,6 +213,7 @@ Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pat
 - "This package imports [N] internals. Expected for its role?"
 - "The CLI calls [client/repo] directly. Why is the service skipped?"
 - "[hop] returns fmt.Errorf only. Wrap in a layer domain error with a code, or is a string error enough here?"
+- "HTTP maps `pkg/<kit>` sentinel X directly. Keep that import, or re-export / wrap on the service package (C23)?"
 - "This LLM entrypoint has no OTEL init / no client spans. Rely on the gateway alone, or wire process tracing?"
 - "Is this a reusable library with public API trapped in `internal/`, or should that surface move to `pkg/`?"
 - "This `cmd/<app>/main.go` does more than wiring. Should it be thinned to config, observability, and a run call?"
