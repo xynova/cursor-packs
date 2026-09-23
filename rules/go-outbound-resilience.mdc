@@ -36,8 +36,16 @@ When the user asks to review Go changes that touch outbound I/O: staged review *
 - Enforcement: Failsafe `WithContext(ctx)`; no unbounded Background on network hops that already received a deadline.
 - Violation: STOP, thread `ctx` through the seam; fail closed when a required deadline is missing (see review Stage B).
 
+**CONSTRAINT:** Outbound hops that need a caller-supplied bound MUST fail closed when `ctx` (or `req.Context()`) has **no** deadline: return an error and NEVER call the downstream. MUST NOT invent a fallback duration, `http.Client.Timeout`, or leaf `WithTimeout` to paper over a missing deadline (golang-quality **CONSTRAINT 8**). Process entrypoints MAY set the job budget once with `WithTimeout` / `WithDeadline`; that is the caller bound.
+
+- Enforcement: Shared HTTP/exec seam checks `Deadline()` before `Do` / `Run` / failsafe `Get`; Stage 5 and Stage B flag leaf timeouts used as a substitute for a missing deadline.
+- Violation: STOP, require the deadline at the seam, move budget timeouts to the caller, re-check.
+
 CORRECT:
 ```go
+if _, ok := ctx.Deadline(); !ok {
+    return nil, fmt.Errorf("outbound: missing deadline")
+}
 out, err := failsafe.With(breakerFor(name), retryPolicy).
     WithContext(ctx).
     Get(func() ([]byte, error) {
@@ -50,6 +58,7 @@ PROHIBITED:
 cmd := exec.CommandContext(ctx, "glab", args...)
 err := cmd.Run() // bare outbound
 // or: for i := 0; i < 3; i++ { time.Sleep(...); if err := do(); err == nil { return } }
+// or: c := &http.Client{Timeout: 60 * time.Second}; c.Do(req) // Timeout as missing-deadline fallback
 ```
 
 Local-only lookups that do not call a remote dependency (for example `exec.LookPath`) MAY stay unretriable. Test fakes that implement the exec/HTTP interface MAY omit failsafe.

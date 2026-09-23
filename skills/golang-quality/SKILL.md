@@ -82,7 +82,27 @@ return fmt.Errorf("post /run: %s", err.Error())
 
 **CONSTRAINT 7 — Nil guards.** Constructors MUST panic on nil required dependencies. Public API pointer inputs MUST return an error on nil (do not panic at the call site).
 
-**CONSTRAINT 8 — Context propagated.** NEVER replace a received `ctx` with `context.Background()`. Check `ctx.Done()` before expensive work.
+**CONSTRAINT 8 — Context propagated; outbound deadlines fail closed.** NEVER replace a received `ctx` with `context.Background()`. Check `ctx.Done()` before expensive work. Outbound hops that need a caller-supplied bound (HTTP `Do`, forge CLI / network `exec`, LLM/gateway calls, remote `git` push/fetch) MUST require `ctx.Deadline()` (or the request’s context deadline) **before** the call: IF missing → return an error and MUST NOT call the downstream. MUST NOT invent a fallback `time.Duration` / `http.Client.Timeout` / `WithTimeout` at the leaf to “save” a missing deadline. Process entrypoints and gateways MAY call `context.WithTimeout` / `WithDeadline` once to set the job budget; that is the caller bound, not a leaf fallback. See `.cursor/rules/go-outbound-resilience.mdc` and review Stage B.
+- Enforcement: Stage 5 / Stage B greps outbound packages for `Timeout:` / `WithTimeout` next to bare `Do` / `Command` when the hop’s `ctx` is unchecked; generation places `if _, ok := ctx.Deadline(); !ok { return … }` (or equivalent) at the shared seam.
+- Violation: STOP, fail closed on missing deadline, move any budget `WithTimeout` to the caller/entrypoint, re-check.
+
+CORRECT:
+```go
+if _, ok := ctx.Deadline(); !ok {
+    return fmt.Errorf("outbound: missing deadline")
+}
+return client.Do(req.WithContext(ctx))
+```
+
+PROHIBITED:
+```go
+timeout := 60 * time.Second
+if d, ok := ctx.Deadline(); ok {
+    timeout = time.Until(d)
+}
+// still calls Do when deadline was missing
+c := &http.Client{Timeout: timeout}
+```
 
 **CONSTRAINT 9 — No unused work / no N+1.** Every declared variable MUST be used. Batch fetches when the same data is needed for many IDs.
 
@@ -391,7 +411,7 @@ func (s *Store) Publish(...) error {
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
 2. **Implement** — Apply all 24 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists every operator verb (C20) and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? PASS or fix.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated and outbound deadlines fail closed (C8)? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists every operator verb (C20) and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? PASS or fix.
 4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
 
 ```bash
@@ -438,7 +458,7 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] Typed domain error at each layer (code, op, Unwrap); persistence errors returned
 - [ ] HTTP/CLI map service-layer errors (C23); entry packages do not import kit/leaf packages only for `errors.Is` on leaf sentinels
 - [ ] Constructor nil panics; pointer params nil-checked
-- [ ] No `context.Background()` inside a function that already has `ctx`
+- [ ] No `context.Background()` inside a function that already has `ctx`; outbound hops fail closed without `ctx.Deadline()` (C8; no leaf Timeout fallback)
 - [ ] No HTTP outside client packages; no `logrus.New()` / `database.NewClient()` inside business logic
 
 ### Quality

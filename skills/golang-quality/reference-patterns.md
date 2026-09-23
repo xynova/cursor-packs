@@ -39,6 +39,13 @@ if err := client.SendMessage(ctx, agentID, msgs); err != nil {
 ```
 
 - MUST defer `cancel()` immediately after `WithTimeout` / `WithCancel` / `WithDeadline`.
+- Outbound hops that need a caller bound MUST fail closed when `ctx` has no deadline (golang-quality CONSTRAINT 8 / `go-outbound-resilience.mdc`). MUST NOT invent a leaf `http.Client.Timeout` or `WithTimeout` to cover a missing deadline; set the budget at the process/job entrypoint instead.
+
+```go
+if _, ok := ctx.Deadline(); !ok {
+    return fmt.Errorf("outbound: missing deadline")
+}
+```
 
 ### Database transaction
 
