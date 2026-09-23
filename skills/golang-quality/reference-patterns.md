@@ -781,3 +781,35 @@ serve: ## Start the AcmeCorp desktop forever-service
 dev-only-stack:
 	process-compose up
 ```
+
+---
+
+## Numbered SQL migrations
+
+LOAD-WHEN: adding or changing durable Postgres/SQL schema; Stage 5 / golang-quality CONSTRAINT 24.
+
+### Shape
+
+```text
+migrations/
+  000001_init.up.sql
+  000001_init.down.sql
+  000002_add_metrics.up.sql
+  000002_add_metrics.down.sql
+```
+
+Apply pending versions once (store open, `migrate up`, or bootstrap). Record applied versions. Write paths stay DML-only.
+
+### MUST / MUST NOT
+
+- MUST: versioned up (and preferably down) files for production schema.
+- MUST: apply pending once per process/bootstrap (or explicit migrate command).
+- MUST NOT: run full `CREATE TABLE IF NOT EXISTS` / schema strings on every insert or publish.
+- SHOULD: keep SQL driver/provider packages separate from DTO-only domain packages.
+- MAY: use create-if-not-exists only for in-memory or throwaway test databases.
+
+### Detection (Stage 5)
+
+- DDL inside hot write/publish loops.
+- New durable tables with no migrations directory or migrator.
+- Domain packages blank-importing SQL drivers only because schema lived beside DTOs.

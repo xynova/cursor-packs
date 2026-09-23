@@ -17,6 +17,7 @@ When generating, completing, or fixing Go:
 4. For multi-section markdown, reports, or TOC builders: follow `.cursor/rules/go-structured-strings.mdc` (`text/template` over WriteString spaghetti).
 5. For package layout, follow golang-quality C19: reusable API in `pkg/` for libraries, thin `cmd/` entrypoints for applications, domain names over grab-bags like `util` or `common`.
 6. For CLI / daemon argv surface (`serve`, `version`, root help, no bare start): follow `.cursor/skills/cli-command-surface/SKILL.md` (and `.cursor/rules/cli-command-surface.mdc`).
+7. For durable SQL schema: follow golang-quality C24 (numbered migrations applied once; no full DDL on every write path).
 
 When the user asks to review, audit, rate quality, check code, or production readiness of Go:
 

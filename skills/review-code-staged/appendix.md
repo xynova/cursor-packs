@@ -214,3 +214,21 @@ Detect (Stage 5 / C22):
 - Blind retry of every non-zero exit or every HTTP status.
 
 Related: golang-quality CONSTRAINT 22; Stage 5 Generation Gates checklist (C22); `golang-quality/reference.md` outbound resilience.
+
+---
+
+## 20. Durable SQL schema without numbered migrations
+
+Hot paths that re-run `CREATE TABLE IF NOT EXISTS` (or a giant embedded schema string) on every insert/publish hammer serverless Postgres, race concurrent writers, and hide real schema evolution.
+
+WRONG: `Publish` / `Insert` begins with full DDL every call; no version table; callers of snapshot DTOs import a package that blank-imports a SQL driver solely because schema lived beside the DTO.
+
+RIGHT: Numbered `*.up.sql` / `*.down.sql` (or equivalent); apply pending once via migrate/bootstrap; write paths are DML only; SQL provider package separate from domain DTOs when possible.
+
+Detect (Stage 5 / C24):
+
+- New durable tables introduced with only create-if-not-exists in the write path.
+- `Migrate` / schema apply invoked inside per-row or per-publish loops.
+- Missing migrations directory (or migrator) when production SQL schema is added.
+
+Related: golang-quality CONSTRAINT 24; Stage 5 Generation Gates checklist (C24); `golang-quality/reference-patterns.md` numbered SQL migrations.
