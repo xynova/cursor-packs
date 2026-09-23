@@ -365,13 +365,33 @@ if errors.Is(err, localgit.ErrMutationCanceled) {
 }
 ```
 
+**CONSTRAINT 24 — Numbered SQL migrations.** When a Go module owns durable relational schema (Postgres or other SQL), MUST keep schema changes as numbered migration files (for example `migrations/000001_init.up.sql` / `.down.sql`, or an equivalent versioned directory) and apply **pending** versions once through a migrate path (open/store bootstrap, `migrate up` CLI, or equivalent). MUST record applied versions in a version table (or the chosen migrator’s bookkeeping). MUST NOT re-run ad-hoc `CREATE TABLE IF NOT EXISTS` / full DDL on every insert, publish, or request path. MUST NOT embed a growing one-shot schema string that is executed on each write. In-memory or throwaway test DBs MAY use create-if-not-exists when they never back durable production data. SQL driver packages (providers) SHOULD stay separate from domain packages that only need DTOs so non-SQL callers do not pull a database driver. See [reference-patterns.md](reference-patterns.md#numbered-sql-migrations).
+- Enforcement: Stage 5 scans new or changed SQL schema / store open paths; flag DDL inside hot write paths and missing versioned migration dirs when durable tables are introduced.
+- Violation: STOP, extract numbered migrations, apply pending once at bootstrap/migrate, keep write paths DML-only, re-check.
+
+CORRECT:
+```text
+migrations/000001_conform_runs.up.sql
+migrations/000001_conform_runs.down.sql
+→ store Open / migrate CLI applies pending versions once
+→ Publish / Insert only upserts rows
+```
+
+PROHIBITED:
+```go
+func (s *Store) Publish(...) error {
+    _, err := s.db.Exec(schemaSQL) // full CREATE TABLE IF NOT EXISTS on every write
+    // ...
+}
+```
+
 ---
 
 ## Steps
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
-2. **Implement** — Apply all 23 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists every operator verb (C20) and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? PASS or fix.
+2. **Implement** — Apply all 24 constraints during generation. First param on I/O functions: `ctx context.Context`.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists every operator verb (C20) and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? PASS or fix.
 4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
 
 ```bash
@@ -437,3 +457,4 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] Makefile verbs (C20–C21): help lists operators; shared jobs use shared names (`serve` not only `dev`)
 - [ ] Outbound resilience (C22): exec/HTTP hops use failsafe-go (retry + breaker); no bare Do/Command; no ad-hoc sleep retry loops
 - [ ] Error boundary (C23): inbound HTTP/CLI map service-package errors; no leaf-kit import only for sentinel checks
+- [ ] SQL migrations (C24): durable schema uses numbered up/down (or equivalent) applied once; no full DDL on every write/publish path

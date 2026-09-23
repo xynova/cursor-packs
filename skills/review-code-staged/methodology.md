@@ -44,7 +44,7 @@ Which stages? (numbers, ranges, or 'all')
 | 2 | Type Safety | `any` / `interface{}`, type assertions, nil before dereference |
 | 3 | Error Handling | typed wrap-chain, `_ =`, log-without-return, persistence, DB fallback |
 | 4 | Code Clarity | naming, godot periods, structured logs, over-export |
-| 5 | Generation Gates | `golang-quality` constraints 1–23 (templates, OTEL, durable AI dumps, resources, layering, config create, package layout, Makefile verb list + shared Make verbs, outbound failsafe-go resilience, HTTP/CLI service-layer error mapping); `go-structured-strings` for report builders. External Uber / Code Review Comments are citations only. |
+| 5 | Generation Gates | `golang-quality` constraints 1–24 (templates, OTEL, durable AI dumps, resources, layering, config create, package layout, Makefile verb list + shared Make verbs, outbound failsafe-go resilience, HTTP/CLI service-layer error mapping, numbered SQL migrations); `go-structured-strings` for report builders. External Uber / Code Review Comments are citations only. |
 
 AI finds issues, reports them with code pairs in the plan file. No user input required mid-stage or between mechanical stages.
 
@@ -175,7 +175,7 @@ When the review target includes a command-line runner (`cmd/`, daemon `main`, CL
 ### Ownership vs Stage 3
 
 - **Stage 3** keeps error-handling depth (typed wrap-chain, `_ =`, log-without-return, persistence, named returns, DB fallback).
-- **Stage 5** owns generation-specific gates Stage 3 does not cover: C1–3 (HTTP/cancel/txn defers), C7–23 (nil, ctx, unused/N+1, layering, format/godot overlap, interfaces, templates, structured logging, OTEL, durable AI dumps, AI module isolation, config create, package layout, Makefile verbs, outbound failsafe-go resilience, HTTP/CLI service-layer error mapping).
+- **Stage 5** owns generation-specific gates Stage 3 does not cover: C1–3 (HTTP/cancel/txn defers), C7–24 (nil, ctx, unused/N+1, layering, format/godot overlap, interfaces, templates, structured logging, OTEL, durable AI dumps, AI module isolation, config create, package layout, Makefile verbs, outbound failsafe-go resilience, HTTP/CLI service-layer error mapping, numbered SQL migrations).
 - Apply **C4** and **C6** in Stage 5 **only when Stage 3 was not selected** for this review. If Stage 3 already ran, do not duplicate those findings under Stage 5.
 
 ### Checklist (map to golang-quality)
@@ -200,8 +200,9 @@ When the review target includes a command-line runner (`cmd/`, daemon `main`, CL
 - [ ] C20 / C21: if a Makefile is in scope, help lists operator verbs; shared jobs use shared names (`serve` / `serve-down`, not only `dev`)
 - [ ] C22: outbound process exec and HTTP client hops use failsafe-go (retry with exponential backoff + jitter, circuit breaker for shared network-backed deps); flag bare `Do` / `Command` / `CommandContext` in client/exec packages; no ad-hoc sleep retry loops; classify retryable vs permanent errors — see appendix pattern 19
 - [ ] C23: inbound HTTP / CLI entry packages map service-layer errors (`errors.Is` / `As` / `Is*` on the commands/service package); MUST NOT import a kit/leaf package solely to check that leaf’s sentinel when the service hop owns the operation
+- [ ] C24: when durable SQL schema is in scope, numbered migration files + apply-pending-once; flag DDL (`CREATE TABLE IF NOT EXISTS` / full schema strings) on every write/publish path; SQL provider packages should not force db drivers onto DTO-only importers — see appendix pattern 20
 
-Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pattern 15 when TraceDir / runreport / failure dumps are in scope, pattern 16 when generator/evaluator/signature diffs are in scope, pattern 17 when package paths, `cmd` mains, or `internal/` layout are in scope, pattern 18 when CLI argv / `serve` / `version` / bare-binary start paths are in scope, and pattern 19 when outbound exec/HTTP or forge CLI wrappers are in scope.
+Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pattern 15 when TraceDir / runreport / failure dumps are in scope, pattern 16 when generator/evaluator/signature diffs are in scope, pattern 17 when package paths, `cmd` mains, or `internal/` layout are in scope, pattern 18 when CLI argv / `serve` / `version` / bare-binary start paths are in scope, pattern 19 when outbound exec/HTTP or forge CLI wrappers are in scope, and pattern 20 when durable SQL schema / store publish paths are in scope.
 
 ---
 
