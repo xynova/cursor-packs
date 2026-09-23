@@ -1,0 +1,55 @@
+---
+description: >-
+  Outbound HTTP and process-exec resilience — failsafe-go retry + circuit
+  breaker for network-backed hops. Apply when changing Go clients, forge CLIs,
+  git push/fetch, SCM HTTP, or any outbound Do/Command path.
+globs: "**/*.go,**/go.mod,**/go.sum"
+alwaysApply: false
+---
+
+# Go outbound resilience (cursor-packs)
+
+**Moral:** Network-backed hops fail under load. Retries and breakers belong in one shared seam, not as ad-hoc sleep loops at each call site.
+
+When generating, completing, or fixing Go that talks to the network (HTTP client `Do`, forge CLIs such as `gh`/`glab`, `git` push/fetch over remotes, LLM/gateway HTTP):
+
+1. Load `.cursor/skills/golang-quality/SKILL.md` **CONSTRAINT 22** (Outbound resilience / failsafe-go) and follow it.
+2. For copy-paste policy wiring: that skill's `reference.md` section **Outbound resilience (failsafe-go)**.
+3. Prefer one shared package (for example `pkg/forge/outbound` or `internal/clients`) that wraps failsafe-go so call sites stay thin.
+
+When the user asks to review Go changes that touch outbound I/O: staged review **Stage 5** MUST apply C22 and appendix pattern 19 (see `review-code-staged`).
+
+## Hard constraints
+
+**CONSTRAINT:** Outbound process execution (`exec.Command`, `exec.CommandContext`, or a project exec wrapper) and outbound HTTP (`http.Client.Do` or equivalent) MUST run under [failsafe-go](https://pkg.go.dev/github.com/failsafe-go/failsafe-go): retry with exponential backoff and jitter, plus a circuit breaker for shared network-backed dependencies.
+
+- Enforcement: Grep changed packages for `Command` / `CommandContext` / `.Do(`; confirm a failsafe `Run` / `Get` (or project wrapper that embeds those policies) owns the hop.
+- Violation: STOP, wrap the hop at the shared seam, classify retryable vs permanent errors, re-check.
+
+**CONSTRAINT:** MUST NOT scatter ad-hoc `time.Sleep` retry loops for outbound I/O. MUST NOT blind-retry every non-zero exit or every HTTP status.
+
+- Enforcement: Flag sleep/retry loops and “retry all errors” policies in client/exec packages.
+- Violation: STOP, replace with failsafe-go policies that classify transients (timeout, killed, transport, HTTP 429/5xx) vs permanent (bad argv, auth, most other 4xx).
+
+**CONSTRAINT:** MUST honor the caller `context.Context` (stop when canceled or the deadline fires). MUST NOT invent a longer deadline than the remaining budget.
+
+- Enforcement: Failsafe `WithContext(ctx)`; no unbounded Background on network hops that already received a deadline.
+- Violation: STOP, thread `ctx` through the seam; fail closed when a required deadline is missing (see review Stage B).
+
+CORRECT:
+```go
+out, err := failsafe.With(breakerFor(name), retryPolicy).
+    WithContext(ctx).
+    Get(func() ([]byte, error) {
+        return runOnce(ctx, name, args...)
+    })
+```
+
+PROHIBITED:
+```go
+cmd := exec.CommandContext(ctx, "glab", args...)
+err := cmd.Run() // bare outbound
+// or: for i := 0; i < 3; i++ { time.Sleep(...); if err := do(); err == nil { return } }
+```
+
+Local-only lookups that do not call a remote dependency (for example `exec.LookPath`) MAY stay unretriable. Test fakes that implement the exec/HTTP interface MAY omit failsafe.

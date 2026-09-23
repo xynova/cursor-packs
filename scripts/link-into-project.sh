@@ -79,6 +79,7 @@ SKILLS=(
 RULES=(
   golang.mdc
   go-structured-strings.mdc
+  go-outbound-resilience.mdc
   cli-command-surface.mdc
   dspy.mdc
   strop.mdc

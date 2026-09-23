@@ -213,7 +213,7 @@ Detect (Stage 5 / C22):
 - Hand-rolled sleep/retry around outbound I/O.
 - Blind retry of every non-zero exit or every HTTP status.
 
-Related: golang-quality CONSTRAINT 22; Stage 5 Generation Gates checklist (C22); `golang-quality/reference.md` outbound resilience.
+Related: `.cursor/rules/go-outbound-resilience.mdc`; golang-quality CONSTRAINT 22; Stage 5 Generation Gates checklist (C22); `golang-quality/reference.md` outbound resilience.
 
 ---
 
