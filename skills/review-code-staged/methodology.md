@@ -44,7 +44,7 @@ Which stages? (numbers, ranges, or 'all')
 | 2 | Type Safety | `any` / `interface{}`, type assertions, nil before dereference |
 | 3 | Error Handling | typed wrap-chain, `_ =`, log-without-return, persistence, DB fallback |
 | 4 | Code Clarity | naming, godot periods, structured logs, over-export |
-| 5 | Generation Gates | `golang-quality` constraints 1–24 (templates, OTEL, durable AI dumps, resources, layering, config create, package layout, Makefile verb list + shared Make verbs, outbound failsafe-go resilience, HTTP/CLI service-layer error mapping, numbered SQL migrations); `go-structured-strings` for report builders. External Uber / Code Review Comments are citations only. |
+| 5 | Generation Gates | `golang-quality` constraints 1–25 (templates, OTEL, durable AI dumps, resources, layering, config create, package layout, Makefile verb list + shared Make verbs, outbound failsafe-go resilience, HTTP/CLI service-layer error mapping, numbered SQL migrations, injectable clocks); `go-structured-strings` for report builders. External Uber / Code Review Comments are citations only. |
 
 AI finds issues, reports them with code pairs in the plan file. No user input required mid-stage or between mechanical stages.
 
@@ -185,7 +185,7 @@ When the review target includes a command-line runner (`cmd/`, daemon `main`, CL
 - [ ] C3: every `Begin` has `defer tx.Rollback` after the error check
 - [ ] C4 / C6 (only if Stage 3 not selected): no `_ =` except defer cleanup; no log-without-return; persistence errors returned
 - [ ] C7: constructor nil panics; public pointer params nil-checked
-- [ ] C8: no replacing received `ctx` with `context.Background()`; `ctx.Done()` before expensive work
+- [ ] C8: no replacing received `ctx` with `context.Background()`; nil `opts.Context` / context params fail closed (no Background substitute); `ctx.Done()` before expensive work; outbound hops fail closed when `ctx`/`req.Context()` has no deadline (no leaf `Timeout` / `WithTimeout` fallback) — see `go-outbound-resilience.mdc`
 - [ ] C9: no unused work; no N+1 when a batch exists
 - [ ] C10: HTTP / external API only in client packages; CLI has no business logic
 - [ ] C11: comments end with period; format/lint gates known for the project (Stage 1 already ran tools when selected)
@@ -198,11 +198,12 @@ When the review target includes a command-line runner (`cmd/`, daemon `main`, CL
 - [ ] C18: multi-field construction uses config create (`cfg.Create*` / `CreateModule`); no long parallel arg lists beside a half-empty Config
 - [ ] C19: kit vs app classified; kit public API in `pkg/<domain>/` (not trapped in `internal/`); app `main` is wiring only (no mux/handlers/routing in `package main`); new files sit under `internal/<domain>/` rather than a new root sibling or grab-bag (`util`, `common`, `helpers`, `shared`, `misc`, `tools`); `internal/` is not a flat dumping ground; app modules do not grow a mixed host `pkg/` unless they are also a published kit. See appendix pattern 17.
 - [ ] C20 / C21: if a Makefile is in scope, help lists operator verbs; shared jobs use shared names (`serve` / `serve-down`, not only `dev`)
-- [ ] C22: outbound process exec and HTTP client hops use failsafe-go (retry with exponential backoff + jitter, circuit breaker for shared network-backed deps); flag bare `Do` / `Command` / `CommandContext` in client/exec packages; no ad-hoc sleep retry loops; classify retryable vs permanent errors — see appendix pattern 19
+- [ ] C22: outbound process exec and HTTP client hops use failsafe-go (retry with exponential backoff + jitter, circuit breaker for shared network-backed deps); flag bare `Do` / `Command` / `CommandContext` in client/exec packages; no ad-hoc sleep retry loops; classify retryable vs permanent errors — MUST Read `.cursor/rules/go-outbound-resilience.mdc` when outbound hops are in scope; see appendix pattern 19
 - [ ] C23: inbound HTTP / CLI entry packages map service-layer errors (`errors.Is` / `As` / `Is*` on the commands/service package); MUST NOT import a kit/leaf package solely to check that leaf’s sentinel when the service hop owns the operation
 - [ ] C24: when durable SQL schema is in scope, numbered migration files + apply-pending-once; flag DDL (`CREATE TABLE IF NOT EXISTS` / full schema strings) on every write/publish path; SQL provider packages should not force db drivers onto DTO-only importers — see appendix pattern 20
+- [ ] C25: durable / test-sensitive timestamps use an injected clock (`Options.Now`, `store.Now`, or equivalent); flag leaf `time.Now()` on `CreatedAt` / manifests / cache `Store*`; no wall-clock fallback when the injected clock is zero/nil — MUST Read `.cursor/rules/go-injectable-clock.mdc` when timestamp write paths are in scope
 
-Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pattern 15 when TraceDir / runreport / failure dumps are in scope, pattern 16 when generator/evaluator/signature diffs are in scope, pattern 17 when package paths, `cmd` mains, or `internal/` layout are in scope, pattern 18 when CLI argv / `serve` / `version` / bare-binary start paths are in scope, pattern 19 when outbound exec/HTTP or forge CLI wrappers are in scope, and pattern 20 when durable SQL schema / store publish paths are in scope.
+Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pattern 15 when TraceDir / runreport / failure dumps are in scope, pattern 16 when generator/evaluator/signature diffs are in scope, pattern 17 when package paths, `cmd` mains, or `internal/` layout are in scope, pattern 18 when CLI argv / `serve` / `version` / bare-binary start paths are in scope, pattern 19 when outbound exec/HTTP or forge CLI wrappers are in scope (also Read `.cursor/rules/go-outbound-resilience.mdc`), pattern 20 when durable SQL schema / store publish paths are in scope, and pattern 21 when durable timestamp / `CreatedAt` / manifest / cache stamp paths are in scope (also Read `.cursor/rules/go-injectable-clock.mdc`).
 
 ---
 
@@ -299,7 +300,7 @@ MUST NOT flag tests, `context.Background()` at process start, or in-process work
 
 - External dep constructed inside the type instead of injected
 - Package-level mutable state
-- `time.Now()` / `uuid.New` not injectable where tests need control
+- `time.Now()` / `uuid.New` not injectable where tests need control (golang-quality **C25** / `.cursor/rules/go-injectable-clock.mdc` for durable stamps)
 - Function 40+ lines with mixed concerns
 - Unit test hitting a real network or database
 
@@ -307,6 +308,11 @@ MUST NOT flag tests, `context.Background()` at process start, or in-process work
 
 - "[Type] constructs [dep] in `New`/`method`. Do tests need a mock seam?"
 - "[Function] is [N] lines covering [concerns]. Split in scope?"
+- "[path] stamps CreatedAt / manifest time with time.Now(). Inject the job clock (C25), or is this metrics-only?"
+
+**CONSTRAINT:** Durable and test-sensitive timestamps MUST use an injected clock. MUST NOT leave leaf `time.Now()` on cache/manifest/`CreatedAt` writes. MUST Read `.cursor/rules/go-injectable-clock.mdc` when those paths are in scope.
+- Enforcement: Stage C inspect lists bare `time.Now` on durable stamps; consultant asks the clock question above with Why this matters.
+- Violation: Record a finding (or open question). Do not clear as non-issue solely because a parent Options has an unused `Now` field.
 
 ---
 

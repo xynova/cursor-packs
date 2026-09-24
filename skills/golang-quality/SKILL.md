@@ -82,7 +82,34 @@ return fmt.Errorf("post /run: %s", err.Error())
 
 **CONSTRAINT 7 — Nil guards.** Constructors MUST panic on nil required dependencies. Public API pointer inputs MUST return an error on nil (do not panic at the call site).
 
-**CONSTRAINT 8 — Context propagated.** NEVER replace a received `ctx` with `context.Background()`. Check `ctx.Done()` before expensive work.
+**CONSTRAINT 8 — Context propagated; nil and outbound deadlines fail closed.** NEVER replace a received `ctx` with `context.Background()`. Check `ctx.Done()` before expensive work. When a function or Options struct takes a `context.Context` (including optional `opts.Context` fields) for work that can cancel, time out, or call the network/LLM: IF that context is **nil** → return an error and MUST NOT substitute `context.Background()`. Callers MUST pass a non-nil context (usually with a deadline from the job entrypoint). Outbound hops that need a caller-supplied bound (HTTP `Do`, forge CLI / network `exec`, LLM/gateway calls, remote `git` push/fetch) MUST require `ctx.Deadline()` (or the request’s context deadline) **before** the call: IF missing → return an error and MUST NOT call the downstream. MUST NOT invent a fallback `time.Duration` / `http.Client.Timeout` / `WithTimeout` at the leaf to “save” a missing deadline. Process entrypoints and gateways MAY call `context.WithTimeout` / `WithDeadline` once to set the job budget; that is the caller bound, not a leaf fallback. See `.cursor/rules/go-outbound-resilience.mdc` and review Stage B.
+- Enforcement: Stage 5 / Stage B greps for `if ctx == nil` / `if opts.Context == nil` followed by `context.Background()`; greps outbound packages for leaf `Timeout:` / `WithTimeout` when the hop’s `ctx` is unchecked; generation fails closed on nil and on missing deadline.
+- Violation: STOP, return an error on nil context (no Background substitute), fail closed on missing deadline, move any budget `WithTimeout` to the caller/entrypoint, re-check.
+
+CORRECT:
+```go
+if opts.Context == nil {
+    return fmt.Errorf("dispatch: context is required")
+}
+if _, ok := opts.Context.Deadline(); !ok {
+    return fmt.Errorf("outbound: missing deadline")
+}
+return client.Do(req.WithContext(opts.Context))
+```
+
+PROHIBITED:
+```go
+ctx := opts.Context
+if ctx == nil {
+    ctx = context.Background() // papers over a missing caller bound
+}
+timeout := 60 * time.Second
+if d, ok := ctx.Deadline(); ok {
+    timeout = time.Until(d)
+}
+// still calls Do when deadline was missing
+c := &http.Client{Timeout: timeout}
+```
 
 **CONSTRAINT 9 — No unused work / no N+1.** Every declared variable MUST be used. Batch fetches when the same data is needed for many IDs.
 
@@ -315,8 +342,8 @@ dev-down:
 # no serve / serve-down
 ```
 
-**CONSTRAINT 22 — Outbound resilience (failsafe-go).** Outbound process execution (`exec.Command`, `exec.CommandContext`, or a project exec wrapper) and outbound HTTP client calls (`http.Client.Do`, or equivalent) MUST run under [failsafe-go](https://pkg.go.dev/github.com/failsafe-go/failsafe-go) policies: retry with exponential backoff and jitter, plus a circuit breaker for shared network-backed dependencies (forge CLIs such as `gh`/`glab`, HTTP APIs, LLM endpoints). MUST honor the caller `context.Context` (stop when canceled or the deadline fires; MUST NOT invent a longer deadline than remaining budget). MUST classify retryable failures (timeout, process killed, transport errors, HTTP 429/5xx) versus permanent failures (bad argv, auth/config misuse, most other 4xx); MUST NOT blind-retry every non-zero exit or every HTTP status. MUST NOT scatter ad-hoc `time.Sleep` retry loops for outbound I/O. Local-only lookups that do not call a remote dependency (for example `exec.LookPath`) MAY stay unretriable. Test fakes that implement the exec/HTTP interface MAY omit failsafe. See [reference.md](reference.md#outbound-resilience-failsafe-go).
-- Enforcement: Stage 5 scans client/exec packages for bare `Do` / `Command` / `CommandContext` hops without a failsafe `Run` / `Get` (or project wrapper that embeds those policies); generation places policies at the shared exec/HTTP seam.
+**CONSTRAINT 22 — Outbound resilience (failsafe-go).** Outbound process execution (`exec.Command`, `exec.CommandContext`, or a project exec wrapper) and outbound HTTP client calls (`http.Client.Do`, or equivalent) MUST run under [failsafe-go](https://pkg.go.dev/github.com/failsafe-go/failsafe-go) policies: retry with exponential backoff and jitter, plus a circuit breaker for shared network-backed dependencies (forge CLIs such as `gh`/`glab`, HTTP APIs, LLM endpoints). MUST honor the caller `context.Context` (stop when canceled or the deadline fires; MUST NOT invent a longer deadline than remaining budget). MUST classify retryable failures (timeout, process killed, transport errors, HTTP 429/5xx) versus permanent failures (bad argv, auth/config misuse, most other 4xx); MUST NOT blind-retry every non-zero exit or every HTTP status. MUST NOT scatter ad-hoc `time.Sleep` retry loops for outbound I/O. Local-only lookups that do not call a remote dependency (for example `exec.LookPath`) MAY stay unretriable. Test fakes that implement the exec/HTTP interface MAY omit failsafe. Standing Cursor rule: `.cursor/rules/go-outbound-resilience.mdc`. See [reference.md](reference.md#outbound-resilience-failsafe-go) and review appendix pattern 19.
+- Enforcement: Stage 5 scans client/exec packages for bare `Do` / `Command` / `CommandContext` hops without a failsafe `Run` / `Get` (or project wrapper that embeds those policies); generation places policies at the shared exec/HTTP seam; when outbound hops are in scope Stage 5 MUST Read `go-outbound-resilience.mdc`.
 - Violation: STOP, wrap the hop with failsafe-go (retry + breaker where the dep is shared/networked), classify retryable errors, re-check.
 
 CORRECT:
@@ -385,13 +412,32 @@ func (s *Store) Publish(...) error {
 }
 ```
 
+**CONSTRAINT 25 — Injectable clocks.** Timestamps that affect durable state, fingerprints, ordering, manifests, or cache records (`CreatedAt`, `GeneratedAt`, job `Options.Now` consumers, identity filenames from unix nano) MUST come from an injected clock (`Options.Now`, `store.Now`, `Clock func() time.Time`, or equivalent). MUST NOT call `time.Now()` at those write sites. Process or job entrypoints MAY call `time.Now()` once to fill the injected clock when the caller omitted it. Leaf helpers and stores MUST NOT invent a wall-clock fallback when their clock field is zero or nil (fail closed). Latency and metrics timers that are not persisted as domain state MAY use local `time.Now()`. Standing Cursor rule: `.cursor/rules/go-injectable-clock.mdc`. See review Stage C and Stage 5.
+- Enforcement: Stage 5 / Stage C greps `time.Now` next to durable stamp fields and `Store*` / manifest writers; generation places the job clock on Options and threads it; stores error when the clock is missing.
+- Violation: STOP, inject the clock, remove leaf `time.Now()` fallbacks on durable stamps, re-check.
+
+CORRECT:
+```go
+now := opts.Now
+if now.IsZero() {
+    now = time.Now().UTC() // job entry only
+}
+store := &DigestStore{Dir: dir, Now: now}
+```
+
+PROHIBITED:
+```go
+CreatedAt: time.Now().UTC().Format(time.RFC3339)
+// or inside Store*: if s.Now.IsZero() { t = time.Now() }
+```
+
 ---
 
 ## Steps
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
-2. **Implement** — Apply all 24 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists every operator verb (C20) and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? PASS or fix.
+2. **Implement** — Apply all 25 constraints during generation. First param on I/O functions: `ctx context.Context`.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated and outbound deadlines fail closed (C8)? logger injected? clock injected for durable stamps (C25)? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists every operator verb (C20) and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? PASS or fix.
 4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
 
 ```bash
@@ -438,7 +484,7 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] Typed domain error at each layer (code, op, Unwrap); persistence errors returned
 - [ ] HTTP/CLI map service-layer errors (C23); entry packages do not import kit/leaf packages only for `errors.Is` on leaf sentinels
 - [ ] Constructor nil panics; pointer params nil-checked
-- [ ] No `context.Background()` inside a function that already has `ctx`
+- [ ] No `context.Background()` inside a function that already has `ctx`; nil `opts.Context` / param fails closed (no Background substitute); outbound hops fail closed without `ctx.Deadline()` (C8; no leaf Timeout fallback)
 - [ ] No HTTP outside client packages; no `logrus.New()` / `database.NewClient()` inside business logic
 
 ### Quality
@@ -458,3 +504,4 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] Outbound resilience (C22): exec/HTTP hops use failsafe-go (retry + breaker); no bare Do/Command; no ad-hoc sleep retry loops
 - [ ] Error boundary (C23): inbound HTTP/CLI map service-package errors; no leaf-kit import only for sentinel checks
 - [ ] SQL migrations (C24): durable schema uses numbered up/down (or equivalent) applied once; no full DDL on every write/publish path
+- [ ] Injectable clocks (C25): durable stamps use injected `Now` / Clock; no leaf `time.Now()` on CreatedAt / manifests / cache Store*

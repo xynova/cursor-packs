@@ -1,0 +1,54 @@
+---
+description: >-
+  Injectable clocks for durable and test-sensitive timestamps — no scattered
+  time.Now() on CreatedAt / manifests / cache stamps. Apply when changing Go
+  that stamps time into persisted state, fingerprints, or job Options.
+globs: "**/*.go"
+alwaysApply: false
+---
+
+# Go injectable clocks (cursor-packs)
+
+**Moral:** Wall clock at every write site makes jobs non-deterministic and keeps coming back in review. One job clock is injected; leaves stamp from that clock.
+
+When generating, completing, or fixing Go that records time into durable or test-sensitive state (`CreatedAt`, `GeneratedAt`, manifests, cache records, identity filenames from unix nano, job `Options.Now`):
+
+1. Load `.cursor/skills/golang-quality/SKILL.md` **CONSTRAINT 25** (Injectable clocks) and follow it.
+2. Prefer a typed field on Options / the store (`Now time.Time` or `Clock func() time.Time`) filled once at the process or job entrypoint.
+3. Staged review **Stage 5** and **Stage C** MUST apply C25 when timestamp write paths are in scope (see `review-code-staged`).
+
+## Hard constraints
+
+**CONSTRAINT:** Timestamps that affect durable state, fingerprints, ordering, manifests, or cache records MUST come from an injected clock (`Options.Now`, `store.Now`, `Clock` func, or equivalent). MUST NOT call `time.Now()` at those write sites.
+
+- Enforcement: Grep changed packages for `time.Now` next to `CreatedAt` / `GeneratedAt` / manifest / cache `Store*` paths; confirm an injected clock owns the stamp.
+- Violation: STOP, thread the job clock into the writer, fail closed when the clock is missing, re-check.
+
+**CONSTRAINT:** Process or job entrypoints MAY call `time.Now()` **once** to fill the injected clock when the caller did not supply one. Leaf helpers and stores MUST NOT invent a wall-clock fallback when their clock field is zero/nil.
+
+- Enforcement: Entry `Run`/`main` may set `now = time.Now().UTC()` if `opts.Now.IsZero()`; `Store*` / manifest writers return an error (or refuse to write) when their clock is unset.
+- Violation: STOP, remove the leaf fallback; require the clock from the caller.
+
+**CONSTRAINT:** Latency and metrics timers (elapsed duration for logs only) MAY use local `time.Now()` when the value is not persisted as domain state.
+
+CORRECT:
+```go
+now := opts.Now
+if now.IsZero() {
+    now = time.Now().UTC() // job entry only
+}
+store := &DigestStore{Dir: dir, Now: now}
+// ...
+func (s *DigestStore) createdAt() (string, error) {
+    if s == nil || s.Now.IsZero() {
+        return "", fmt.Errorf("digest store: Now clock is required")
+    }
+    return s.Now.UTC().Format(timestampFmt), nil
+}
+```
+
+PROHIBITED:
+```go
+CreatedAt: time.Now().UTC().Format(time.RFC3339) // leaf wall clock
+// or: if s.Now.IsZero() { t = time.Now() } inside Store*
+```

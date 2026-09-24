@@ -17,12 +17,14 @@ When generating, completing, or fixing Go:
 4. For multi-section markdown, reports, or TOC builders: follow `.cursor/rules/go-structured-strings.mdc` (`text/template` over WriteString spaghetti).
 5. For package layout, follow golang-quality C19: reusable API in `pkg/` for libraries, thin `cmd/` entrypoints for applications, domain names over grab-bags like `util` or `common`.
 6. For CLI / daemon argv surface (`serve`, `version`, root help, no bare start): follow `.cursor/skills/cli-command-surface/SKILL.md` (and `.cursor/rules/cli-command-surface.mdc`).
-7. For durable SQL schema: follow golang-quality C24 (numbered migrations applied once; no full DDL on every write path).
+7. For outbound HTTP / forge CLI / git remote / network `Do`/`Command`: follow `.cursor/rules/go-outbound-resilience.mdc` (golang-quality **C22** / failsafe-go; **C8** nil-context and deadline fail-closed before the hop).
+8. For durable or test-sensitive timestamps (`CreatedAt`, manifests, cache stamps): follow `.cursor/rules/go-injectable-clock.mdc` (golang-quality **C25**; inject job clock, no leaf `time.Now()`).
+9. For durable SQL schema: follow golang-quality C24 (numbered migrations applied once; no full DDL on every write path).
 
 When the user asks to review, audit, rate quality, check code, or production readiness of Go:
 
 1. Load `.cursor/skills/review-code-staged/SKILL.md` (group menu: `mechanical` | `consultant` | `both`; do not dump all checklists first).
-2. Staged review **includes** generation-gate detect as **Stage 5** (same `golang-quality` constraints used while writing, plus `go-structured-strings` for report builders, plus `cli-command-surface` when a CLI entrypoint is in scope). Prefer **`mechanical`** (includes stage 5) when the user wants detect-only full quality.
+2. Staged review **includes** generation-gate detect as **Stage 5** (same `golang-quality` constraints used while writing, plus `go-structured-strings` for report builders, plus `cli-command-surface` when a CLI entrypoint is in scope, plus `go-outbound-resilience` / C22 when outbound exec or HTTP is in scope, plus `go-injectable-clock` / C25 when timestamp write paths are in scope). Prefer **`mechanical`** (includes stage 5) when the user wants detect-only full quality.
 
 For export/visibility audits: `.cursor/skills/review-member-visibility/SKILL.md`.
 

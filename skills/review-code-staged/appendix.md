@@ -213,7 +213,7 @@ Detect (Stage 5 / C22):
 - Hand-rolled sleep/retry around outbound I/O.
 - Blind retry of every non-zero exit or every HTTP status.
 
-Related: golang-quality CONSTRAINT 22; Stage 5 Generation Gates checklist (C22); `golang-quality/reference.md` outbound resilience.
+Related: `.cursor/rules/go-outbound-resilience.mdc`; golang-quality CONSTRAINT 22; Stage 5 Generation Gates checklist (C22); `golang-quality/reference.md` outbound resilience.
 
 ---
 
@@ -232,3 +232,21 @@ Detect (Stage 5 / C24):
 - Missing migrations directory (or migrator) when production SQL schema is added.
 
 Related: golang-quality CONSTRAINT 24; Stage 5 Generation Gates checklist (C24); `golang-quality/reference-patterns.md` numbered SQL migrations.
+
+---
+
+## 21. Durable timestamps from leaf time.Now()
+
+Cache records, manifests, and `CreatedAt` stamped with wall clock at the write site make jobs non-deterministic and ignore an injectable job `Now` that already exists on Options.
+
+WRONG: `CreatedAt: time.Now().UTC().Format(...)` inside `Store*` / manifest writers; or `if s.Now.IsZero() { t = time.Now() }` fallback in the leaf.
+
+RIGHT: Job entry fills `opts.Now` once (wall clock only if caller omitted it); store/helper requires that clock and fails closed when zero/nil.
+
+Detect (Stage 5 / Stage C / C25):
+
+- `time.Now` next to `CreatedAt`, `GeneratedAt`, manifest stamps, or cache `Store*`.
+- Injected `Now` field present on Options but never threaded into the writer.
+- Leaf wall-clock fallback when the injected clock is unset.
+
+Related: `.cursor/rules/go-injectable-clock.mdc`; golang-quality CONSTRAINT 25; Stage 5 / Stage C.
