@@ -122,6 +122,45 @@
   - **Container dependency**: [e.g. "Needs youtubeContainer.StructuralService"]
   - **Nil handling**: [What happens if container/service is nil?]
 
+#### 2.7 Pipeline resumability and trajectory checkpoints
+
+**Does this feature involve multi-step pipelines, batch tasks, or LLM/external inference?**
+- [ ] **Yes** → Fill in trajectory details below
+- [ ] **No** → Skip to 2.8
+
+**If yes:**
+- **Checkpoint identity**: [e.g. pipeline, job, entity ID, version, definition version, source fingerprint]
+- **Evidence schema**: [What discrete payload struct is saved at each step boundary?]
+- **Step boundaries**: [Which steps save checkpoints, e.g. "hook, conundrum, fork"?]
+- **Resumption mechanism**: [How does the runner detect a completed step and restore in-memory state without re-invoking models?]
+- **Downstream invalidation**: [If an upstream step re-runs or fingerprint changes, how are downstream checkpoints dropped?]
+
+#### 2.8 Multi-repository boundaries and commit ownership
+
+**Does this feature touch a submodule, nested checkout, or shared pack (e.g. strop, cursor-packs)?**
+- [ ] **Yes** → Fill in boundary details below
+- [ ] **No** → Skip to 2.9
+
+**If yes:**
+- **Owning repository**: [e.g. "providers/strop (submodule)" or "cursor-packs"]
+- **Host repository**: [e.g. "content-pipelines" or "site"]
+- **Two-phase delivery sequence**:
+  - Phase 1: Implement, test, and commit portable changes in the library repository first.
+  - Phase 2: In the host repository, bump the submodule pin / commit pointer, update adapters, and verify integration.
+- **Zero product spill**: Confirm the library change contains no host brand names, private paths, or host-only workflows.
+
+#### 2.9 Language and quality standards (Go projects)
+
+**For Go codebases, explicit adherence to golang-quality constraints:**
+- **Package classification**: Kit (`pkg/<domain>/`) vs product kit vs app-only (`internal/<domain>/`). No grab-bag packages (`util`, `common`, `helpers`), no loose root files, no flat sibling forest under `internal/`.
+- **Typed domain error wrapping**: Return typed domain errors with layer `op`, stable code, message, and `Unwrap`. No bare `err`, no dropped causes (`fmt.Errorf("...: %s", err.Error())`).
+- **Defensive constructors & nil guards**: Constructors panic on nil required dependencies; public APIs return errors on nil pointers.
+- **Config create constructors**: Types with multi-field inputs use typed `Config` structs and `CreateX()` methods.
+- **Context propagation**: Never discard incoming `ctx` or replace with `context.Background()`. Check `ctx.Done()` before expensive loops.
+- **Durable AI work dumps**: AI traces (RLM traces, runreports, failure dumps) must be written to durable paths that survive process exit, never solely in `os.RemoveAll` temp trees.
+- **Structured logging**: Use injected logger with field key-value pairs; no raw `fmt.Printf` or inline `logrus.New()` in services.
+- **Verification gates**: Plan must include running `make format`, `make lint`, `make vet`, `make test`, and `godot` period comment checks.
+
 ---
 
 ### 3. Data Flow Diagram
@@ -298,7 +337,31 @@ Use this order to avoid blocked work:
 - [ ] Register commands with root
 - [ ] **Checkpoint**: `bin/pipelines [command] --help` works
 
-#### Phase G: End-to-End Verification
+#### Phase G: Trajectory & Resumability (if applicable)
+- [ ] Implement checkpoint persistence (identity, evidence structs, session save/load)
+- [ ] Wire resumption checks into pipeline runner (skip completed steps)
+- [ ] Implement downstream invalidation on upstream re-run
+- [ ] Write resumption unit test (stop midway, rerun, verify state restored without re-computation)
+- [ ] **Checkpoint**: Pipeline resumes from failure at the exact failing step
+
+#### Phase H: Multi-Repository Sequence (if touching submodules/packs)
+- [ ] Implement and test portable changes in library repository (e.g. strop, cursor-packs)
+- [ ] Run library verification gates (`make test`, `make lint`)
+- [ ] Commit and push library branch; open library PR
+- [ ] In host repository, bump submodule pin to library commit
+- [ ] Update host adapters to use new library API
+- [ ] **Checkpoint**: Clean git status and valid submodule pointers across all repositories
+
+#### Phase I: Quality Gates & Verification (Mandatory before completion)
+- [ ] Run formatting: `make format` (or `gofmt -s -w .`)
+- [ ] Verify comments end with a period: `golangci-lint run --enable godot`
+- [ ] Run compiler checks: `make vet`
+- [ ] Run linters: `make lint`
+- [ ] Run unit and integration tests: `make test` (or `go test -v -race ./...`)
+- [ ] Verify module dependencies: `go mod tidy`
+- [ ] **Checkpoint**: All quality gates pass with zero warnings
+
+#### Phase J: End-to-End Verification
 - [ ] Run full command flow (CLI → service → repo → DB)
 - [ ] Verify data persists correctly
 - [ ] Check logs for "not found" or "nil" errors
@@ -318,6 +381,26 @@ Use this order to avoid blocked work:
 - [ ] **Init order**: Registration happens before client creation (shown in container wiring)
 - [ ] **DI validation**: All constructor dependencies are created in the container before NewService
 - [ ] **Config resolution**: All `Get[Thing]Provider(job)` calls use correct job keys that exist in config.yaml
+
+### Resumability & Trajectories (Pipelines & Batch Jobs)
+- [ ] Checkpoint identity schema is defined (pipeline, job, entity, versions, source fingerprint)
+- [ ] Evidence payloads are isolated structs per step boundary
+- [ ] Downstream invalidation logic is planned for upstream step re-execution
+- [ ] Runner handles checkpoint load failure gracefully without silent corruption
+
+### Multi-Repository Boundaries (Libraries & Submodules)
+- [ ] Portable library changes are cleanly separated from host-specific adapters
+- [ ] Library contains no host brands, private layouts, or host workflows
+- [ ] Two-phase commit sequence is planned (library PR first, host pin bump second)
+
+### Language & Quality Standards (Go)
+- [ ] Package layout matches kit (`pkg/`) vs product kit vs app-only (`internal/`)
+- [ ] Error handling returns typed domain errors with layer `op` and code; no bare `err` returns
+- [ ] Constructors panic on nil required dependencies; public functions validate nil pointers
+- [ ] Config create constructors are planned for types with multiple dependencies
+- [ ] Context is propagated cleanly; never replaced with `context.Background()`
+- [ ] AI traces and logs are stored in durable directories, not wiped temp folders
+- [ ] Verification recipe (`make format`, `make lint`, `make vet`, `make test`) is scheduled
 
 ### Error Handling
 - [ ] What happens if registry is nil? (Service disabled or error?)
@@ -597,6 +680,90 @@ bin/pipelines [pipeline] [command] [args]
 
 ---
 
+### Phase G: Trajectory & Resumability (Pipelines & Long-Running Tasks)
+
+**Goal**: Multi-step and LLM pipelines can fail and resume without losing completed work or re-running expensive upstream steps.
+
+**Tasks**:
+- [ ] Define checkpoint `Identity` (pipeline, job, entity ID, version, definition version, source fingerprint)
+- [ ] Define discrete `Evidence` structs for step outputs and evaluations
+- [ ] Implement session save/load checks in pipeline runners
+- [ ] Invalidate downstream checkpoints when upstream inputs or fingerprints change
+- [ ] Write unit tests verifying resumption restores state from disk without re-executing completed phases
+
+**Checkpoint**:
+```bash
+# Verify unit tests for trajectory resumption
+go test ./... -run "Test.*Trajectory|Test.*Resume" -v
+```
+
+---
+
+### Phase H: Multi-Repository Delivery (Submodules & Shared Packs)
+
+**Goal**: Portable changes land cleanly in library repositories before host adapter wiring.
+
+**Tasks**:
+- [ ] Verify repository ownership before writing: `git -C <path> rev-parse --show-toplevel`
+- [ ] Implement portable domain logic, interfaces, or tools inside the library repository
+- [ ] Run library verification gates (`make format`, `make lint`, `make vet`, `make test`)
+- [ ] Commit and push library feature branch; create PR
+- [ ] In host repository, bump submodule pin to the library commit
+- [ ] Wire host-specific adapters to the updated library API
+- [ ] Verify clean boundaries: confirm zero host product spill in the library repo
+
+**Checkpoint**:
+```bash
+# Verify both library and host working trees are clean and pins match
+git -C <library-path> status -sb
+git status -sb
+```
+
+---
+
+### Phase I: Language Quality Gates & Verification (Go Standards)
+
+**Goal**: Code adheres strictly to `golang-quality` rules and passes all mechanical quality checks.
+
+**Tasks**:
+- [ ] Verify package layout: `pkg/` for kit public API; `internal/<domain>/` for hidden logic; no grab-bag packages (`util`, `common`)
+- [ ] Verify error handling: return typed domain errors with `op` and code; wrap causes; no bare `err` returns
+- [ ] Verify nil guards: constructors panic on nil required dependencies; public methods validate nil pointer inputs
+- [ ] Verify config create: types with multiple inputs use typed `Config` and `CreateX()` methods
+- [ ] Verify context propagation: never discard `ctx` or replace with `context.Background()`
+- [ ] Verify durable AI dumps: RLM traces, runreports, and failure dumps write to persistent directories
+- [ ] Verify structured logging: injected logger used with key-value fields; no raw `fmt.Printf` or inline `logrus.New()`
+- [ ] Run formatting: `make format` (or `gofmt -s -w .`)
+- [ ] Run comment period check: `golangci-lint run --enable godot`
+- [ ] Run compiler vet: `make vet`
+- [ ] Run linters: `make lint`
+- [ ] Run tests: `make test` (or `go test -v -race ./...`)
+- [ ] Verify dependencies: `go mod tidy`
+
+**Checkpoint**:
+```bash
+make format && make lint && make vet && make test
+```
+
+---
+
+### Phase J: End-to-End Verification
+
+**Goal**: Full feature executes cleanly from user entrypoint.
+
+**Tasks**:
+- [ ] Run full command flow (CLI → service → repo → DB)
+- [ ] Verify data persists correctly in database or target store
+- [ ] Inspect logs to ensure zero "not found", "nil pointer", or unhandled errors
+- [ ] Run edge case scenarios (invalid inputs, missing optional configs)
+
+**Checkpoint**:
+```bash
+bin/pipelines [pipeline] [command] [args]
+```
+
+---
+
 ## Pre-Implementation Review (Do This Before Coding)
 
 Go through this checklist with another person or AI:
@@ -605,29 +772,50 @@ Go through this checklist with another person or AI:
 1. **Show me the registration function**: Where is it? What does it register?
 2. **Show me where it's called**: In which container, at what point in NewContainer()?
 3. **Show me what depends on it**: Which clients call Get[Thing] that need the registration?
-4. **Trace backward from CLI**: Start with command, go backward to registration—are all links present?
+4. **Trace backward from CLI**: Start with command, go backward to registration: are all links present?
+
+### Resumability Review
+5. **Checkpoint identity**: Can a failed run be uniquely identified and resumed without repeating expensive steps?
+6. **Downstream invalidation**: If an earlier step is re-run, are stale downstream checkpoints dropped?
+
+### Repository Boundary Review
+7. **Two-phase delivery**: If changing a submodule or shared pack, are library changes planned and tested before the host pin bump?
+8. **No product spill**: Does the library avoid host brand names, private paths, and host-only conventions?
+
+### Language Quality Review
+9. **Error wrapping**: Are all returned errors wrapped with layer `op` and domain code (no bare `err`)?
+10. **Constructor nil guards**: Do constructors guard against nil dependencies?
+11. **Durable traces**: Do AI traces write to durable paths rather than temp folders deleted on exit?
 
 ### Completeness Review
-5. **Config keys match constants**: Do config.yaml job keys match the constants used in code?
-6. **Migration order**: If multiple migrations, are they numbered correctly?
-7. **Error handling**: What happens if optional dependencies are missing?
+12. **Config keys match constants**: Do config.yaml job keys match the constants used in code?
+13. **Migration order**: If multiple migrations, are they numbered correctly?
+14. **Error handling**: What happens if optional dependencies are missing?
 
 ### Pattern Consistency Review
-8. **Matches reference**: Is the structure parallel to the reference implementation?
-9. **No new patterns**: Are we reusing existing patterns, or inventing new ones?
-10. **Same file structure**: Do we have the same file layout (container, services, clients, database)?
+15. **Matches reference**: Is the structure parallel to the reference implementation?
+16. **No new patterns**: Are we reusing existing patterns, or inventing new ones?
+17. **Same file structure**: Do we have the same file layout (container, services, clients, database)?
 
 ---
 
 ## Post-Implementation Verification (Do This After Coding)
 
-### Build & Test
+### Quality Gates & Standards
 ```bash
-make build                          # Must pass
-go test ./internal/pipelines/[pipeline]/... -v  # All tests pass
+make format                         # Format code
+make vet                            # Compiler vet checks
+make lint                           # Linters pass with zero errors
+make test                           # All unit and integration tests pass
+go mod tidy                         # Clean dependency manifests
 ```
 
-### Connectivity Test
+### Build & Run
+```bash
+make build                          # Must pass
+```
+
+### Connectivity & Execution Test
 ```bash
 # Does the command work?
 bin/pipelines [pipeline] [command] [args]
@@ -637,6 +825,19 @@ tail -f logs/app.log | grep -i "error\|not found\|nil"
 
 # Verify DB changes
 psql $DATABASE_URL -c "SELECT * FROM [schema].[table] LIMIT 5;"
+```
+
+### Resumability & Trajectory Verification
+```bash
+# Trigger a multi-step run, interrupt midway, and re-run to confirm completed steps are skipped
+bin/pipelines [pipeline] [command] [args]
+```
+
+### Multi-Repository Boundary Check
+```bash
+# Verify submodule pins match and working trees are clean
+git submodule status
+git status -sb
 ```
 
 ### Glue Verification
@@ -789,7 +990,7 @@ Ask these questions explicitly:
 
 ## Summary
 
-**Key insight**: Most implementation failures are glue failures—not business logic bugs.
+**Key insight**: Most implementation failures are glue failures: not business logic bugs.
 
 **The scaffold forces**:
 1. **Explicit glue analysis** before writing code (section 2)
