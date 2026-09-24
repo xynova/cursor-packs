@@ -75,6 +75,7 @@ SKILLS=(
   process-compose-docker
   operator-config
   explain-implementation
+  ask-polypus
 )
 RULES=(
   golang.mdc
@@ -96,6 +97,7 @@ RULES=(
   process-compose-docker.mdc
   operator-config.mdc
   explain-implementation.mdc
+  ask-polypus.mdc
 )
 PERSONAS=(
   intent-first.persona.md

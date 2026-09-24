@@ -1,0 +1,25 @@
+---
+description: >-
+  Consult Gemma (or another allow-listed model) through the local Polypus
+  gateway on :1320. Load skill ask-polypus. Triggers: ask gemma, ask polypus,
+  gemma on polypus, second opinion via Polypus, POLYPUS_BASE_URL chat.
+alwaysApply: false
+---
+
+# Ask Polypus
+
+**Skill:** `.cursor/skills/ask-polypus/SKILL.md` (MUST Read and follow when this rule loads).
+
+## MUST
+
+- Probe `GET http://127.0.0.1:1320/health` (or `POLYPUS_BASE_URL`) before chat
+- Call only the loopback OpenAI surface (`POST /v1/chat/completions`)
+- Default model: `cf_local/@cf/google/gemma-4-26b-a4b-it` when the user says Gemma / ask Polypus without another id
+- Include the artifact under review in the prompt
+- Synthesize the reply for the human; do not treat the consult as an implement order
+
+## MUST NOT
+
+- Call Cloudflare / LM Studio URLs directly from a consumer chat
+- Start `bin/polypus` ad-hoc; offer `make serve` in a Polypus checkout when health fails
+- Use this rule for gateway ops (allow-lists, smoke, Switchyard); that is `polypus-operator` in the Polypus repo
