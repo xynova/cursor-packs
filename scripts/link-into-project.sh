@@ -80,6 +80,7 @@ RULES=(
   golang.mdc
   go-structured-strings.mdc
   go-outbound-resilience.mdc
+  go-injectable-clock.mdc
   cli-command-surface.mdc
   dspy.mdc
   strop.mdc

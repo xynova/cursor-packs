@@ -51,6 +51,18 @@ if _, ok := ctx.Deadline(); !ok {
 }
 ```
 
+### Injectable clocks
+
+Durable and test-sensitive timestamps MUST use an injected clock (golang-quality CONSTRAINT 25 / `.cursor/rules/go-injectable-clock.mdc`). Job entry MAY call `time.Now()` once to fill `opts.Now`; leaves MUST NOT.
+
+```go
+now := opts.Now
+if now.IsZero() {
+    now = time.Now().UTC()
+}
+store := &DigestStore{Dir: dir, Now: now}
+```
+
 ### Database transaction
 
 ```go

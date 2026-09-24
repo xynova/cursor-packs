@@ -412,13 +412,32 @@ func (s *Store) Publish(...) error {
 }
 ```
 
+**CONSTRAINT 25 — Injectable clocks.** Timestamps that affect durable state, fingerprints, ordering, manifests, or cache records (`CreatedAt`, `GeneratedAt`, job `Options.Now` consumers, identity filenames from unix nano) MUST come from an injected clock (`Options.Now`, `store.Now`, `Clock func() time.Time`, or equivalent). MUST NOT call `time.Now()` at those write sites. Process or job entrypoints MAY call `time.Now()` once to fill the injected clock when the caller omitted it. Leaf helpers and stores MUST NOT invent a wall-clock fallback when their clock field is zero or nil (fail closed). Latency and metrics timers that are not persisted as domain state MAY use local `time.Now()`. Standing Cursor rule: `.cursor/rules/go-injectable-clock.mdc`. See review Stage C and Stage 5.
+- Enforcement: Stage 5 / Stage C greps `time.Now` next to durable stamp fields and `Store*` / manifest writers; generation places the job clock on Options and threads it; stores error when the clock is missing.
+- Violation: STOP, inject the clock, remove leaf `time.Now()` fallbacks on durable stamps, re-check.
+
+CORRECT:
+```go
+now := opts.Now
+if now.IsZero() {
+    now = time.Now().UTC() // job entry only
+}
+store := &DigestStore{Dir: dir, Now: now}
+```
+
+PROHIBITED:
+```go
+CreatedAt: time.Now().UTC().Format(time.RFC3339)
+// or inside Store*: if s.Now.IsZero() { t = time.Now() }
+```
+
 ---
 
 ## Steps
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
-2. **Implement** — Apply all 24 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated and outbound deadlines fail closed (C8)? logger injected? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists every operator verb (C20) and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? PASS or fix.
+2. **Implement** — Apply all 25 constraints during generation. First param on I/O functions: `ctx context.Context`.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated and outbound deadlines fail closed (C8)? logger injected? clock injected for durable stamps (C25)? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists every operator verb (C20) and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? PASS or fix.
 4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
 
 ```bash
@@ -485,3 +504,4 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] Outbound resilience (C22): exec/HTTP hops use failsafe-go (retry + breaker); no bare Do/Command; no ad-hoc sleep retry loops
 - [ ] Error boundary (C23): inbound HTTP/CLI map service-package errors; no leaf-kit import only for sentinel checks
 - [ ] SQL migrations (C24): durable schema uses numbered up/down (or equivalent) applied once; no full DDL on every write/publish path
+- [ ] Injectable clocks (C25): durable stamps use injected `Now` / Clock; no leaf `time.Now()` on CreatedAt / manifests / cache Store*
