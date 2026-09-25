@@ -15,5 +15,7 @@ When generating, completing, or fixing a command-line runner or daemon entrypoin
 2. For cross-language examples: that skill's `reference.md`.
 3. Go release version stamping still uses `.cursor/skills/setup-goreleaser/SKILL.md`.
 4. Go license Gate skip for `version` / `license` still uses `.cursor/skills/setup-go-binary-license/SKILL.md`.
+5. Shipped CLI modules MUST ship root `AGENTS.md` plus in-module `ai-copilots/` (see `author-ai-copilots` and constraint 7 in the skill).
+6. Bare invoke (no args) MUST print the agent-ready operating guide (not a one-line syntax error) and exit 0; `--help` remains the human flag catalog.
 
 When staged Go review includes a CLI entrypoint in scope: mechanical **Stage 5** MUST also apply `cli-command-surface` binary checks (see `review-code-staged` methodology).

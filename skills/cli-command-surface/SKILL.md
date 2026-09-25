@@ -33,7 +33,7 @@ Standing contract for every shipped command-line runner (Go, Python, TypeScript,
 - MUST: require a named start command before Listen / server loop / worker loop
 - MUST NOT: treat zero args as “start the daemon”
 - Enforcement: Trace the entrypoint default path; confirm Listen/Serve is behind a start subcommand
-- Violation: STOP, add start command, make bare invoke print usage and exit non-zero (or help and exit 0 only for explicit `help`)
+- Violation: STOP, add start command; bare invoke prints the agent operating guide (constraint 7) and exits 0, or prints usage for legacy CLIs until migrated
 
 CORRECT:
 ```text
@@ -131,10 +131,27 @@ ENTRYPOINT ["/tool"]
 
 **CONSTRAINT 6 — Language-agnostic, framework-local.** Prefer the ecosystem’s normal CLI framework (Go `flag`/cobra/urfave; Python argparse/click/tyro; Node commander/yargs; Rust clap). The contract is behavioral, not a required library.
 
-- MUST: meet constraints 1–5 regardless of framework
+- MUST: meet constraints 1–8 regardless of framework
 - MUST NOT: rewrite a working CLI stack only to match another language’s framework
 - Enforcement: Behavior checklist above; framework choice is out of scope unless the user asks
 - Violation: STOP, restore ecosystem-local tooling; keep the behavior contract
+
+**CONSTRAINT 7 — Agent-ready default view.** Bare invoke (no args) MUST print a structured agent operating guide to stdout and exit 0.
+
+- MUST: include tool name, version, one-line purpose, role/boundaries, agent operating guide (paths to `AGENTS.md` and `ai-copilots/`), commands grouped by risk/lifecycle (inspect, plan/dry-run, execute/mutate), and automation rules (`--dry-run`, `--yes`, headless flags)
+- MUST: keep human flag syntax under `help` / `-h` / `--help` and per-command `--help`
+- MUST NOT: print only a one-line `usage: tool <cmd>` fragment on bare invoke
+- MUST NOT: start Listen/Serve on bare invoke
+- Enforcement: Run `<bin>` with no args; confirm sections above and exit 0
+- Violation: STOP, add `agentGuide()` (or equivalent) before dispatch
+
+**CONSTRAINT 8 — In-module agent harness.** Every shipped CLI module or repository that owns a binary MUST include operator docs for coding agents.
+
+- MUST: ship root `AGENTS.md` pointing into `ai-copilots/README.md` and `ai-copilots/skills/<name>-operator/SKILL.md`
+- MUST: ship `ai-copilots/BOOTSTRAP.md` for host IDE symlink discovery when consumers wire skills
+- MUST: state-mutating flows SHOULD support `--dry-run` and non-interactive confirmation (`--yes` or equivalent) so subagents do not hang on TTY prompts
+- Enforcement: `test -f AGENTS.md && test -f ai-copilots/skills/*/SKILL.md` at module root
+- Violation: STOP, add harness before claiming CLI work is done (see `author-ai-copilots`)
 
 ---
 
@@ -152,9 +169,13 @@ ENTRYPOINT ["/tool"]
 ## Pre-completion checklist
 
 - [ ] **Bare invoke:** No args does not start the service
-      Method: Run `<bin>` with no args; confirm no Listen and exit ≠ success-with-server
-      Pass: Usage printed; process exits; no socket/port bind
-      Fail: Service starts or config load is the only error → STOP, require start command
+      Method: Run `<bin>` with no args; confirm no Listen and no socket/port bind
+      Pass: Agent operating guide printed (constraint 7); exit 0; or legacy usage + non-zero until migrated
+      Fail: Service starts or only a one-line syntax error → STOP, require agent guide + start command
+- [ ] **Agent harness:** Module ships `AGENTS.md` and `ai-copilots/` operator skill
+      Method: List files at module root
+      Pass: Links resolve; operator skill documents safe command order
+      Fail: Missing harness → STOP, add before merge
 - [ ] **Version:** `<bin> version` works without config
       Method: Run without config file / license
       Pass: Version line, exit 0

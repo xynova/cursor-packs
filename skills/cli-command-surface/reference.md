@@ -8,7 +8,7 @@ LOAD-WHEN: implementing or reviewing a language-agnostic CLI runner under `.curs
 
 | Invoke | Required behavior |
 |--------|-------------------|
-| `<bin>` (no args) | Print root usage; do **not** Listen/Serve; exit non-zero (typical `2`) |
+| `<bin>` (no args) | Print agent operating guide (constraint 7); do **not** Listen/Serve; exit `0` |
 | `<bin> help` / `-h` / `--help` | Print root catalog; exit 0 |
 | `<bin> version` | Print identity; no config/Gate/network; exit 0 |
 | `<bin> serve` (or `run` / `start`) | Load config, optional Gate, then Listen |
@@ -127,6 +127,32 @@ When introducing `serve` (or renaming start):
 - [ ] `.air.toml` `full_bin` (or equivalent) includes `serve`
 - [ ] Dockerfile `CMD` or compose `command`
 - [ ] CI smoke that executes the binary as a service
+
+---
+
+## Go (agent guide on bare invoke)
+
+```go
+func run(args []string) int {
+	if len(args) == 0 {
+		fmt.Fprint(os.Stdout, agentOperatingGuide())
+		return 0
+	}
+	switch args[0] {
+	case "help", "-h", "--help":
+		printUsage(os.Stdout)
+		return 0
+	case "version":
+		fmt.Printf("%s %s\n", appName, reportVersion())
+		return 0
+	default:
+		// dispatch subcommands
+	}
+}
+```
+
+MUST: `agentOperatingGuide()` includes ROLE, AGENT OPERATING GUIDE, COMMANDS BY RISK, AUTOMATION RULES.
+MUST: Unknown command prints stderr error + `printUsage` and returns non-zero.
 
 ---
 
