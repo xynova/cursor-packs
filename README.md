@@ -13,6 +13,8 @@ Mount path in consumers: `.cursor/packs/shared`
 | `skills/edit-cursor-packs/` | Branch/commit shared pack edits (not the consumer repo) |
 | `skills/agent-smith/` | Author/review Cursor skills and rules (Agent Smith standards) |
 | `skills/author-ai-copilots/` | Library-owned `ai-copilots/` harness + multi-IDE BOOTSTRAP (incl. Go module Dir resolve) |
+| `skills/ai-readiness/` | Audit/scaffold required `AGENTS.md` + `ai-copilots/` baseline for every repo |
+| `personas/ai-readiness.persona.md` | Gated consultant for AI readiness / harness setup forks |
 | `skills/image-to-webp/` | Portable PNG/HEIC→WebP via cwebp; ask/install tools only after user agrees |
 | `skills/process-compose-docker/` | Process-compose + Docker sidecars: timed preflight, confirm on daemon down, never wipe volumes on down |
 | `skills/golang-quality/` | Generation/completion constraints + quality gates; `reference.md` encyclopedia |
@@ -35,7 +37,8 @@ Mount path in consumers: `.cursor/packs/shared`
 | `rules/go-binary-license.mdc` | `internal/license`, goreleaser, `cmd/**/main.go` — load setup-go-binary-license |
 | `rules/cursor-packs.mdc` | Soft-link ownership — load edit-cursor-packs |
 | `rules/agent-smith.mdc` | Authoring skills/rules — load agent-smith |
-| `rules/ai-copilots.mdc` | Library `AGENTS.md` / `ai-copilots/**` — load author-ai-copilots |
+| `rules/ai-copilots.mdc` | Library `AGENTS.md` / `ai-copilots/**` — load ai-readiness then author-ai-copilots |
+| `rules/ai-readiness.mdc` | Missing harness / AI readiness asks — load ai-readiness skill + persona |
 | `rules/always-rules-0-ai.mdc` | Always-on model behavior: English identifiers, US spelling, no em dash, tmp clones |
 | `rules/always-rules-01-human-interaction.mdc` | Always-on fluent consultant + light tutor voice, implement gate, Intent-First / Consultant loaders |
 | `rules/image-to-webp.mdc` | `globs: **/*.{png,heic,heif}` — convert shipping rasters to WebP; load skill `image-to-webp` |

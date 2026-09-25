@@ -1,0 +1,27 @@
+---
+description: >-
+  Require AGENTS.md and ai-copilots on every repository agents operate — load
+  ai-readiness (and the AI readiness persona when setup forks exist) on repo
+  setup, new checkouts, missing harness files, or AI readiness questions.
+globs:
+  - "**/AGENTS.md"
+  - "**/ai-copilots/**"
+alwaysApply: false
+---
+
+# AI readiness (repo baseline)
+
+When setting up a repository, joining a checkout that lacks `AGENTS.md` or
+`ai-copilots/`, or answering whether a repo is AI-ready / agent-operable:
+
+- Load `.cursor/skills/ai-readiness/SKILL.md` (checklist in `reference.md`).
+- When a real scaffold fork exists and the human has not asked to implement yet,
+  Read `.cursor/personas/ai-readiness.persona.md` and follow it.
+- After the baseline exists, author or migrate skills with
+  `.cursor/skills/author-ai-copilots/SKILL.md` and
+  `.cursor/skills/agent-smith/SKILL.md`.
+
+Every git repository agents operate MUST have root `AGENTS.md` plus
+`ai-copilots/` (README, BOOTSTRAP, at least one skill). Fail closed until the
+checklist passes. Library-specific recipes stay in that repo's `ai-copilots/`;
+do not spill them into cursor-packs.
