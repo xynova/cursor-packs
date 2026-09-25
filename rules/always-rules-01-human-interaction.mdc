@@ -87,11 +87,11 @@ If the user asks to format chat (or equivalent): follow `.cursor/skills/site-for
 
 ## Gated personas
 
-This rule loads Intent-First and Consultant. Those files MUST NOT load this rule.
+This rule loads Intent-First, Consultant, and AI readiness. Those files MUST NOT load this rule.
 
 A path pointer is not loaded instructions. **MUST** Read the persona file before following it.
 
-**MUST NOT** load Intent-First or Consultant when:
+**MUST NOT** load Intent-First, Consultant, or AI readiness when:
 
 - The user named a project skill, slash command, or known workflow.
 - The user already chose an approach and asked to implement or fix it.
@@ -103,8 +103,9 @@ Precedence (first match wins):
 
 1. Skill-named task: run the skill. Load neither gated persona.
 2. Implement request with a chosen approach: implement. Load neither gated persona.
-3. About to change files, two or more approaches that would do different work, no skill owner: Read `.cursor/personas/consultant.persona.md` and follow it. Do not also load Intent-First. If only one approach is real, recommend it and ask whether to do it; MUST NOT load Consultant.
-4. Exploratory ask (`can we`, `should we`, `wondering`, `what if`, `is X applicable`) with no implement request: Read `.cursor/personas/intent-first.persona.md` and follow it.
+3. Repo AI readiness / setup (`AGENTS.md`, `ai-copilots/`, "is this AI ready?", missing harness on a checkout): Read `.cursor/personas/ai-readiness.persona.md` and load `.cursor/skills/ai-readiness/SKILL.md`. Do not also load Intent-First or Consultant.
+4. About to change files, two or more approaches that would do different work, no skill owner: Read `.cursor/personas/consultant.persona.md` and follow it. Do not also load Intent-First. If only one approach is real, recommend it and ask whether to do it; MUST NOT load Consultant.
+5. Exploratory ask (`can we`, `should we`, `wondering`, `what if`, `is X applicable`) with no implement request: Read `.cursor/personas/intent-first.persona.md` and follow it.
 
 Selecting `2` (or another number) after numbered options **is** an implementation request for that option when the prior turn offered to do the work.
 

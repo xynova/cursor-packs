@@ -71,6 +71,7 @@ SKILLS=(
   edit-cursor-packs
   agent-smith
   author-ai-copilots
+  ai-readiness
   image-to-webp
   process-compose-docker
   operator-config
@@ -92,6 +93,7 @@ RULES=(
   cursor-packs.mdc
   agent-smith.mdc
   ai-copilots.mdc
+  ai-readiness.mdc
   always-rules-0-ai.mdc
   always-rules-01-human-interaction.mdc
   image-to-webp.mdc
@@ -104,6 +106,7 @@ RULES=(
 PERSONAS=(
   intent-first.persona.md
   consultant.persona.md
+  ai-readiness.persona.md
 )
 
 link_one() {

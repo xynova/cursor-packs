@@ -24,6 +24,8 @@ description: >-
 - Wiring a dependency's copilots into `.cursor/`, `.github/`, `.claude/`, or `.codex/`
 - Reviewing whether a Go library that agents must operate ships in-module skills
 
+When the baseline is missing, load [ai-readiness](../ai-readiness/SKILL.md) first.
+
 ---
 
 ## Layout contract
@@ -155,11 +157,14 @@ Cross-product shared skills (for example generic Go quality) MAY stay in cursor-
 ## Workflow
 
 1. Confirm ownership: library repo vs host vs cursor-packs.
-2. Create or migrate `ai-copilots/` using [reference.md](reference.md) layout.
-3. Write `AGENTS.md` entry + skill bodies (agent-smith).
-4. Add `BOOTSTRAP.md` from the portable template (fill module path and skill names).
-5. Wire host discovery (wire-only mode) when the user asks.
-6. Verify: `ls -la` links resolve; `go list -m` Dir contains `ai-copilots/`.
+2. Run [ai-readiness](../ai-readiness/SKILL.md) audit first. If the baseline is
+   missing, scaffold with that skill (or continue here using the same layout).
+3. Create or migrate `ai-copilots/` using [reference.md](reference.md) layout.
+4. Write `AGENTS.md` entry + skill bodies (agent-smith).
+5. Add `BOOTSTRAP.md` from the portable template (fill module path and skill names).
+6. Wire host discovery (wire-only mode) when the user asks.
+7. Verify: `ls -la` links resolve; `go list -m` Dir contains `ai-copilots/`;
+   ai-readiness checklist passes.
 
 ---
 
