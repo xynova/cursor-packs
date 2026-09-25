@@ -72,6 +72,15 @@ PROHIBITED:
 Enforcement: open `AGENTS.md`; first skill links resolve under `ai-copilots/`
 Violation: STOP, rewrite pointers, re-verify
 
+## Portable CLI modules
+
+When the library ships a command-line binary (not only a Go API):
+
+- MUST: meet `.cursor/skills/cli-command-surface/SKILL.md` constraints 7–8 (agent operating guide on bare invoke, in-module harness).
+- MUST: bare `<bin>` prints the agent guide; `--help` prints human flag syntax.
+- MUST: operator skill under `ai-copilots/skills/<cli-name>-operator/SKILL.md` documents inspect → dry-run → execute order.
+- MUST NOT: rely on host repos to document the CLI; the module owns `AGENTS.md` and `ai-copilots/`.
+
 ---
 
 ## Authoring checklist

@@ -165,7 +165,9 @@ Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality
 
 When the review target includes a command-line runner (`cmd/`, daemon `main`, CLI package that owns process argv), MUST also Read `.cursor/skills/cli-command-surface/SKILL.md` and apply its binary checks. These checks are language-agnostic behavior gates; they apply to Go entrypoints in this review and to other-language runners when that is the stated target.
 
-- [ ] Bare invoke (no args) does not Listen/Serve; prints usage and exits non-zero
+- [ ] Bare invoke (no args) does not Listen/Serve; prints agent operating guide (sections: role, agent guide, lifecycle commands, automation rules) and exits 0, or legacy usage until migrated
+- [ ] Root `AGENTS.md` and in-module `ai-copilots/` operator skill exist for shipped CLI modules
+- [ ] State-mutating subcommands support `--dry-run` and headless `--yes` (or equivalent) where interactive confirm exists
 - [ ] Root `version` (or documented equivalent) prints identity without config / license Gate / network
 - [ ] Root help catalog lists start + version + other real root commands
 - [ ] Unknown root command does not fall through to serve
@@ -238,6 +240,8 @@ Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pat
 - "This `cmd/<app>/main.go` does more than wiring. Should it be thinned to config, observability, and a run call?"
 - "This change adds `internal/<leaf>` at the internal root. Does an existing domain folder own it, or is a new domain parent the right nest?"
 - "Bare `<bin>` starts the service. Should start be an explicit command (`serve` / `run`), and what breaks if we change launchers?"
+- "Bare `<bin>` prints only a one-line usage error. Should it print the agent operating guide and point to `AGENTS.md` / `ai-copilots/`?"
+- "This CLI module has no `ai-copilots/` harness. Should operator docs live in-module for agent discovery?"
 
 For a full architecture pass, point at project `pipelines-x-review-architecture` (if present) instead of duplicating it.
 
