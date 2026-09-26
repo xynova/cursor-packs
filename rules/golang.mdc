@@ -60,3 +60,31 @@ go test ./... fails
 → rm go.mod go.sum
 → go mod init something_new
 ```
+
+## Git pre-commit (gofmt)
+
+**CONSTRAINT:** When CI runs a `gofmt -l` (or `gofmt` check) gate on a Go module, that repository MUST ship `.githooks/pre-commit` that runs `gofmt -w` on staged `*.go` files and re-stages them, and MUST expose `make hooks-install` that sets `git config core.hooksPath .githooks` (local to the clone).
+- Enforcement: CI workflow contains gofmt; repo has matching `.githooks/pre-commit` and Makefile target
+- Violation: STOP, add hook + `hooks-install` before claiming the module is commit-safe
+
+**CONSTRAINT:** Before the first `git commit` in a Go repo that ships `.githooks/pre-commit`, agents MUST run `make hooks-install` (or equivalent `git config core.hooksPath .githooks`) once per clone.
+- Enforcement: `git config --get core.hooksPath` equals `.githooks` or hook path is active
+- Violation: STOP, run `make hooks-install`, then commit
+
+**CONSTRAINT:** Before claiming Go edits are ready to commit, agents MUST run `make fmt` or `gofmt -w` on touched packages even when a hook is installed.
+- Enforcement: `gofmt -l` on changed paths is empty
+- Violation: STOP, format, re-run tests
+
+CORRECT:
+```text
+make hooks-install   # once per clone
+make fmt && make test
+git commit ...
+```
+
+PROHIBITED:
+```text
+CI runs gofmt -l
+→ no .githooks/pre-commit in repo
+→ commit without make fmt
+```
