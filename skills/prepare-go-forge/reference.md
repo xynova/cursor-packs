@@ -217,4 +217,4 @@ gh api -X PATCH "repos/OWNER/REPO" \
   -f security_and_analysis='{"secret_scanning":{"status":"enabled"},"secret_scanning_push_protection":{"status":"enabled"}}'
 ```
 
-Always copy [templates/github/secret-scan.yml](templates/github/secret-scan.yml) as a portable gitleaks baseline.
+Always copy [templates/github/secret-scan.yml](templates/github/secret-scan.yml) as a portable gitleaks baseline. The template runs the **MIT gitleaks CLI** in Docker (`zricethezav/gitleaks`); do **not** use `gitleaks/gitleaks-action` for organization-owned repos (commercial action license).
