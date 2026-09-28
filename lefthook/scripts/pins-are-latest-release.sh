@@ -17,9 +17,14 @@ if [[ ! -d "$packs/.git" && ! -f "$packs/.git" ]]; then
   exit 1
 fi
 
-git -C "$packs" fetch --tags origin 2>/dev/null || git -C "$packs" fetch --tags 2>/dev/null || true
+packs_git() {
+  env -u GIT_DIR -u GIT_WORK_TREE git -C "$packs" "$@"
+}
 
-if ! current="$(git -C "$packs" describe --tags --exact-match HEAD 2>/dev/null)"; then
+packs_git fetch --tags origin 2>/dev/null || packs_git fetch --tags 2>/dev/null || true
+
+packs_head="$(packs_git rev-parse HEAD)"
+if ! current="$(packs_git describe --tags --exact-match "$packs_head" 2>/dev/null)"; then
   echo "lefthook: cursor-packs checkout must be at an exact v* release tag"
   exit 1
 fi
@@ -29,7 +34,7 @@ if [[ ! "$current" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
   exit 1
 fi
 
-latest="$(git -C "$packs" tag -l 'v*' --sort=-v:refname | head -n 1)"
+latest="$(packs_git tag -l 'v*' --sort=-v:refname | head -n 1)"
 if [[ -z "$latest" ]]; then
   echo "lefthook: no v* tags found in packs remote; cut a release on cursor-packs first"
   exit 1
