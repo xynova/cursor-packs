@@ -23,6 +23,7 @@ This skill does **not** own merge-conflict resolution (`resolve-pr-merge-conflic
 - Consumer pin bump of `.cursor/packs/shared`, `.majordomo`, `providers/*`, or similar
 - `git status` shows `modified: <submodule> (new commits)` right after merge or branch switch
 - Nested case: parent is clean for the outer gitlink, but inside `.majordomo` (or another nest) packs still sit on a different SHA
+- Before `git worktree add` (parent clone must match gitlinks; no `(new commits)` dirt on packs or providers)
 
 ---
 
