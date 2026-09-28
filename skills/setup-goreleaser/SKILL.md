@@ -53,10 +53,12 @@ Defaults: `project_name` = binary name; `main` = `./cmd/<binary>`; `binary` = `<
 - MUST treat module version `(devel)` as local development and keep reporting `dev`.
 - Align local `make build` ldflags with `-X main.version=...` when a Makefile exists.
 - Run `goreleaser check` after writing config (if `goreleaser` is installed).
+- MUST also write or update `.github/workflows/auto-patch-release.yml` from [reference.md](reference.md) (decide script, tag + GoReleaser in one job). MUST load `manage-go-releases` for skip rules and same-pipeline publish policy.
+- MUST NOT ship tag-only `release.yml` without auto-patch when the repo uses agent-oriented releases on `main`.
 
 ## Must not
 
-- Do not add Homebrew taps, Docker images, NFPM, or Snap unless the user asks.
+- Do not add Homebrew taps, Docker images, NFPM, or Snap unless the user asks (when Docker **is** asked, scaffold reusable `docker-release.yml` with `workflow_call` and call it from auto-patch; see manage-go-releases).
 - Do not force-push tags or invent a first release tag during setup.
 - Do not commit secrets; `GITHUB_TOKEN` from Actions is enough for public/private GitHub Releases.
 - Do not overwrite an existing `.goreleaser.yaml` or `release.yml` without confirmation.
@@ -69,7 +71,8 @@ Defaults: `project_name` = binary name; `main` = `./cmd/<binary>`; `binary` = `<
 1. **Discover** - binary name, `./cmd/...` path, existing release files, version var.
 2. **Write** `.goreleaser.yaml` from [reference.md](reference.md) (substitute project/binary/main).
 3. **Write** `.github/workflows/release.yml` from [reference.md](reference.md).
-4. **Wire version** - in the build main package (or the package the `-X` path targets):
+4. **Write** `.github/workflows/auto-patch-release.yml` from [reference.md](reference.md); use `bash .cursor/packs/shared/scripts/auto-patch-decide.sh` when the consumer has cursor-packs submodule.
+5. **Wire version** - in the build main package (or the package the `-X` path targets):
 
 ```go
 import (
@@ -124,6 +127,7 @@ LDFLAGS := -X main.version=$(VERSION)
 
 - [ ] `.goreleaser.yaml` (v2, multi-platform, ldflags, changelog groups)
 - [ ] `.github/workflows/release.yml` (tag `v*`, goreleaser-action v6)
+- [ ] `.github/workflows/auto-patch-release.yml` (decide script, same-job GoReleaser; optional `workflow_call` Docker job stub documented)
 - [ ] `version` default `"dev"` + `reportVersion` / BuildInfo fallback + user-visible version command
 - [ ] Makefile ldflags aligned (if Makefile exists)
 - [ ] `goreleaser check` OK (or noted if binary missing)
