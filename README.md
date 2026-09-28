@@ -30,6 +30,10 @@ Mount path in consumers: `.cursor/packs/shared`
 | `skills/plan-scaffold/` | Implementation plan meta-framework |
 | `skills/review-member-visibility/` | Export-only-what-is-essential audit |
 | `skills/review-code-smells/` | Code smell / maintainability review protocol |
+| `skills/install-repo-hooks/` | Verify Lefthook install + ai-copilots wire before first commit |
+| `skills/after-merge/` | Post-merge verify, branch/worktree cleanup, submodule sync |
+| `lefthook/` | Shared Lefthook config (default-branch refuse, go format, pre-push packs pin) |
+| `AGENTS.md` + `ai-copilots/` | Operator harness when this repo is the workspace root |
 | `rules/golang.mdc` | Go + `go.mod`/`go.work` — load golang-quality / staged review; no module-skeleton rewrite |
 | `rules/dspy.mdc` | Agent-decided — load thin dspy skills |
 | `rules/strop.mdc` | Agent-decided — load strop skills (softlinked from the strop module `ai-copilots/`) |
@@ -66,18 +70,28 @@ From the consumer repo root:
 git submodule add https://github.com/xynova/cursor-packs.git .cursor/packs/shared
 git submodule update --init --recursive
 .cursor/packs/shared/scripts/link-into-project.sh --project .
+.cursor/packs/shared/scripts/ensure-lefthook-consumer.sh --project .
+make hooks-install   # or: lefthook install — add hooks-install to the host Makefile if missing
 ```
 
-Commit `.gitmodules`, the submodule pointer, and the new symlinks.
+Commit `.gitmodules`, the submodule pointer, symlinks, and `lefthook.yml` when created.
+
+Agents: load `install-repo-hooks` before the first commit (Lefthook + host `ai-copilots` BOOTSTRAP wire).
 
 ### After clone
 
 ```bash
 git submodule update --init --recursive
 .cursor/packs/shared/scripts/link-into-project.sh --project .
+.cursor/packs/shared/scripts/ensure-lefthook-consumer.sh --project .
+make hooks-install
 ```
 
 (Re-run the link script when upgrading the pack and new skill names appear.)
+
+### Operating cursor-packs as the workspace
+
+When the git root is this repository (not a consumer submodule path), read [AGENTS.md](AGENTS.md) and run [ai-copilots/BOOTSTRAP.md](ai-copilots/BOOTSTRAP.md).
 
 ## Versioning
 
@@ -92,6 +106,7 @@ git checkout v0.1.0   # or latest: git checkout "$(git tag -l 'v*' --sort=-v:ref
 cd ../../..
 git add .cursor/packs/shared
 .cursor/packs/shared/scripts/link-into-project.sh --project .
+.cursor/packs/shared/scripts/ensure-lefthook-consumer.sh --project .
 git commit -m "Bump cursor-packs to v0.1.0"
 ```
 
