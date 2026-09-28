@@ -2,6 +2,15 @@
 
 Shared git hooks for repositories that submodule cursor-packs at `.cursor/packs/shared`.
 
+## cursor-packs as workspace root
+
+When this repository is the git root (not a consumer submodule path):
+
+1. `./scripts/ensure-lefthook-consumer.sh --project .` (extends `lefthook/lefthook-packs-root.yml`)
+2. `make hooks-install`
+
+Pre-push compares `HEAD` to the newest `v*` tag on this repo (same pin rule as consumers).
+
 ## Consumer setup
 
 1. Root `lefthook.yml`:

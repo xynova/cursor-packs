@@ -14,14 +14,14 @@ cd "$REPO_ROOT"
 
 ## Lefthook in this checkout
 
-This repo ships `lefthook/` for consumers. To run the same hooks when committing **in cursor-packs**:
+This repo ships `lefthook/` for consumers. To run fleet hooks when committing **in cursor-packs**:
 
 ```bash
 ./scripts/ensure-lefthook-consumer.sh --project .
-# Add Makefile hooks-install or: command -v lefthook && lefthook install
+make hooks-install
 ```
 
-Run `./scripts/ensure-lefthook-consumer.sh --project .` then install hooks. The script picks `./lefthook/lefthook.yml` when this repo is the root, or the consumer submodule path otherwise.
+The ensure script writes root `lefthook.yml` extending `lefthook/lefthook-packs-root.yml` (packs-as-root script paths). Consumers extend `.cursor/packs/shared/lefthook/lefthook.yml` instead.
 
 ## After new skill or rule names
 

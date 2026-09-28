@@ -35,8 +35,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 EXTENDS=""
-if [[ -f "$PROJECT/lefthook/lefthook.yml" ]]; then
-  EXTENDS="./lefthook/lefthook.yml"
+if [[ -f "$PROJECT/lefthook/lefthook-packs-root.yml" ]]; then
+  EXTENDS="./lefthook/lefthook-packs-root.yml"
 elif [[ -f "$PROJECT/.cursor/packs/shared/lefthook/lefthook.yml" ]]; then
   EXTENDS=".cursor/packs/shared/lefthook/lefthook.yml"
 else

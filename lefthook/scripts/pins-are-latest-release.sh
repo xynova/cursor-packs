@@ -2,17 +2,25 @@
 set -euo pipefail
 
 root="$(git rev-parse --show-toplevel)"
-packs="${PACKS_PATH:-$root/.cursor/packs/shared}"
+packs="${PACKS_PATH:-}"
+
+if [[ -z "$packs" ]]; then
+  if [[ -f "$root/lefthook/lefthook-packs-root.yml" ]]; then
+    packs="$root"
+  else
+    packs="$root/.cursor/packs/shared"
+  fi
+fi
 
 if [[ ! -d "$packs/.git" && ! -f "$packs/.git" ]]; then
-  echo "lefthook: packs submodule not found at $packs (skip pin check only if repo has no packs)"
+  echo "lefthook: packs not found at $packs (consumer submodule or cursor-packs root)"
   exit 1
 fi
 
 git -C "$packs" fetch --tags origin 2>/dev/null || git -C "$packs" fetch --tags 2>/dev/null || true
 
 if ! current="$(git -C "$packs" describe --tags --exact-match HEAD 2>/dev/null)"; then
-  echo "lefthook: .cursor/packs/shared must be checked out at an exact v* release tag"
+  echo "lefthook: cursor-packs checkout must be at an exact v* release tag"
   exit 1
 fi
 

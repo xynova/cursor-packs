@@ -91,7 +91,7 @@ make hooks-install
 
 ### Operating cursor-packs as the workspace
 
-When the git root is this repository (not a consumer submodule path), read [AGENTS.md](AGENTS.md) and run [ai-copilots/BOOTSTRAP.md](ai-copilots/BOOTSTRAP.md).
+When the git root is this repository (not a consumer submodule path), read [AGENTS.md](AGENTS.md), run [ai-copilots/BOOTSTRAP.md](ai-copilots/BOOTSTRAP.md), then `make hooks-install` after `ensure-lefthook-consumer.sh`.
 
 ## Versioning
 
