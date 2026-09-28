@@ -68,6 +68,8 @@ SKILLS=(
   setup-gitlab-runner
   resolve-pr-merge-conflicts
   sync-submodules-after-merge
+  install-repo-hooks
+  after-merge
   edit-cursor-packs
   agent-smith
   author-ai-copilots

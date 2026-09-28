@@ -58,7 +58,28 @@ HEAD is main, master, develop, or trunk
 → edit files on that branch
 ```
 
-**CONSTRAINT:** When HEAD is already a non-default branch, MUST stay on that branch for continuing related work. MUST NOT create a sibling `feat/`/`fix/` branch only because the task title changed.
+**CONSTRAINT:** Default branches (`main`, `master`, `develop`, `trunk`) are update-from-origin only: `fetch`, fast-forward, or `pull`. MUST NOT commit, amend, or push while HEAD is a default branch name.
+
+- Enforcement: `git rev-parse --abbrev-ref HEAD` before commit or push; Lefthook pre-commit when hooks are installed
+- Violation: STOP, create or switch to a feature branch (or sibling worktree), then continue
+
+PROHIBITED:
+```text
+Commit on main, then sit ahead of origin/main with local-only work
+→ push blocked by forge; hooks should refuse the commit
+```
+
+**CONSTRAINT:** Parallel agents MUST use sibling git worktrees (one directory per agent), not competing `checkout -b` in one dirty tree. Full convention: `install-repo-hooks` skill and `lefthook/README.md` in cursor-packs.
+
+- Enforcement: before `git worktree add`, sync submodules per `sync-submodules-after-merge`
+- Violation: STOP, sync parent submodules, add worktree, run hooks-install and BOOTSTRAP wire in the new tree
+
+**CONSTRAINT:** Before `git commit`, MUST verify clone setup (Lefthook installed, ai-copilots wire OK) by loading `.cursor/skills/install-repo-hooks/SKILL.md` or confirming the same checklist already passed in this clone or worktree.
+
+- Enforcement: run checklist once per clone or worktree before the first commit
+- Violation: STOP, run `make hooks-install` and BOOTSTRAP wire, then commit
+
+**CONSTRAINT:** When HEAD is already a non-default branch, MUST stay on that branch for continuing related work. MUST NOT create a sibling `feat/`/`fix/` branch only because the task title changed. MUST NOT `checkout -b` or switch branches unless the user asked to split work or start fresh after merge.
 
 Enforcement: before `git checkout -b` / `git switch -c` on a non-default HEAD, confirm the user asked to split or start after merge
 Violation: STOP, stay on the current branch (or run the open-PR gate below)

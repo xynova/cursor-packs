@@ -8,7 +8,7 @@ alwaysApply: false
 
 # Sync submodules after merge (cursor-packs)
 
-When a PR that touches submodule gitlinks merges, after checkout of that tip, or when pin bumps leave `(new commits)` dirt:
+When a PR that touches submodule gitlinks merges, after checkout of that tip, when pin bumps leave `(new commits)` dirt, or **before `git worktree add`** in the parent clone:
 
 1. Load `.cursor/skills/sync-submodules-after-merge/SKILL.md` and follow its constraints.
 2. Run recursive `git submodule update --init` at the parent and inside nests that have their own `.gitmodules`.

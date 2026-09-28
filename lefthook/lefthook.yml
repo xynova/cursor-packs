@@ -1,0 +1,17 @@
+# Shared fleet hooks (consumer: extends from root lefthook.yml)
+# Scripts run from the host repository root.
+
+pre-commit:
+  parallel: false
+  commands:
+    default-branch-refuse:
+      run: bash .cursor/packs/shared/lefthook/scripts/default-branch-refuse.sh
+    go-format:
+      glob: "*.go"
+      run: bash .cursor/packs/shared/lefthook/scripts/go-format-staged.sh {staged_files}
+      stage_fixed: true
+
+pre-push:
+  commands:
+    pins-are-latest-release:
+      run: bash .cursor/packs/shared/lefthook/scripts/pins-are-latest-release.sh
