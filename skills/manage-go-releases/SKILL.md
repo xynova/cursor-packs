@@ -34,6 +34,14 @@ Shared policy for Go libraries and toolkits consumed by agents (for example stro
 - Enforcement: auto-tag job skip logic / agent checks subjects before tagging
 - Violation: delete mistaken tag only if user asks; never force-push by default
 
+**CONSTRAINT:** MUST NOT create a tag when every file changed since the last `v*` tag is agent-harness only (paths under `.cursor/` or `lefthook.yml`). This covers cursor-packs pin bumps even when the commit subject is not `chore:`.
+- Enforcement: shared `scripts/auto-patch-decide.sh` path filter or equivalent in auto-patch CI
+- Violation: STOP; use harness-only skip before tagging
+
+**CONSTRAINT:** Docker images, Helm charts, or other publish jobs MUST run in the **same** workflow as tag + GoReleaser (`workflow_call` or extra job). MUST NOT rely on `GITHUB_TOKEN` tag push to start a sibling workflow.
+- Enforcement: Stage 5 review checklist in [reference.md](reference.md); no `on: push: tags` as the only Docker path after auto-patch
+- Violation: STOP; wire `workflow_call` from auto-patch (see `setup-goreleaser` auto-patch template)
+
 **CONSTRAINT:** MUST use **minor** only for additive public API, and **major** only for breaking public API (or when the user explicitly requests that bump).
 - Enforcement: `workflow_dispatch` bump input or explicit user instruction
 - Violation: STOP, do not treat “cut a release” as major by default
@@ -64,9 +72,10 @@ When the repo is a Go **library** (source releases / `builds.skip: true` is OK):
 
 1. Keep tag-triggered GoReleaser (`.github/workflows/release.yml` or GitLab `.gitlab/ci/goreleaser-release.yml`) for human-pushed `v*` tags.
 2. Add a default-branch push workflow/job that:
-   - Skips docs/chore/ci-only ranges and `[skip release]`
+   - Skips docs/chore/ci-only ranges, harness-only path ranges, and `[skip release]` (prefer `scripts/auto-patch-decide.sh` in cursor-packs)
    - Creates annotated `vX.Y.(Z+1)`
    - Runs GoReleaser in the **same job** (CI job-token tag pushes do not reliably trigger other pipelines)
+   - Calls Docker or other publish workflows via `workflow_call` in the same pipeline when images are in scope
    - Offers manual bump (`workflow_dispatch` bump input on GitHub; `RELEASE_BUMP` on GitLab web pipelines)
 3. Document the policy in the upstream README under a short **Releases (for agents)** section.
 
@@ -90,10 +99,17 @@ Binary TRUE/FALSE:
 
 ---
 
+## Review (Stage 5)
+
+When release CI is in the PR diff, load this skill and score [reference.md](reference.md) checklist (subject skip, harness path skip, GoReleaser same job, same-pipeline Docker).
+
+---
+
 ## Pre-completion verification
 
 - [ ] Patch is the default bump; minor/major only when asked or API warrants it
-- [ ] Docs/chore/ci-only and `[skip release]` do not get tags
+- [ ] Docs/chore/ci-only, harness-only paths, and `[skip release]` do not get tags
+- [ ] Extra publish (Docker) uses `workflow_call` or same job, not tag-wake sibling workflow
 - [ ] Consumer pin updated submodule (or path) **and** `go.mod` when applicable
 - [ ] No force-push of tags unless the user explicitly requests it
 - [ ] If publish 403'd on packages / `admin_packages`, `prepare-go-forge` was run (or deferred with reason)

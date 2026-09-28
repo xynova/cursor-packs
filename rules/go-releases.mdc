@@ -13,3 +13,10 @@ When releasing, tagging, auto-patching, or pinning a Go module / submodule depen
 4. When the forge is not release-ready (missing protected `main`, package registry off, job-token `admin_packages` 403, or no Go quality / secret CI), load `.cursor/skills/prepare-go-forge/SKILL.md` and run the host prepare script before retrying publish.
 
 Project overlays may name concrete paths (for example `providers/strop`); the shared skill owns the version policy.
+
+## Review (Stage 5)
+
+When a PR changes `.github/workflows/*release*`, `.goreleaser.yaml`, or cursor-packs `scripts/auto-patch-decide.sh`:
+
+1. Load `.cursor/skills/manage-go-releases/SKILL.md` and [reference.md](.cursor/skills/manage-go-releases/reference.md) checklist during **review-code-staged** Stage 5.
+2. Fail the gate if auto-patch lacks harness-only path skip, or if Docker/extra publish depends only on `on: push: tags` after a `GITHUB_TOKEN` tag push.
