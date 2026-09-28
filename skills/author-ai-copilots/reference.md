@@ -213,3 +213,43 @@ ls "$MOD/ai-copilots/skills"
 
 `replace` directives and `go.work` make `.Dir` point at the local checkout.
 Pure cache installs point at the module cache version directory.
+
+---
+
+## `review-hooks.yaml` (staged review integration)
+
+Libraries that want **review-code-staged** to load extra gates, tools, and consultant briefs MUST ship:
+
+```text
+<module-root>/ai-copilots/review-hooks.yaml
+```
+
+Product-neutral YAML. cursor-packs MUST NOT vendor copies; hosts discover via soft-linked skills.
+
+Suggested fields:
+
+| Field | Purpose |
+| --- | --- |
+| `library` | Go module path |
+| `in_scope.import_prefixes` | Activate when review target imports these prefixes |
+| `in_scope.path_globs` | Activate when paths match (orchestration, digest, etc.) |
+| `stage5_skills` | Skill dir names under `.cursor/skills/` to Read after golang-quality |
+| `mechanical_stages[]` | `{ id, title, skill, tool_slots[] }` with **prefixed** ids (`strop-M1`, never `1`–`5`) |
+| `tool_slots[]` | `{ name, prefer, fallback }` merged into Stage 1 when active |
+| `consultant_briefs[]` | `{ stage: A|B|C, skill, when }` injected during pack consultant stages |
+
+**CONSTRAINT:** Library mechanical stage IDs MUST NOT collide with pack `1`–`5` or `A`–`C`.
+
+**CONSTRAINT:** BOOTSTRAP `ln` MUST fail closed when the destination is a real file or a symlink into cursor-packs (`packs/shared`). Use prefixed skill names; never replace pack-owned skills.
+
+CORRECT:
+```bash
+link_lib_skill inference-pace ai-copilots/skills/inference-pace
+# refuses if .cursor/skills/golang-quality points at packs/shared
+```
+
+PROHIBITED:
+```text
+rm .cursor/skills/golang-quality
+ln -snf $MOD/ai-copilots/skills/foo .cursor/skills/golang-quality
+```

@@ -33,6 +33,7 @@ When the baseline is missing, load [ai-readiness](../ai-readiness/SKILL.md) firs
 **CONSTRAINT:** Canonical operator content MUST live under the library module root as `ai-copilots/`.
 
 - MUST include: `ai-copilots/README.md`, `ai-copilots/BOOTSTRAP.md`, `ai-copilots/skills/<name>/SKILL.md`
+- MAY include: `ai-copilots/review-hooks.yaml` for staged review discovery (see [reference.md](reference.md) § review-hooks)
 - MAY include: `ai-copilots/agents/<name>.md` (subagent manifests), skill shards next to `SKILL.md`
 - MUST ship inside the published Go module (not gitignored) so `go get` / module cache / vendor receive the tree
 - MUST NOT use a top-level `skills/` alone as the long-term canonical path; migrate to `ai-copilots/skills/`
