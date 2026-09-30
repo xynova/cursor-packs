@@ -14,6 +14,8 @@ Load only when the user asks to merge, confirms a merge landed, or wants post-me
 
 This skill does **not** resolve open PR conflicts; it verifies a completed merge and cleans local state.
 
+**Note:** Aligning a consumer submodule gitlink to upstream `main` after an upstream squash merge belongs in the **consumer pin bump** (`manage-go-releases`, same PR before open), not a second hygiene MR triggered from after-merge.
+
 ---
 
 ## When to load

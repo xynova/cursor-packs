@@ -90,6 +90,24 @@ PROHIBITED:
 go get github.com/behaviorengineering/strop@latest
 ```
 
+**CONSTRAINT:** When a consumer change depends on an upstream PR, merge, or `v*` tag (submodule gitlink, `go.mod` require, `images.env`, `.cursor/packs/shared`), MUST merge upstream **first** (or wait until it lands), then pin the consumer to the **post-merge** base tip or exact `v*` tag in the **same** consumer PR as the related host work.
+- Enforcement: before `gh pr create` / `glab mr create` / push that claims the PR is ready, ask the human once whether any pins are missing (submodule, `go.mod`, image pins, packs gitlink); load `resolve-pr-merge-conflicts` pin gate when opening the PR
+- Violation: STOP; do not open a pin-only follow-up MR to realign a squash-merge SHA after the main consumer MR merged
+
+CORRECT:
+```bash
+# Upstream polypus PR #60 merged to main at 3103dcb
+git -C providers/polypus fetch origin main
+git -C providers/polypus checkout 3103dcb
+# Host MR includes providers/polypus gitlink + images.env / go.mod in one change
+```
+
+PROHIBITED:
+```bash
+# Consumer MR pins upstream PR tip dca273b while upstream PR still open
+# → merge consumer → second MR "chore: pin to main" for the same bump
+```
+
 ---
 
 ## Upstream auto-patch CI (library)
@@ -124,6 +142,7 @@ Binary TRUE/FALSE:
 | go.mod require matches | `go list -m <module>` | Version is `vX.Y.Z` | Pseudo-version / drift |
 | Working tree clean for dep | `git -C <dep> status --short` | Empty | Uncommitted dep edits |
 | Parent status after pin | After gitlink bump: run **`sync-submodules-after-merge`** (`git submodule update --init --recursive`) | No `(new commits)` dirt; checkout SHA equals gitlink | Stale checkout; do not `git add` the submodule to “fix” it |
+| Pre-PR pin ask / post-merge SHA | Upstream merged first; consumer gitlink is post-merge tip or `v*` tag; human asked once about missing pins before PR open | Pin-only follow-up MR after squash-merge SHA rewrite | PR-tip pin while upstream still open (unless human accepted temp pin) |
 
 ---
 
@@ -141,5 +160,6 @@ When release CI is in the PR diff, load this skill and score [reference.md](refe
 - [ ] Verify job present when extra publish (Docker, charts) is in scope
 - [ ] Consumer pin waits for publish-complete (full workflow green), not tag or GoReleaser alone
 - [ ] Consumer pin updated submodule (or path) **and** `go.mod` when applicable
+- [ ] Pre-PR pin ask done; post-merge upstream SHA or `v*` tag in same consumer change (no pin-only follow-up MR)
 - [ ] No force-push of tags unless the user explicitly requests it
 - [ ] If publish 403'd on packages / `admin_packages`, `prepare-go-forge` was run (or deferred with reason)

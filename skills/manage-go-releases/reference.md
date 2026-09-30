@@ -12,6 +12,7 @@ Load this when a PR touches `.github/workflows/*release*`, `.goreleaser.yaml`, o
 | Extra artifacts (Docker, etc.) | `workflow_call` or same-job publish after GoReleaser | Only `on: push: tags` sibling workflow |
 | Verify after publish | Final job asserts artifacts for `new_tag` (e.g. `docker buildx imagetools inspect`) | GoReleaser or Docker green without registry proof |
 | Consumer pin gate | Docs / agents wait for full workflow green including verify | Pin on tag exists or GoReleaser-only success |
+| Pre-PR pin ask / post-merge SHA | Upstream merged; consumer pins post-merge tip or `v*` in same PR; agent asked human about missing pins before open | Pin-only follow-up after squash-merge; PR-tip pin while upstream open |
 
 CORRECT:
 
