@@ -20,6 +20,18 @@ is_harness_only_path() {
   return 1
 }
 
+is_packaging_only_path() {
+  local path="$1"
+  case "${path}" in
+    Dockerfile|Dockerfile.*) return 0 ;;
+    scripts/docker-*) return 0 ;;
+    scripts/ci/docker-*) return 0 ;;
+    scripts/ci/switchyard-smoke-routes.toml) return 0 ;;
+    .github/workflows/docker-release.yml|.github/workflows/packaging-rebuild.yml) return 0 ;;
+  esac
+  return 1
+}
+
 if [[ "${HEAD_MSG:-}" == *"[skip release]"* ]]; then
   write_out "skip=true"
   write_out "reason=commit contains [skip release]"
@@ -85,6 +97,20 @@ else
     if [[ "${harness_only}" == "true" ]]; then
       write_out "skip=true"
       write_out "reason=only agent-harness paths since ${last_tag} (.cursor/, lefthook.yml)"
+      exit 0
+    fi
+
+    packaging_only="true"
+    while IFS= read -r f; do
+      [[ -z "${f}" ]] && continue
+      if ! is_packaging_only_path "${f}"; then
+        packaging_only="false"
+        break
+      fi
+    done <<< "${files}"
+    if [[ "${packaging_only}" == "true" ]]; then
+      write_out "skip=true"
+      write_out "reason=packaging-only (use Docker release -rN)"
       exit 0
     fi
   fi
