@@ -1,6 +1,9 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help hooks-install
+.PHONY: help hooks-install test-auto-patch-decide
+
+test-auto-patch-decide: ## Smoke-test auto-patch path predicates
+	bash scripts/auto-patch-decide_test.sh
 
 help: ## List operator targets
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n\nTargets:\n"} /^[a-zA-Z0-9_.-]+:.*##/ { printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)

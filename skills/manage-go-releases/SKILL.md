@@ -146,9 +146,9 @@ Binary TRUE/FALSE:
 
 ---
 
-## Review (Stage 5)
+## Review (Stage 5 — CI Quality)
 
-When release CI is in the PR diff, load this skill and score [reference.md](reference.md) checklist (subject skip, harness path skip, GoReleaser same job, same-pipeline Docker, verify job, publish-complete pin gate).
+When release CI is in the PR diff (GitHub or GitLab auto-patch, GoReleaser config, or decide/path-predicate scripts), load this skill and score [reference.md](reference.md) under category **CI Quality** (subject skip, harness path skip, packaging-only skip, full git history, GoReleaser same job, same-pipeline Docker, verify job, publish-complete pin gate). Inline path filters in provider repos MUST match `scripts/auto-patch-path-predicates.sh`.
 
 ---
 

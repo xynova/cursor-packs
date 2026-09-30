@@ -53,7 +53,7 @@ Defaults: `project_name` = binary name; `main` = `./cmd/<binary>`; `binary` = `<
 - MUST treat module version `(devel)` as local development and keep reporting `dev`.
 - Align local `make build` ldflags with `-X main.version=...` when a Makefile exists.
 - Run `goreleaser check` after writing config (if `goreleaser` is installed).
-- MUST also write or update `.github/workflows/auto-patch-release.yml` from [reference.md](reference.md) (decide script, tag + GoReleaser in one job). MUST load `manage-go-releases` for skip rules and same-pipeline publish policy.
+- MUST also write or update `.github/workflows/auto-patch-release.yml` from [reference.md](reference.md) (decide script, tag + GoReleaser in one job). On GitLab, MUST write `.gitlab/ci/auto-patch-release.yml` from `prepare-go-forge/templates/gitlab/auto-patch-release.yml` or inline path filters from [reference.md](reference.md#inline-path-filter-fragment-no-cursor-packs-submodule). Auto-patch MUST skip harness-only (`.cursor/`, `lefthook.yml`) and packaging-only diffs since last `v*` (script or equivalent inline). MUST load `manage-go-releases` for skip rules and same-pipeline publish policy.
 - MUST NOT ship tag-only `release.yml` without auto-patch when the repo uses agent-oriented releases on `main`.
 
 ## Must not

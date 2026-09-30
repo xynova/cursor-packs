@@ -130,7 +130,7 @@ image:
 1. **Detect host** from `origin`.
 2. **Authenticate** (`glab` or `gh`) as Maintainer+.
 3. **Run prepare script** (`--project` / `--repo`).
-4. **Copy CI templates** from [templates/](templates/) when missing (GitLab quality + secret/SAST snippet + `goreleaser-release.yml`; GitHub `ci.yml` + secret scan).
+4. **Copy CI templates** from [templates/](templates/) when missing (GitLab `golang-quality.yml`, `goreleaser-release.yml`, `auto-patch-release.yml`; secret/SAST snippet; GitHub `ci.yml` + secret scan).
 5. **Cross-check** checklist below.
 6. **Hand off** to `setup-goreleaser` / `manage-go-releases` if release files or auto-patch are still missing.
 7. **Verify** (optional): re-run the last failed `release` / `auto_patch_release` job.
