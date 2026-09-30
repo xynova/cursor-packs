@@ -23,6 +23,7 @@ Optional (report, do not block baseline claim if files pass):
 |---|--------|--------|
 | 9 | Cursor links | `test -f .cursor/skills/<name>/SKILL.md` after wire |
 | 10 | GitHub Copilot links | `test -f .github/skills/<name>/SKILL.md` after wire |
+| 11 | Wire-only skills gitignored | BOOTSTRAP lists Go-module link names; those paths appear in `.gitignore`; `git status` clean after wire | Module-cache symlinks committed or mistaken for pin drift |
 
 ## Scaffold sequence
 

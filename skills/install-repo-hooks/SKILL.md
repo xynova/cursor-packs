@@ -59,6 +59,11 @@ extends:
 - Full baseline audit: load `ai-readiness`
 - Violation: STOP, run BOOTSTRAP wire commands, re-verify paths
 
+**CONSTRAINT:** After wire, MUST NOT confuse **pack pins** with **local skill links**. Pack content is pinned only via `.cursor/packs/shared` gitlink. Go-module wired skills under `.cursor/skills/` (from `go list -m` + `ln -snf`) MUST be gitignored when BOOTSTRAP says they are not committed; `??` on those paths is expected until gitignore is present.
+
+- Enforcement: `author-ai-copilots` reference "Host workspace: three Cursor skill sources"
+- Violation: STOP; run `make wire-cursor-skills` (or BOOTSTRAP), add gitignore names from BOOTSTRAP, do not commit module-cache symlinks
+
 **CONSTRAINT:** Before `git worktree add`, MUST load `sync-submodules-after-merge` in the **parent** clone so gitlinks match HEAD.
 
 - Violation: STOP, sync parent, then add worktree
@@ -80,4 +85,5 @@ extends:
 - [ ] Root `lefthook.yml` extends packs shared config
 - [ ] `lefthook install` succeeded in this tree
 - [ ] BOOTSTRAP skill symlinks resolve
+- [ ] Go-module wired skill names gitignored when BOOTSTRAP marks them wire-only (status clean after wire)
 - [ ] Packs submodule on a `v*` tag when pre-push pin check applies
