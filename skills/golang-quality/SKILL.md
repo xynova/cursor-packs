@@ -431,13 +431,32 @@ CreatedAt: time.Now().UTC().Format(time.RFC3339)
 // or inside Store*: if s.Now.IsZero() { t = time.Now() }
 ```
 
+**CONSTRAINT 26 — Embedded SQLite is pure Go (modernc).** When a Go module embeds SQLite via `database/sql`, MUST use `modernc.org/sqlite` and `sql.Open("sqlite", dsn)`. MUST NOT add `github.com/mattn/go-sqlite3` or any other CGO SQLite driver for new first-party code. MUST NOT set `CGO_ENABLED=1`, hostrelease CGO flags, or Docker CGO build paths solely to compile SQLite. DSN MUST use modernc pragma form (`_pragma=foreign_keys(1)`, `_pragma=journal_mode(WAL)`, `_pragma=busy_timeout(...)`) — not mattn’s `_foreign_keys=on` query style. Writer pools SHOULD use `SetMaxOpenConns(1)` for sqlite write paths (or document split read/write pools when concurrent writers are expected). Postgres/`pgx` and other server SQL drivers are out of scope for C26. Third-party dependencies that still import mattn MUST be tracked for replacement; MUST NOT add new first-party mattn imports. Platform-native CGO unrelated to SQLite (RobotGo, Keychain, etc.) is allowed. See [reference-patterns.md](reference-patterns.md#embedded-sqlite-modernc).
+- Enforcement: Stage 5 greps `go.mod`, blank imports, and `sql.Open` when embedded SQLite is in scope; flag mattn and `sqlite3` driver name on new/changed paths.
+- Violation: STOP, switch to modernc driver + DSN, remove CGO-only build hooks added for SQLite, re-check.
+
+CORRECT:
+```go
+import _ "modernc.org/sqlite"
+
+db, err := sql.Open("sqlite", path+"?_pragma=foreign_keys(1)&_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)")
+db.SetMaxOpenConns(1)
+```
+
+PROHIBITED:
+```go
+import _ "github.com/mattn/go-sqlite3"
+
+db, err := sql.Open("sqlite3", path+"?_foreign_keys=on&_journal_mode=WAL")
+```
+
 ---
 
 ## Steps
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
-2. **Implement** — Apply all 25 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated and outbound deadlines fail closed (C8)? logger injected? clock injected for durable stamps (C25)? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists every operator verb (C20) and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? PASS or fix.
+2. **Implement** — Apply all 26 constraints during generation. First param on I/O functions: `ctx context.Context`.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated and outbound deadlines fail closed (C8)? logger injected? clock injected for durable stamps (C25)? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists every operator verb (C20) and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? Embedded SQLite uses modernc, not mattn/CGO (C26)? PASS or fix.
 4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
 
 ```bash
@@ -505,3 +524,4 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] Error boundary (C23): inbound HTTP/CLI map service-package errors; no leaf-kit import only for sentinel checks
 - [ ] SQL migrations (C24): durable schema uses numbered up/down (or equivalent) applied once; no full DDL on every write/publish path
 - [ ] Injectable clocks (C25): durable stamps use injected `Now` / Clock; no leaf `time.Now()` on CreatedAt / manifests / cache Store*
+- [ ] Embedded SQLite (C26): `modernc.org/sqlite` + `sql.Open("sqlite", …)`; no new `mattn/go-sqlite3`; no CGO solely for SQLite; modernc pragma DSN
