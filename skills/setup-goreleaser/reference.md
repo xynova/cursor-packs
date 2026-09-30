@@ -240,6 +240,80 @@ jobs:
 
 If cursor-packs is not a submodule yet, inline the same rules from `scripts/auto-patch-decide.sh` until the pin exists.
 
+**MUST:** auto-patch jobs use full git history (`fetch-depth: 0` on GitHub, `GIT_DEPTH: "0"` on GitLab). Range since last `v*` drives path skips.
+
+**MUST NOT:** rely on workflow `paths:` / `paths-ignore:` or GitLab `rules:changes:` as the only harness protection (tip commit only).
+
+## `.gitlab/ci/auto-patch-release.yml` (packs present)
+
+Copy from `prepare-go-forge/templates/gitlab/auto-patch-release.yml` or use the same script invocation:
+
+```bash
+git submodule update --init --depth 1 .cursor/packs/shared
+export OUTPUT_FILE="${CI_PROJECT_DIR}/auto-patch.env"
+export EVENT_NAME="${CI_PIPELINE_SOURCE}"
+export MANUAL_BUMP="${RELEASE_BUMP:-patch}"
+export HEAD_MSG="${CI_COMMIT_TITLE:-}"
+bash .cursor/packs/shared/scripts/auto-patch-decide.sh
+source "${OUTPUT_FILE}"
+```
+
+Treat `CI_PIPELINE_SOURCE=web` as manual (same as `workflow_dispatch`); the decide script accepts `EVENT_NAME=web`.
+
+## Inline path-filter fragment (no cursor-packs submodule)
+
+Insert **after** the subject-releasable check and **before** semver bump. Keep in sync with `scripts/auto-patch-path-predicates.sh`.
+
+```bash
+# Keep in sync with cursor-packs scripts/auto-patch-decide.sh
+
+is_harness_only_path() {
+  local path="$1"
+  [[ "${path}" == lefthook.yml ]] && return 0
+  [[ "${path}" == .cursor/* ]] && return 0
+  return 1
+}
+
+is_packaging_only_path() {
+  local path="$1"
+  case "${path}" in
+    Dockerfile|Dockerfile.*) return 0 ;;
+    scripts/docker-*) return 0 ;;
+    scripts/ci/docker-*) return 0 ;;
+    scripts/ci/switchyard-smoke-routes.toml) return 0 ;;
+    .github/workflows/docker-release.yml|.github/workflows/packaging-rebuild.yml) return 0 ;;
+  esac
+  return 1
+}
+
+# When last_tag is v0.0.0: files="$(git diff-tree --no-commit-id --name-only -r HEAD)"
+# Else: files="$(git diff --name-only "${last_tag}" HEAD)"
+
+if [[ -n "${files}" ]]; then
+  harness_only="true"
+  while IFS= read -r f; do
+    [[ -z "${f}" ]] && continue
+    if ! is_harness_only_path "${f}"; then harness_only="false"; break; fi
+  done <<< "${files}"
+  if [[ "${harness_only}" == "true" ]]; then
+    echo "Skipping auto release: only agent-harness paths since ${last_tag}"
+    exit 0
+  fi
+
+  packaging_only="true"
+  while IFS= read -r f; do
+    [[ -z "${f}" ]] && continue
+    if ! is_packaging_only_path "${f}"; then packaging_only="false"; break; fi
+  done <<< "${files}"
+  if [[ "${packaging_only}" == "true" ]]; then
+    echo "Skipping auto release: packaging-only (use Docker release -rN)"
+    exit 0
+  fi
+fi
+```
+
+On GitHub Actions, write `skip=true` to `$GITHUB_OUTPUT` instead of `exit 0` when the decide step must set job outputs.
+
 ## Project release skill
 
 After setup, consumers often keep a **project-local** skill (not in cursor-packs) named `release-<binary>`:

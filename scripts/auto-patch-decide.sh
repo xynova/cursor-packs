@@ -1,35 +1,42 @@
 #!/usr/bin/env bash
-# Decide whether an auto-patch release should run. Writes GitHub Actions outputs.
-# Requires: fetch-depth 0 checkout. Env: EVENT_NAME, MANUAL_BUMP, HEAD_MSG (optional).
+# Decide whether an auto-patch release should run.
+#
+# Writes key=value lines to OUTPUT_FILE or GITHUB_OUTPUT (GitHub Actions).
+# Requires: full git history (fetch-depth 0 / GIT_DEPTH 0).
+#
+# Env:
+#   OUTPUT_FILE   — GitLab dotenv or local test output (preferred when set)
+#   GITHUB_OUTPUT — GitHub Actions step output (fallback)
+#   EVENT_NAME    — push (default), workflow_dispatch, or web (manual bump)
+#   MANUAL_BUMP   — patch|minor|major when manual
+#   HEAD_MSG      — tip commit subject ([skip release])
+#
+# Edge cases:
+#   - .cursor/packs/shared gitlink-only bumps are harness-only (no product tag).
+#   - Mixed harness + product paths are releasable.
+#   - Manual (workflow_dispatch / web) skips subject/path filters; still refuses existing tags.
+#   - Empty file list does not path-skip (falls through to bump).
 set -euo pipefail
 
-github_output="${GITHUB_OUTPUT:-}"
-if [[ -z "${github_output}" ]]; then
-  echo "auto-patch-decide: GITHUB_OUTPUT is required" >&2
+_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=auto-patch-path-predicates.sh
+source "${_script_dir}/auto-patch-path-predicates.sh"
+
+decide_output="${OUTPUT_FILE:-${GITHUB_OUTPUT:-}}"
+if [[ -z "${decide_output}" ]]; then
+  echo "auto-patch-decide: OUTPUT_FILE or GITHUB_OUTPUT is required" >&2
   exit 1
 fi
 
 write_out() {
-  printf '%s\n' "$1" >> "${github_output}"
+  printf '%s\n' "$1" >> "${decide_output}"
 }
 
-is_harness_only_path() {
-  local path="$1"
-  [[ "${path}" == lefthook.yml ]] && return 0
-  [[ "${path}" == .cursor/* ]] && return 0
-  return 1
-}
-
-is_packaging_only_path() {
-  local path="$1"
-  case "${path}" in
-    Dockerfile|Dockerfile.*) return 0 ;;
-    scripts/docker-*) return 0 ;;
-    scripts/ci/docker-*) return 0 ;;
-    scripts/ci/switchyard-smoke-routes.toml) return 0 ;;
-    .github/workflows/docker-release.yml|.github/workflows/packaging-rebuild.yml) return 0 ;;
+is_manual_event() {
+  case "${EVENT_NAME:-push}" in
+    workflow_dispatch|web) return 0 ;;
+    *) return 1 ;;
   esac
-  return 1
 }
 
 if [[ "${HEAD_MSG:-}" == *"[skip release]"* ]]; then
@@ -45,7 +52,7 @@ fi
 write_out "last_tag=${last_tag}"
 
 bump="patch"
-if [[ "${EVENT_NAME:-push}" == "workflow_dispatch" ]]; then
+if is_manual_event; then
   bump="${MANUAL_BUMP:-patch}"
 else
   range="${last_tag}..HEAD"
