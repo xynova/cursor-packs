@@ -42,6 +42,24 @@ Shared policy for Go libraries and toolkits consumed by agents (for example stro
 - Enforcement: Stage 5 review checklist in [reference.md](reference.md); no `on: push: tags` as the only Docker path after auto-patch
 - Violation: STOP; wire `workflow_call` from auto-patch (see `setup-goreleaser` auto-patch template)
 
+**CONSTRAINT:** When release CI publishes container images or other non-Go artifacts in the same pipeline, a tag is **published** only after a final **verify** job in that workflow is green (artifacts exist for `new_tag`, for example GHCR manifest inspect for image tags). Consumer agents MUST NOT bump submodule, `go.mod`, `images.env`, or deploy pins to `vX.Y.Z` until that full workflow succeeds (GoReleaser plus extra publish plus verify). A GitHub Release tag or `git ls-remote` alone is not enough when images are in scope.
+- Enforcement: Stage 5 checklist in [reference.md](reference.md); consumer pin checklist row for publish-complete
+- Violation: STOP; fix or re-run release CI before pinning consumers
+
+CORRECT:
+```bash
+# Auto patch workflow green through verify for v0.2.38, then pin host
+gh run list --workflow="Auto patch release" --limit 5
+# confirm success for the tag, then:
+git -C providers/polypus checkout v0.2.38
+```
+
+PROHIBITED:
+```bash
+# GoReleaser succeeded but Docker or verify failed; tag exists on origin
+git -C providers/polypus checkout v0.2.38   # half-publish
+```
+
 **CONSTRAINT:** MUST use **minor** only for additive public API, and **major** only for breaking public API (or when the user explicitly requests that bump).
 - Enforcement: `workflow_dispatch` bump input or explicit user instruction
 - Violation: STOP, do not treat “cut a release” as major by default
@@ -76,6 +94,7 @@ When the repo is a Go **library** (source releases / `builds.skip: true` is OK):
    - Creates annotated `vX.Y.(Z+1)`
    - Runs GoReleaser in the **same job** (CI job-token tag pushes do not reliably trigger other pipelines)
    - Calls Docker or other publish workflows via `workflow_call` in the same pipeline when images are in scope
+   - Ends with a **verify** job that fails when published artifacts for `new_tag` are missing (images: registry manifest inspect)
    - Offers manual bump (`workflow_dispatch` bump input on GitHub; `RELEASE_BUMP` on GitLab web pipelines)
 3. Document the policy in the upstream README under a short **Releases (for agents)** section.
 
@@ -92,6 +111,7 @@ Binary TRUE/FALSE:
 | Check | Method | Pass | Fail |
 |-------|--------|------|------|
 | Tag exists on origin | `git ls-remote --tags origin 'v*'` | Desired `vX.Y.Z` listed | Tag missing; wait or cut release |
+| Publish complete (images in scope) | Auto-patch / release workflow for that tag is green through **verify** | Success on verify job | Half-publish; fix CI before pin |
 | Checkout matches tag | `git -C <dep> describe --tags --exact-match` | Equals `vX.Y.Z` | Dirty or wrong SHA |
 | go.mod require matches | `go list -m <module>` | Version is `vX.Y.Z` | Pseudo-version / drift |
 | Working tree clean for dep | `git -C <dep> status --short` | Empty | Uncommitted dep edits |
@@ -101,7 +121,7 @@ Binary TRUE/FALSE:
 
 ## Review (Stage 5)
 
-When release CI is in the PR diff, load this skill and score [reference.md](reference.md) checklist (subject skip, harness path skip, GoReleaser same job, same-pipeline Docker).
+When release CI is in the PR diff, load this skill and score [reference.md](reference.md) checklist (subject skip, harness path skip, GoReleaser same job, same-pipeline Docker, verify job, publish-complete pin gate).
 
 ---
 
@@ -110,6 +130,8 @@ When release CI is in the PR diff, load this skill and score [reference.md](refe
 - [ ] Patch is the default bump; minor/major only when asked or API warrants it
 - [ ] Docs/chore/ci-only, harness-only paths, and `[skip release]` do not get tags
 - [ ] Extra publish (Docker) uses `workflow_call` or same job, not tag-wake sibling workflow
+- [ ] Verify job present when extra publish (Docker, charts) is in scope
+- [ ] Consumer pin waits for publish-complete (full workflow green), not tag or GoReleaser alone
 - [ ] Consumer pin updated submodule (or path) **and** `go.mod` when applicable
 - [ ] No force-push of tags unless the user explicitly requests it
 - [ ] If publish 403'd on packages / `admin_packages`, `prepare-go-forge` was run (or deferred with reason)
