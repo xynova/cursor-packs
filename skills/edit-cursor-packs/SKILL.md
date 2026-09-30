@@ -63,6 +63,7 @@ Typology (or any single-library) slice vocabulary rule → cursor-packs/rules/
 - Product/pipeline skills and fat invariant rules stay as **real** files under the consumer `.cursor/`.
 - The link script **skips** existing non-symlink paths (protects overlays).
 - MUST NOT replace an overlay with a pack symlink unless the user explicitly asks.
+- Host **ai-copilots** operator symlinks and **Go-module** wired skills are not pack pins. See `author-ai-copilots` reference "Host workspace: three Cursor skill sources" before interpreting `?? .cursor/skills/*` as submodule drift.
 
 ## Typical sequence
 
