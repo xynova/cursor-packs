@@ -250,3 +250,20 @@ Detect (Stage 5 / Stage C / C25):
 - Leaf wall-clock fallback when the injected clock is unset.
 
 Related: `.cursor/rules/go-injectable-clock.mdc`; golang-quality CONSTRAINT 25; Stage 5 / Stage C.
+
+---
+
+## 22. Auto-patch subject-only skip (missing harness path filter)
+
+Auto-patch that only skips `docs:` / `chore:` / `ci:` subjects still cuts product tags when the diff since the last `v*` is harness-only (for example `.cursor/packs/shared` gitlink bumps).
+
+WRONG: subject-releasable loop only; no `git diff --name-only` since last tag; no `is_harness_only_path` / decide script.
+
+RIGHT: `bash .cursor/packs/shared/scripts/auto-patch-decide.sh` (with `fetch-depth: 0`) or inline filters kept in sync with `scripts/auto-patch-path-predicates.sh`.
+
+Detect (Stage 5 **CI Quality**):
+
+- `.gitlab/ci/auto-patch-release.yml` or `.github/workflows/auto-patch-release.yml` changed without harness/packaging path skip.
+- Missing `GIT_DEPTH: "0"` / `fetch-depth: 0` on the auto-patch job.
+
+Related: `.cursor/rules/go-releases.mdc`; `manage-go-releases/reference.md`; appendix pattern 22; setup-goreleaser reference inline fragment.
