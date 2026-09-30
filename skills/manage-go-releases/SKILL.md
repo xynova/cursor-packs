@@ -38,6 +38,14 @@ Shared policy for Go libraries and toolkits consumed by agents (for example stro
 - Enforcement: shared `scripts/auto-patch-decide.sh` path filter or equivalent in auto-patch CI
 - Violation: STOP; use harness-only skip before tagging
 
+**CONSTRAINT:** MUST NOT create a Go tag when every file changed since the last `v*` tag is packaging-only (Dockerfiles, docker CI scripts, `docker-release.yml`, `packaging-rebuild.yml`). Publish an immutable GHCR image revision `X.Y.Z-rN` (`N >= 1`) that reuses the existing `vX.Y.Z` release binaries instead.
+- Enforcement: `scripts/auto-patch-decide.sh` packaging-only path filter; `packaging-rebuild` or manual **Docker release** `workflow_call` with `image_revision`
+- Violation: STOP; cut `-rN` image, not `vX.Y.(Z+1)`, for Dockerfile/base-only work
+
+**CONSTRAINT:** Container images MUST carry OCI labels: `org.opencontainers.image.version` equals app semver `X.Y.Z` only; rebuild counter belongs in the image tag `X.Y.Z-rN` and vendor label `com.behaviorengineering.image.rebuild-revision` (`rN` or empty). MUST NOT overwrite an existing GHCR tag.
+- Enforcement: Docker release immutability gate (`imagetools inspect` before push); label assert in CI
+- Violation: STOP; bump `-rN` instead of re-pushing the same tag
+
 **CONSTRAINT:** Docker images, Helm charts, or other publish jobs MUST run in the **same** workflow as tag + GoReleaser (`workflow_call` or extra job). MUST NOT rely on `GITHUB_TOKEN` tag push to start a sibling workflow.
 - Enforcement: Stage 5 review checklist in [reference.md](reference.md); no `on: push: tags` as the only Docker path after auto-patch
 - Violation: STOP; wire `workflow_call` from auto-patch (see `setup-goreleaser` auto-patch template)
