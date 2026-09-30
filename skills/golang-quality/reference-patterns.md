@@ -577,7 +577,7 @@ if _, err := observability.Init(otelCfg); err != nil {
 ```
 
 - Process entrypoints that call LLMs MUST initialize the tracer provider.
-- When `MAJORDOMO_OTEL_ENDPOINT` / `OTEL_EXPORTER_OTLP_ENDPOINT` (or project equivalent) is set, MUST export via OTLP so Phoenix/Arize receives client spans.
+- When `MAJORDOMO_OTEL_ENDPOINT` / `OTEL_EXPORTER_OTLP_ENDPOINT` / `POLYPUS_OTLP_ENDPOINT` (Polypus Phoenix; see `ask-polypus` **Dev env**) or project equivalent is set, MUST export via OTLP so Phoenix/Arize receives client spans.
 - Local failure dumps without OTLP MAY still run; they do not replace OTLP when operators expect Phoenix.
 
 ### Client spans on LLM hops (not gateway-only)

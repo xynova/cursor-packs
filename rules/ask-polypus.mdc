@@ -3,7 +3,8 @@ description: >-
   Consult Gemma (or another allow-listed model) through the Polypus gateway
   (POLYPUS_BASE_URL, default http://127.0.0.1:1320). Load skill ask-polypus.
   Triggers: ask gemma, ask polypus, gemma on polypus, second opinion via
-  Polypus, POLYPUS_BASE_URL chat.
+  Polypus, POLYPUS_BASE_URL, POLYPUS_OTLP_ENDPOINT, Phoenix OTLP, OpenInference
+  dev env.
 alwaysApply: false
 ---
 
@@ -19,6 +20,7 @@ alwaysApply: false
 - Include the artifact under review in the prompt
 - Synthesize the reply for the human; do not treat the consult as an implement order
 - On health failure with non-loopback `BASE`, report remote unreachable; do not suggest local stack restart
+- For pipelines/MCP dev: document `POLYPUS_BASE_URL` and `POLYPUS_OTLP_ENDPOINT` together; Phoenix UI on Polypus host `:6006`, OTLP `:4317` (see skill **Dev env**)
 
 ## MUST NOT
 

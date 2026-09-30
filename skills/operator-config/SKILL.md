@@ -88,7 +88,14 @@ redis:
 
 **CONSTRAINT:** When the host uses an OS keyring, MUST declare which env names are secrets in the live config (top-level `secrets:` as a list of env names and/or `{env, required}` mappings). MUST query the keyring only for those names, and only after env is empty. MUST skip the keyring entirely when `secrets:` is omitted or empty. MUST NOT hardcode a product-wide env list that always calls `Keyring.Get` on every load. MUST inject `Keyring` via `operatorconfig.Options.Keyring` (or a host options field) for tests; MUST NOT require a process-global mutable keyring as the only test seam.
 
-Implementers MUST use `github.com/behaviorengineering/operatorconfig` (`ResolveConfigPath`, `Load` or host decode + `ResolveSecrets`, `InitUserConfig`, `Options.Keyring`) instead of reimplementing discovery and keyring order.
+Implementers MUST use `github.com/behaviorengineering/operatorconfig` (`ResolveConfigPath`, `Load`, `InitUserConfig`, `Options.Keyring`, `Options.EnvDefaults`) instead of reimplementing discovery, keyring order, env defaults, or `${VAR}` expand.
+
+**CONSTRAINT:** `operatorconfig.Load` order MUST be: read YAML → `ResolveSecrets` → `ApplyEnvDefaults` → expand `${VAR}` from process env → fail closed on leftover `${` in strings. MUST NOT expand placeholders before secrets resolve. MUST NOT add host-specific `switch` cases in a second expand walk.
+
+**CONSTRAINT:** Non-secret operator URLs (for example Polypus `POLYPUS_BASE_URL`, `POLYPUS_OTLP_ENDPOINT` for Phoenix/OpenInference OTLP) MUST use `Options.EnvDefaults` (static `Value` or `Derive`), not `secrets:` and not custom expand logic in the host. YAML references `${POLYPUS_BASE_URL}` / `${POLYPUS_OTLP_ENDPOINT}` only. Dev defaults and Phoenix UI `:6006` / OTLP `:4317` on the Polypus host: `ask-polypus` skill **Dev env**.
+
+- Enforcement: Host calls `operatorconfig.Load` (or the same order manually); `EnvDefaults` registered in one host helper; no duplicate expand in `internal/config/env.go`
+- Violation: STOP, move defaults to `EnvDefaults`, delete host expand switches, re-verify
 
 - Enforcement: Read YAML `secrets:` (or equivalent) and resolve helper; empty list does not call Get; tests inject Keyring
 - Violation: STOP, bind secret names from config, skip Get when empty, add injection seam, re-verify
