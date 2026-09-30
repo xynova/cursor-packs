@@ -8,6 +8,8 @@ Load this when a PR touches `.github/workflows/*release*`, `.goreleaser.yaml`, o
 | Harness path skip | Skips when diff since last tag is only `.cursor/**` or `lefthook.yml` | Pack bumps cut product tags |
 | GoReleaser same job | Tag create + `goreleaser release` in one workflow job (or same pipeline without tag-wake) | Tag push expects another workflow to start |
 | Extra artifacts (Docker, etc.) | `workflow_call` or same-job publish after GoReleaser | Only `on: push: tags` sibling workflow |
+| Verify after publish | Final job asserts artifacts for `new_tag` (e.g. `docker buildx imagetools inspect`) | GoReleaser or Docker green without registry proof |
+| Consumer pin gate | Docs / agents wait for full workflow green including verify | Pin on tag exists or GoReleaser-only success |
 
 CORRECT:
 
@@ -21,6 +23,11 @@ jobs:
   docker:
     needs: release
     uses: ./.github/workflows/docker-release.yml
+  verify:
+    needs: [release, docker]
+    if: needs.release.outputs.skip != 'true'
+    steps:
+      - run: docker buildx imagetools inspect ghcr.io/ORG/IMAGE:${VERSION}
 ```
 
 PROHIBITED:
