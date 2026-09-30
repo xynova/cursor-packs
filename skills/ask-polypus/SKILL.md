@@ -6,7 +6,8 @@ description: >-
   defaulting to Gemma 4 on cf_local. Use when the user says ask Gemma, ask
   Polypus, go ask gemma on polypus, second opinion via Polypus, or wants a
   gateway chat completion without editing Polypus itself. Not for operating or
-  debugging the gateway (use polypus-operator).
+  debugging the gateway (use polypus-operator). Also use for dev env: Polypus
+  gateway URL, Phoenix / OpenInference OTLP (POLYPUS_OTLP_ENDPOINT).
 ---
 
 # Ask Polypus (Gemma consult)
@@ -35,6 +36,41 @@ Resolve `BASE` once per consult:
 
 ```bash
 BASE="${POLYPUS_BASE_URL:-http://127.0.0.1:1320}"
+```
+
+## Dev env (gateway + Phoenix / OpenInference OTLP)
+
+Export these in direnv, shell profile, or the MCP/pipelines parent process so **chat and client OTLP share the same Polypus host** (local `make serve` or remote Tailscale URL).
+
+| Env | Role | Loopback default (Polypus `make serve`) |
+| --- | --- | --- |
+| `POLYPUS_BASE_URL` | OpenAI gateway origin (no `/v1`) | `http://127.0.0.1:1320` |
+| `POLYPUS_OTLP_ENDPOINT` | Phoenix OTLP gRPC `host:port` (Arize Phoenix UI reads these traces) | `127.0.0.1:4317` when unset; with remote `POLYPUS_BASE_URL`, derive `<gateway-host>:4317` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Generic OTel (optional; Polypus gateway may mirror from `POLYPUS_OTLP_ENDPOINT`) | Same collector as Phoenix when tracing is on |
+
+| Surface | URL |
+| --- | --- |
+| Phoenix UI (traces) | `http://127.0.0.1:6006` on the Polypus host |
+| OTLP gRPC | `host:4317` on the Polypus host (not the gateway `:1320` port) |
+
+**CONSTRAINT:** Consumer YAML MUST use `${POLYPUS_OTLP_ENDPOINT}` for `openinference.endpoint` (or equivalent), not hardcoded `localhost:4317`, when `POLYPUS_BASE_URL` can be remote. Hosts SHOULD register defaults via `operatorconfig` `EnvDefaults` (see `operator-config` skill).
+
+**CONSTRAINT:** MUST NOT put OTLP URLs in `secrets:`; they are operator env, not keyring credentials.
+
+Polypus-only toggles (`POLYPUS_OTEL`, `POLYPUS_PHOENIX`, `POLYPUS_FAILURE_DUMP_DIR`): see `polypus-operator` in the Polypus repo.
+
+Example (remote gateway + derived OTLP):
+
+```bash
+export POLYPUS_BASE_URL=https://polypus.example.ts.net
+# POLYPUS_OTLP_ENDPOINT unset → consumers derive polypus.example.ts.net:4317
+```
+
+Example (local dev):
+
+```bash
+export POLYPUS_BASE_URL=http://127.0.0.1:1320
+export POLYPUS_OTLP_ENDPOINT=127.0.0.1:4317
 ```
 
 ## Core constraints
