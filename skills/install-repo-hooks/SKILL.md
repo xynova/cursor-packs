@@ -31,20 +31,33 @@ One-time (per clone or worktree) setup: Lefthook + ai-copilots wire. Commit-time
 - Enforcement: `pwd` matches toplevel before install steps
 - Violation: STOP, `cd` to toplevel, restart checklist
 
-**CONSTRAINT:** MUST ship or verify root `lefthook.yml` that extends the packs submodule:
+**CONSTRAINT:** MUST ship or verify root `lefthook.yml` for one of two consumer modes:
+
+**Packs consumer** (umbrella host, Consilium, any repo with `.cursor/packs/shared`):
 
 ```yaml
 extends:
   - .cursor/packs/shared/lefthook/lefthook.yml
 ```
 
-- Enforcement: file exists and lists the extends path
-- Violation: STOP, create thin file from `lefthook/README.md`
+**Standalone Go module** (portable provider; no packs submodule):
 
-**CONSTRAINT:** MUST initialize packs before extends resolve: `git submodule update --init --recursive` when `.cursor/packs/shared` is a gitlink.
+```yaml
+extends:
+  - lefthook/lefthook-go-standalone.yml
+```
+
+Scripts live under `scripts/git-hooks/`. Scaffold with `./scripts/ensure-go-standalone-lefthook.sh --project .` from a cursor-packs checkout, or copy `prepare-go-forge` templates.
+
+- Enforcement: file exists and lists a valid extends path; standalone repos have `scripts/git-hooks/*.sh`
+- Violation: STOP, create files from `lefthook/README.md` or `ensure-go-standalone-lefthook.sh`
+
+**CONSTRAINT:** When using the packs consumer mode, MUST initialize packs before extends resolve: `git submodule update --init --recursive` when `.cursor/packs/shared` is a gitlink.
 
 - Enforcement: `test -f .cursor/packs/shared/lefthook/lefthook.yml`
 - Violation: STOP, submodule update, retry
+
+Standalone mode MUST NOT require a packs submodule; skip this step when `lefthook/lefthook-go-standalone.yml` is the extends target.
 
 **CONSTRAINT:** MUST install Lefthook and register hooks once per clone or worktree.
 
@@ -82,7 +95,7 @@ extends:
 
 ## Pre-completion verification
 
-- [ ] Root `lefthook.yml` extends packs shared config
+- [ ] Root `lefthook.yml` extends packs shared config or standalone `lefthook-go-standalone.yml`
 - [ ] `lefthook install` succeeded in this tree
 - [ ] BOOTSTRAP skill symlinks resolve
 - [ ] Go-module wired skill names gitignored when BOOTSTRAP marks them wire-only (status clean after wire)
