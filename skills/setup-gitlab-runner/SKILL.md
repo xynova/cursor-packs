@@ -15,6 +15,24 @@ description: >-
 Register a **local** GitLab runner so project pipelines can run without SaaS
 shared minutes. Prefer the **docker** executor when jobs declare `image:`.
 
+## Preferred path: runnerconcierge
+
+For macOS and Windows homelab hosts, prefer the Go wizard
+**runnerconcierge** (`github.com/behaviorengineering/runnerconcierge`) instead
+of hand-rolled register scripts:
+
+```bash
+runnerconcierge init
+runnerconcierge          # interactive wizard
+runnerconcierge doctor
+runnerconcierge setup --non-interactive --yes --repo group/project --tag-list my-tag
+```
+
+The wizard enforces GitLab 16+ rules (tags on `POST /user/runners` only, not
+on `gitlab-runner register`), login-user Windows services (not LocalSystem),
+and checkpointed resume. Host-specific tags and project paths belong in the
+**consumer** repo preset wrapper, not in runnerconcierge itself.
+
 **Companion notes:** [reference.md](reference.md)
 
 **Related:** `prepare-go-forge` (host forge settings and CI stubs). This skill
