@@ -11,7 +11,7 @@ When this repository is the git root (not a consumer submodule path):
 
 Pre-push compares `HEAD` to the newest `v*` tag on this repo (same pin rule as consumers).
 
-## Consumer setup
+## Consumer setup (cursor-packs submodule)
 
 1. Root `lefthook.yml`:
 
@@ -23,6 +23,15 @@ extends:
 2. Install Lefthook once per clone or worktree: `make hooks-install` (or `lefthook install`).
 
 3. Keep the packs submodule gitlink on a `v*` release tag. Pre-push fails if the checkout is not the newest `v*` on origin.
+
+## Standalone Go modules (no packs submodule)
+
+Portable Go libraries and providers that do not submodule cursor-packs still use the same **pre-commit** jobs (default-branch refuse + staged Go format). They do **not** run the packs pin pre-push check.
+
+1. From a cursor-packs checkout: `./scripts/ensure-go-standalone-lefthook.sh --project /path/to/go-module`
+2. Or copy [prepare-go-forge templates](../skills/prepare-go-forge/templates/lefthook/) and [git-hooks](../skills/prepare-go-forge/templates/git-hooks/) into the target repo.
+3. Add `hooks-install` from [templates/make/hooks-install.mk](../skills/prepare-go-forge/templates/make/hooks-install.mk).
+4. `make hooks-install` once per clone or worktree.
 
 ## Jobs
 

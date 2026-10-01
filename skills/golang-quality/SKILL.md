@@ -464,6 +464,7 @@ Do NOT complete while any of these fail. Fix, re-run, then complete.
 - [ ] Makefile help: if a `Makefile` exists, `make` / `make help` lists every operator verb (CONSTRAINT 20)
 - [ ] Makefile shared verbs: shared jobs use `build` / `test` / `vet` / `tidy` / `lint` / `serve` / `serve-down` (and `init` / `ci` when applicable); no serve-only-as-`dev` (CONSTRAINT 21)
 - [ ] Format: `make format` if present, else `gofumpt`/`gofmt` + `goimports`
+- [ ] Commit hooks: `make hooks-install` once per clone (packs consumer or standalone; see `install-repo-hooks`)
 - [ ] Lint: `make lint` if present, else `golangci-lint run` (gosec/godot via `.golangci.yml` when configured)
 - [ ] Vet: `make vet` if present, else `go vet ./...`
 - [ ] Test: `make test` if present, else `go test` on changed packages
