@@ -186,12 +186,13 @@ Operators expect a catalog (`serve`, `version`, `help`). A daemon whose default 
 
 WRONG: `main` parses flags and listens when `os.Args` has no subcommand; no root `version`; README says `go run ./cmd/tool` to start the daemon.
 
-RIGHT: Explicit start command (`serve`); bare invoke prints usage and exits non-zero; `version` works without config or license Gate; Makefile / Docker / Air / compose use the start command. See `cli-command-surface`.
+RIGHT: Explicit start command (`serve`); bare invoke prints the agent operating guide (multi-line stdout, exit 0); `version` works without config or license Gate; Makefile / Docker / Air / compose use the start command. See `cli-command-surface`.
 
 Detect (Stage 5 when CLI in scope; Stage A consult):
 
 - Entrypoint falls through to Listen/Serve with no subcommand.
 - Missing `version` / root help catalog.
+- Agent guide or root help concatenates sections without newlines (wall of text).
 - Launchers still invoke the bare binary after start became explicit.
 - Help text marks discovery flags as required when resolvers already default them.
 

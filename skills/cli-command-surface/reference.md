@@ -8,8 +8,8 @@ LOAD-WHEN: implementing or reviewing a language-agnostic CLI runner under `.curs
 
 | Invoke | Required behavior |
 |--------|-------------------|
-| `<bin>` (no args) | Print agent operating guide (constraint 7); do **not** Listen/Serve; exit `0` |
-| `<bin> help` / `-h` / `--help` | Print root catalog; exit 0 |
+| `<bin>` (no args) | Print agent operating guide (constraints 7–9); do **not** Listen/Serve; exit `0` |
+| `<bin> help` / `-h` / `--help` | Print root catalog (one command per line); exit 0 |
 | `<bin> version` | Print identity; no config/Gate/network; exit 0 |
 | `<bin> serve` (or `run` / `start`) | Load config, optional Gate, then Listen |
 | `<bin> unknown` | Usage + non-zero; never fall through to serve |
@@ -156,6 +156,53 @@ MUST: Unknown command prints stderr error + `printUsage` and returns non-zero.
 
 ---
 
+## Go (stdout newline helper)
+
+Guide and usage printers often share one helper. Each logical line MUST end with `\n` in the terminal.
+
+```go
+func writeln(w io.Writer, format string, args ...any) {
+	if format == "" {
+		fmt.Fprintln(w)
+		return
+	}
+	out := fmt.Sprintf(format, args...)
+	if !strings.HasSuffix(out, "\n") {
+		out += "\n"
+	}
+	fmt.Fprint(w, out)
+}
+```
+
+MUST: Route `agentOperatingGuide()`, `printUsage`, and root help through `writeln` or explicit `fmt.Println` per line.
+MUST NOT: chain `fmt.Fprintf` calls without newlines between sections (constraint 9).
+
+Example guide shape (stdout):
+
+```text
+tool v1.2.3
+One-line purpose.
+
+Short boundary sentence (bare invoke does not start serve).
+
+Documentation for agents
+  AGENTS.md
+  ai-copilots/README.md
+
+Read-only
+  doctor, version, help
+
+Changes host or remote
+  init, setup
+
+Automation example
+  tool setup --non-interactive --yes ...
+
+Full command list: tool help
+```
+
+---
+
 ## Review mapping
 
 | Check | Mechanical (Stage 5 when CLI in scope) | Consultant (Stage A) |
@@ -164,4 +211,5 @@ MUST: Unknown command prints stderr error + `printUsage` and returns non-zero.
 | Missing `version` | Detect fail | — |
 | Missing root catalog | Detect fail | — |
 | Launchers still bare | Detect fail | — |
+| Guide/help wall of text (missing newlines) | Detect fail | — |
 | Subcommand taxonomy / naming | — | Ask if `serve` vs `run` matches operator vocabulary |

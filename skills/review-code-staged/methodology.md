@@ -188,6 +188,7 @@ Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality
 When the review target includes a command-line runner (`cmd/`, daemon `main`, CLI package that owns process argv), MUST also Read `.cursor/skills/cli-command-surface/SKILL.md` and apply its binary checks. These checks are language-agnostic behavior gates; they apply to Go entrypoints in this review and to other-language runners when that is the stated target.
 
 - [ ] Bare invoke (no args) does not Listen/Serve; prints agent operating guide (sections: role, agent guide, lifecycle commands, automation rules) and exits 0, or legacy usage until migrated
+- [ ] Agent guide and root help are multi-line on stdout (constraint 9); no wall of text from missing newlines between `Fprintf` calls
 - [ ] Root `AGENTS.md` and in-module `ai-copilots/` operator skill exist for shipped CLI modules
 - [ ] State-mutating subcommands support `--dry-run` and headless `--yes` (or equivalent) where interactive confirm exists
 - [ ] Root `version` (or documented equivalent) prints identity without config / license Gate / network

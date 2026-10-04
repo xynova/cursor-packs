@@ -131,7 +131,7 @@ ENTRYPOINT ["/tool"]
 
 **CONSTRAINT 6 — Language-agnostic, framework-local.** Prefer the ecosystem’s normal CLI framework (Go `flag`/cobra/urfave; Python argparse/click/tyro; Node commander/yargs; Rust clap). The contract is behavioral, not a required library.
 
-- MUST: meet constraints 1–8 regardless of framework
+- MUST: meet constraints 1–9 regardless of framework
 - MUST NOT: rewrite a working CLI stack only to match another language’s framework
 - Enforcement: Behavior checklist above; framework choice is out of scope unless the user asks
 - Violation: STOP, restore ecosystem-local tooling; keep the behavior contract
@@ -139,7 +139,8 @@ ENTRYPOINT ["/tool"]
 **CONSTRAINT 7 — Agent-ready default view.** Bare invoke (no args) MUST print a structured agent operating guide to stdout and exit 0.
 
 - MUST: include tool name, version, one-line purpose, role/boundaries, agent operating guide (paths to `AGENTS.md` and `ai-copilots/`), commands grouped by risk/lifecycle (inspect, plan/dry-run, execute/mutate), and automation rules (`--dry-run`, `--yes`, headless flags)
-- MUST: keep human flag syntax under `help` / `-h` / `--help` and per-command `--help`
+- MUST: format the guide for humans and agents (constraint 9): short section headings, blank lines between sections, indented doc paths and command lists, and a closing pointer to `help` for the full flag catalog
+- MUST: keep detailed human flag syntax under `help` / `-h` / `--help` and per-command `--help`
 - MUST NOT: print only a one-line `usage: tool <cmd>` fragment on bare invoke
 - MUST NOT: start Listen/Serve on bare invoke
 - Enforcement: Run `<bin>` with no args; confirm sections above and exit 0
@@ -153,13 +154,42 @@ ENTRYPOINT ["/tool"]
 - Enforcement: `test -f AGENTS.md && test -f ai-copilots/skills/*/SKILL.md` at module root
 - Violation: STOP, add harness before claiming CLI work is done (see `author-ai-copilots`)
 
+**CONSTRAINT 9 — Human-readable stdout.** Long-form operator text on stdout (agent operating guide, root help catalog, usage blocks) MUST render as multiple lines in the terminal.
+
+- MUST: end each logical line with a newline (shared `writeln` helper, `fmt.Println`, or equivalent per line)
+- MUST: separate sections with blank lines; MUST NOT pack headings, doc paths, and command lists into one comma-separated paragraph
+- MUST: apply the same newline discipline to root `help` / usage printers, not only the bare-invoke guide
+- MUST NOT: call `fmt.Fprintf(w, "section A")` then `fmt.Fprintf(w, "section B")` without `\n` between them (wall-of-text output)
+- Enforcement: Run `<bin>` and `<bin> help`; confirm multiple lines (visual inspect or `wc -l`); unit tests MAY assert a minimum line count for the guide
+- Violation: STOP, fix the stdout writer and reformat guide/help before claiming CLI UX done
+
+CORRECT:
+```text
+runnerconcierge v1.2.3
+GitLab self-hosted runner setup.
+
+Documentation for agents
+  AGENTS.md
+  ai-copilots/README.md
+
+Read-only
+  doctor, version, help
+
+Full command list: runnerconcierge help
+```
+
+PROHIBITED:
+```text
+runnerconcierge v1.2.3: setup CLI.Purpose: ...Agent docs: AGENTS.md, ...Inspect: doctor, helpExecute: setup...
+```
+
 ---
 
 ## Steps
 
 1. **Identify the runner** — binary name, entry file, existing subcommands.
 2. **Classify start** — if Listen/Serve/worker loop exists, name the start command (`serve` preferred for daemons).
-3. **Wire root dispatch** — bare invoke → usage + non-zero; `version`; `help`; start; other operator commands.
+3. **Wire root dispatch** — bare invoke → agent guide, exit 0; `version`; `help`; start; other operator commands.
 4. **Keep Gate/config out of version** — dispatch `version` / `help` before config load and license Gate.
 5. **Update launchers** — Makefile, Docker, Air, compose, README, CI.
 6. **Verify** — run the pre-completion checklist below.
@@ -184,6 +214,10 @@ ENTRYPOINT ["/tool"]
       Method: `<bin> help` or `--help`
       Pass: Catalog names the real commands
       Fail: Empty or flag-only usage → STOP, add catalog
+- [ ] **Readable guide and help:** stdout is multi-line with blank lines between sections
+      Method: `<bin>` and `<bin> help`; visual inspect or `wc -l`
+      Pass: No wall of text; doc paths and commands on separate lines (constraint 9)
+      Fail: Concatenated single line → STOP, fix stdout newline helper
 - [ ] **Unknown command:** Bad root word exits non-zero with usage
       Method: `<bin> not-a-command`
       Pass: Message + usage, exit 2 (or project non-zero)
