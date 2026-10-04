@@ -14,6 +14,7 @@ Creates relative symlinks:
   .cursor/skills/<name>     -> ../packs/shared/skills/<name>
   .cursor/rules/<file>      -> ../packs/shared/rules/<file>
   .cursor/personas/<file>   -> ../packs/shared/personas/<file>
+  .cursor/agents/<file>     -> ../packs/shared/agents/<file>
 
 Refuses to overwrite a real (non-symlink) file or directory.
 EOF
@@ -110,6 +111,9 @@ PERSONAS=(
   consultant.persona.md
   ai-readiness.persona.md
 )
+AGENTS=(
+  plan-auditor.md
+)
 
 link_one() {
   local link_path="$1"
@@ -142,7 +146,7 @@ echo "Project: $PROJECT"
 echo "Pack:    $PACK"
 echo
 
-mkdir -p "$CURSOR/skills" "$CURSOR/rules" "$CURSOR/personas"
+mkdir -p "$CURSOR/skills" "$CURSOR/rules" "$CURSOR/personas" "$CURSOR/agents"
 
 for name in "${SKILLS[@]}"; do
   link_one \
@@ -163,6 +167,13 @@ for name in "${PERSONAS[@]}"; do
     "$CURSOR/personas/$name" \
     "../packs/shared/personas/$name" \
     "$PACK/personas/$name"
+done
+
+for name in "${AGENTS[@]}"; do
+  link_one \
+    "$CURSOR/agents/$name" \
+    "../packs/shared/agents/$name" \
+    "$PACK/agents/$name"
 done
 
 echo

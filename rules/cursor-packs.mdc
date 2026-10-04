@@ -1,27 +1,28 @@
 ---
 description: >-
-  Routes edits of soft-linked Cursor skills, rules, and personas to the
+  Routes edits of soft-linked Cursor skills, rules, personas, and subagents to the
   cursor-packs submodule workflow, and gates what may be added to the pack.
-  Apply when changing .cursor/skills, .cursor/rules, or .cursor/personas, or
-  when paths resolve into .cursor/packs/shared.
+  Apply when changing .cursor/skills, .cursor/rules, .cursor/personas, or
+  .cursor/agents, or when paths resolve into .cursor/packs/shared.
 globs:
   - .cursor/skills/**
   - .cursor/rules/**
   - .cursor/personas/**
+  - .cursor/agents/**
   - .cursor/packs/shared/**
 alwaysApply: false
 ---
 
 # Soft-linked cursor-packs
 
-- Before editing under `.cursor/skills/`, `.cursor/rules/`, or `.cursor/personas/`, MUST check whether the path is a symlink into `.cursor/packs/shared/`.
+- Before editing under `.cursor/skills/`, `.cursor/rules/`, `.cursor/personas/`, or `.cursor/agents/`, MUST check whether the path is a symlink into `.cursor/packs/shared/`.
 - If it is pack-linked: MUST follow `.cursor/skills/edit-cursor-packs/SKILL.md` (branch/commit in **cursor-packs**, then bump the consumer submodule). MUST NOT treat the path as a normal consumer-owned file.
 - If it is a real file/directory: it is a consumer overlay; edit and commit in the consumer repo.
-- New shared skill, rule, or persona names MUST be added to `.cursor/packs/shared/scripts/link-into-project.sh` allow-lists and the link script re-run in consumers.
+- New shared skill, rule, persona, or subagent names MUST be added to `.cursor/packs/shared/scripts/link-into-project.sh` allow-lists and the link script re-run in consumers.
 
 ## Pack membership gate (ask before creating)
 
-**CONSTRAINT:** Before creating or expanding any skill, rule, or persona in **cursor-packs**, MUST answer the membership questions below. MUST NOT add the artifact to the pack unless it passes.
+**CONSTRAINT:** Before creating or expanding any skill, rule, persona, or subagent in **cursor-packs**, MUST answer the membership questions below. MUST NOT add the artifact to the pack unless it passes.
 
 Ask yourself:
 
