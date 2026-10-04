@@ -17,6 +17,7 @@ When generating, completing, or fixing a command-line runner or daemon entrypoin
 4. Go license Gate skip for `version` / `license` still uses `.cursor/skills/setup-go-binary-license/SKILL.md`.
 5. Shipped CLI modules MUST ship root `AGENTS.md` plus in-module `ai-copilots/` (see `author-ai-copilots` and constraint 7 in the skill).
 6. Bare invoke (no args) MUST print the agent-ready operating guide (not a one-line syntax error) and exit 0; `--help` remains the human flag catalog.
-7. Agent guide and root help MUST use one line per write with trailing newlines (constraint 9); MUST NOT render as a single wall of text in the terminal.
+7. Agent guide, root help, and inspect reports MUST use one line per write with trailing newlines (constraint 9); MUST NOT render as a single wall of text.
+8. Inspect/status/doctor default stdout MUST be dual-audience (constraint 10): labeled sections for humans, stable headings for agents, `--json` when a report object exists.
 
 When staged Go review includes a CLI entrypoint in scope: mechanical **Stage 5** MUST also apply `cli-command-surface` binary checks (see `review-code-staged` methodology).

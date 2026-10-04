@@ -193,6 +193,7 @@ Detect (Stage 5 when CLI in scope; Stage A consult):
 - Entrypoint falls through to Listen/Serve with no subcommand.
 - Missing `version` / root help catalog.
 - Agent guide or root help concatenates sections without newlines (wall of text).
+- Inspect/status/doctor stdout packs `key=value` or embeds a raw `--version` banner.
 - Launchers still invoke the bare binary after start became explicit.
 - Help text marks discovery flags as required when resolvers already default them.
 

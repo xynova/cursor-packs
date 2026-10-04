@@ -540,8 +540,9 @@ func formatSummary(data summaryData) (string, error) {
 }
 ```
 
-- MUST prefer `text/template` for multi-line operator-facing reports.
-- MUST NOT build those layouts with chained `WriteString` / many `Sprintf` calls.
+- MUST prefer `text/template` for multi-line operator-facing reports (poll summaries, ASCII diagrams, status boards).
+- CLI inspect/status/doctor stdout MAY use labeled `writeln` sections per `cli-command-surface` C9–C10; MUST still keep `--json` stable when the command has a report object.
+- MUST NOT build diagram/summary layouts with chained `WriteString` / many `Sprintf` calls.
 - MAY use `fmt` / `strings.Builder` for single-line log lines and tight loops.
 - SHOULD parse with `template.Must` at package init when the template is static.
 - Example in-tree: `internal/poll/summary.go`.

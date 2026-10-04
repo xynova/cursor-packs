@@ -11,6 +11,7 @@ LOAD-WHEN: implementing or reviewing a language-agnostic CLI runner under `.curs
 | `<bin>` (no args) | Print agent operating guide (constraints 7–9); do **not** Listen/Serve; exit `0` |
 | `<bin> help` / `-h` / `--help` | Print root catalog (one command per line); exit 0 |
 | `<bin> version` | Print identity; no config/Gate/network; exit 0 |
+| `<bin> status` / `doctor` / inspect | Dual-audience text (constraint 10); `--json` when a report object exists |
 | `<bin> serve` (or `run` / `start`) | Load config, optional Gate, then Listen |
 | `<bin> unknown` | Usage + non-zero; never fall through to serve |
 
@@ -174,7 +175,7 @@ func writeln(w io.Writer, format string, args ...any) {
 }
 ```
 
-MUST: Route `agentOperatingGuide()`, `printUsage`, and root help through `writeln` or explicit `fmt.Println` per line.
+MUST: Route `agentOperatingGuide()`, `printUsage`, root help, and inspect/status text renderers through `writeln` or explicit `fmt.Println` per line.
 MUST NOT: chain `fmt.Fprintf` calls without newlines between sections (constraint 9).
 
 Example guide shape (stdout):
@@ -203,6 +204,28 @@ Full command list: tool help
 
 ---
 
+## Inspect / status text (dual audience)
+
+Default inspect stdout is for a person at a terminal **and** an agent grepping headings. JSON is a separate document.
+
+```go
+func renderStatus(w io.Writer, rep *Report) {
+	writeln(w, "Host")
+	writeln(w, "  OS:             %s/%s", rep.GOOS, rep.GOARCH)
+	writeln(w, "  gitlab-runner:  %s", compactVersion(rep.RunnerVer))
+	writeln(w, "")
+	writeln(w, "Services")
+	writeln(w, "  How the process is kept alive (launchd, Homebrew, or Windows).")
+	// one service block per unit; gloss kind once
+}
+```
+
+MUST: Stable section titles; one labeled field per line; compact vendor `--version` banners (constraint 10).
+MUST: Keep `--json` field names stable when pretty-printing text.
+MUST NOT: `fmt.Fprintf(w, "os=%s arch=%s runner=%s\n", ..., fullVersionBanner)`.
+
+---
+
 ## Review mapping
 
 | Check | Mechanical (Stage 5 when CLI in scope) | Consultant (Stage A) |
@@ -212,4 +235,5 @@ Full command list: tool help
 | Missing root catalog | Detect fail | — |
 | Launchers still bare | Detect fail | — |
 | Guide/help wall of text (missing newlines) | Detect fail | — |
+| Inspect/status packed `key=value` or raw `--version` banner | Detect fail | — |
 | Subcommand taxonomy / naming | — | Ask if `serve` vs `run` matches operator vocabulary |

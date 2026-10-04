@@ -119,9 +119,9 @@ c := &http.Client{Timeout: timeout}
 
 **CONSTRAINT 12 — Focused interfaces.** Interfaces MUST stay ≤ 5–6 methods. Split by caller responsibility.
 
-**CONSTRAINT 13 — Report layouts use templates.** Multi-line operator-facing summaries, ASCII diagrams, and similar human reports MUST use `text/template` (or `html/template` when HTML). MUST NOT assemble those layouts with chained `WriteString` / `Sprintf`. One-line messages and tight loops MAY keep `fmt` / `strings.Builder`. See [reference.md](reference.md#text-templates-for-reports).
+**CONSTRAINT 13 — Report layouts use templates.** Multi-line operator-facing summaries, ASCII diagrams, and similar human reports MUST use `text/template` (or `html/template` when HTML). MUST NOT assemble those layouts with chained `WriteString` / `Sprintf`. One-line messages and tight loops MAY keep `fmt` / `strings.Builder`. **CLI inspect/status/doctor text** that follows `cli-command-surface` constraints 9–10 (labeled `writeln` sections, optional `--json`) is the exception: MUST NOT fail C13 solely because that renderer is not a `text/template`. See [reference.md](reference.md#text-templates-for-reports) and `.cursor/skills/cli-command-surface/SKILL.md`.
 
-**CONSTRAINT 14 — Structured logging.** Services and non-interactive commands MUST use an injected `internal/observability.Logger` (or the project's equivalent). MUST NOT use `fmt.Print*` or construct a new logger (`logrus.New()`, etc.) inside business logic. Interactive CLI MAY use pterm for operator UI. Error paths MUST log with discriminator fields (IDs, task/job names) then return the error (CONSTRAINT 4 / 6 still apply).
+**CONSTRAINT 14 — Structured logging.** Services and non-interactive commands MUST use an injected `internal/observability.Logger` (or the project's equivalent). MUST NOT use `fmt.Print*` or construct a new logger (`logrus.New()`, etc.) inside business logic. Interactive CLI MAY use pterm for operator UI. Operator inspect reports (`status`, `doctor`, inventory) MUST follow `cli-command-surface` C9–C10 (labeled sections for humans, stable headings for agents, `--json` when a report object exists). Error paths MUST log with discriminator fields (IDs, task/job names) then return the error (CONSTRAINT 4 / 6 still apply).
 - Enforcement: Every new or changed log site uses the injected logger; scan for `fmt.Print` / `logrus.New` in services.
 - Violation: STOP, inject the logger, replace the bypass, re-check.
 
@@ -514,7 +514,7 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] Interfaces ≤ 6 methods
 - [ ] Only essential symbols exported
 - [ ] All comments end with a period
-- [ ] Multi-line reports/diagrams use `text/template` (not chained `WriteString`)
+- [ ] Multi-line reports/diagrams use `text/template` (not chained `WriteString`); CLI inspect stdout may use labeled `writeln` per cli-command-surface C9–C10
 - [ ] Injected structured logger; no `fmt.Print*` / ad-hoc logger in services
 - [ ] LLM/inference entrypoints init OTEL; OTLP exporter when endpoint env set; client spans on generate/evaluate (not gateway-only)
 - [ ] Package layout (C19): kit vs product kit vs app-only classified; kit/product-kit API in `pkg/<domain>/`; thin `cmd/`; implementation and quality/smoke runners in `internal/`; no grab-bags or flat `internal/` forest

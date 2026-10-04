@@ -19,6 +19,8 @@ When generating or editing Go that builds multi-section prose, markdown, reports
 
 **CONSTRAINT:** When assembling a multi-section document (headings, lists, optional blocks, repeated rows), MUST use `text/template` or `html/template` (or an existing project template helper). MUST NOT grow the document with long chains of `WriteString` / `WriteByte` / `fmt.Fprintf` that encode headings and list layout in Go control flow.
 
+CLI inspect/status/doctor **terminal** reports that follow `.cursor/skills/cli-command-surface/SKILL.md` constraints 9–10 (labeled `writeln` sections, optional `--json`) are in scope for that skill, not this template rule. MUST NOT fail this constraint solely for that CLI text path. Markdown, TOC, ASCII boards, and other documents still MUST use templates.
+
 - MUST: put document skeleton in a `const` template string (or `.tmpl` file) with `{{range}}` / `{{if}}`
 - MUST NOT: encode the same skeleton as 10+ sequential builder writes of literal `"## ..."`, `"1. ..."`, `"\n"`
 
