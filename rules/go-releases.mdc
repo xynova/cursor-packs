@@ -13,3 +13,19 @@ When releasing, tagging, auto-patching, or pinning a Go module / submodule depen
 4. When the forge is not release-ready (missing protected `main`, package registry off, job-token `admin_packages` 403, or no Go quality / secret CI), load `.cursor/skills/prepare-go-forge/SKILL.md` and run the host prepare script before retrying publish.
 
 Project overlays may name concrete paths (for example `providers/strop`); the shared skill owns the version policy.
+
+## Review (Stage 5 — CI Quality)
+
+When a PR changes any of:
+
+- `.github/workflows/*release*`, `**/auto-patch-release.yml`
+- `.gitlab/ci/*release*`, `.gitlab/ci/auto-patch-release.yml`
+- `.goreleaser.yaml`, `.goreleaser.yml`
+- `scripts/auto-patch-decide.sh`, `scripts/auto-patch-path-predicates.sh`
+- cursor-packs `setup-goreleaser/**`, `prepare-go-forge/templates/**/auto-patch*`
+
+then:
+
+1. Load `.cursor/skills/manage-go-releases/SKILL.md` and [reference.md](.cursor/skills/manage-go-releases/reference.md) during **review-code-staged** Stage 5.
+2. Record findings under category **CI Quality** (plan file: `#### <Severity> CI Quality: …`).
+3. Fail the gate if auto-patch lacks harness-only or packaging-only path skip (shared decide script or inline equivalent), if checkout lacks full history (`fetch-depth: 0` / `GIT_DEPTH: 0`), if Docker/extra publish depends only on `on: push: tags` after a `GITHUB_TOKEN` tag push, if images are in scope but there is no **verify** job, if GHCR rebuilds lack `X.Y.Z-rN` + OCI version label policy, if consumer pin docs allow bumping before publish-complete (full workflow green including verify), or if consumer PRs omit the pre-PR pin ask / post-merge SHA rule (see [reference.md](.cursor/skills/manage-go-releases/reference.md) Pre-PR pin row).

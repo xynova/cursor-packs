@@ -1,0 +1,59 @@
+# Default-branch auto patch (agent-oriented), GitLab.
+# Skips: docs/chore/ci-only subjects, harness-only paths (.cursor/, lefthook.yml),
+# packaging-only paths, [skip release]. Manual: web pipeline + RELEASE_BUMP.
+#
+# Requires cursor-packs submodule at .cursor/packs/shared (or copy inline filters
+# from setup-goreleaser reference when packs is absent).
+#
+# Include from .gitlab-ci.yml: local: .gitlab/ci/auto-patch-release.yml
+# prepare-go-forge: job-token tag push + ADMIN_PACKAGES for GoReleaser.
+
+auto_patch_release:
+  stage: release
+  image: golang:${GO_VERSION}-bookworm
+  resource_group: release
+  dependencies: []
+  variables:
+    GIT_DEPTH: "0"
+    CGO_ENABLED: "0"
+    GITLAB_TOKEN: $CI_JOB_TOKEN
+    RELEASE_BUMP: "patch"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
+  before_script:
+    - go version
+    - apt-get update -qq && apt-get install -y --no-install-recommends git ca-certificates
+  script:
+    - |
+      set -euo pipefail
+
+      if [[ ! -f .cursor/packs/shared/scripts/auto-patch-decide.sh ]]; then
+        echo "Missing .cursor/packs/shared; init submodule or use inline path filters from setup-goreleaser reference"
+        exit 1
+      fi
+      git submodule update --init --depth 1 .cursor/packs/shared
+
+      export OUTPUT_FILE="${CI_PROJECT_DIR}/auto-patch.env"
+      export EVENT_NAME="${CI_PIPELINE_SOURCE}"
+      export MANUAL_BUMP="${RELEASE_BUMP:-patch}"
+      export HEAD_MSG="${CI_COMMIT_TITLE:-}"
+      bash .cursor/packs/shared/scripts/auto-patch-decide.sh
+      # shellcheck disable=SC1091
+      source "${OUTPUT_FILE}"
+
+      if [[ "${skip}" == "true" ]]; then
+        echo "Skipping auto release: ${reason:-unknown}"
+        exit 0
+      fi
+
+      echo "Creating ${new_tag} (bump=${bump})"
+      git config user.name "gitlab-ci"
+      git config user.email "gitlab-ci@${CI_SERVER_HOST}"
+      git remote set-url origin "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+      git tag -a "${new_tag}" -m "Release ${new_tag}"
+      git push origin "refs/tags/${new_tag}"
+
+      rm -f gl-sast-report.json gl-secret-detection-report.json
+      GOBIN=/usr/local/bin go install github.com/goreleaser/goreleaser/v2@v2.9.0
+      goreleaser release --clean

@@ -137,7 +137,7 @@ fmt.Printf("generator failed: %v\n", err)
 log := logrus.New()
 ```
 
-**CONSTRAINT 15 — Process and LLM observability.** Process entrypoints that run LLM or outbound inference MUST initialize the project's OpenTelemetry tracer provider (see `internal/observability` or equivalent). When an OTLP endpoint env is set (`MAJORDOMO_OTEL_ENDPOINT`, `OTEL_EXPORTER_OTLP_ENDPOINT`, or the project's documented equivalent), MUST attach an OTLP exporter so client spans reach Phoenix/Arize (or the configured backend). Generate, evaluate, and other LLM hops MUST create OpenInference (or project-standard) spans around the library work, not only rely on an AI gateway's HTTP traces. Gateway-only visibility is NOT enough: hangs and parse failures after the HTTP response MUST still appear as client spans. When `defer` records span status from a named `err`, MUST assign with `err =` (never `err :=`) so failure status is preserved. See [reference-patterns.md](reference-patterns.md#observability-otel-and-logging) and review appendix pattern 14.
+**CONSTRAINT 15 — Process and LLM observability.** Process entrypoints that run LLM or outbound inference MUST initialize the project's OpenTelemetry tracer provider (see `internal/observability` or equivalent). When an OTLP endpoint env is set (`MAJORDOMO_OTEL_ENDPOINT`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `POLYPUS_OTLP_ENDPOINT` for Polypus/Phoenix consumers, or the project's documented equivalent), MUST attach an OTLP exporter so client spans reach Phoenix/Arize (or the configured backend). Generate, evaluate, and other LLM hops MUST create OpenInference (or project-standard) spans around the library work, not only rely on an AI gateway's HTTP traces. Gateway-only visibility is NOT enough: hangs and parse failures after the HTTP response MUST still appear as client spans. When `defer` records span status from a named `err`, MUST assign with `err =` (never `err :=`) so failure status is preserved. See [reference-patterns.md](reference-patterns.md#observability-otel-and-logging) and review appendix pattern 14.
 - Enforcement: Entrypoint init installs the tracer; LLM paths have span start/end; OTLP exporter wired when endpoint env is documented for the project; named-return span defers use `err =`.
 - Violation: STOP, wire init/export and spans (or document why this binary has no LLM path), re-check.
 
@@ -464,6 +464,7 @@ Do NOT complete while any of these fail. Fix, re-run, then complete.
 - [ ] Makefile help: if a `Makefile` exists, `make` / `make help` lists every operator verb (CONSTRAINT 20)
 - [ ] Makefile shared verbs: shared jobs use `build` / `test` / `vet` / `tidy` / `lint` / `serve` / `serve-down` (and `init` / `ci` when applicable); no serve-only-as-`dev` (CONSTRAINT 21)
 - [ ] Format: `make format` if present, else `gofumpt`/`gofmt` + `goimports`
+- [ ] Commit hooks: `make hooks-install` once per clone (packs consumer or standalone; see `install-repo-hooks`)
 - [ ] Lint: `make lint` if present, else `golangci-lint run` (gosec/godot via `.golangci.yml` when configured)
 - [ ] Vet: `make vet` if present, else `go vet ./...`
 - [ ] Test: `make test` if present, else `go test` on changed packages

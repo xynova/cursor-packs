@@ -46,6 +46,23 @@ PROHIBITED:
 gh pr create --title "..." --body "..."
 ```
 
+**CONSTRAINT:** After mergeability is clean, IF the branch changes submodule gitlinks or depends on an upstream release/PR that is not yet merged, MUST load **`manage-go-releases`** consumer pin checklist and ask the human **once** whether any pins are missing (submodule, `go.mod`, `images.env`, packs) before `gh pr create` / `glab mr create` / push that claims the PR is ready.
+- MUST: default is merge upstream first, then pin post-merge base tip or exact `v*` in the same consumer PR
+- MUST NOT: open the consumer PR on an upstream PR-tip SHA while upstream is still open, unless the human explicitly accepts a temporary pin and a second pin after merge
+- Enforcement: one plain-language question to the human; wait for answer or explicit proceed before opening the PR
+- Violation: STOP; fix pins or wait for upstream merge before PR create
+
+CORRECT:
+```text
+Branch bumps providers/polypus gitlink; upstream #60 merged → gitlink is merge commit on main; ask: "Any pins missing before I open the MR?"
+```
+
+PROHIBITED:
+```bash
+# Upstream PR still open; consumer MR pins PR head SHA; open MR anyway without asking
+glab mr create ...
+```
+
 **CONSTRAINT:** Conflict resolution MUST preserve the intent of both the feature branch and the base. When intents genuinely disagree, MUST abort and ask the user; MUST NOT guess.
 
 - MUST: for each conflicting file, read both sides (ours = feature branch, theirs = base during `git merge origin/<base>`) and state the overlap in plain English before editing

@@ -243,13 +243,52 @@ Suggested fields:
 **CONSTRAINT:** BOOTSTRAP `ln` MUST fail closed when the destination is a real file or a symlink into cursor-packs (`packs/shared`). Use prefixed skill names; never replace pack-owned skills.
 
 CORRECT:
+
 ```bash
 link_lib_skill inference-pace ai-copilots/skills/inference-pace
 # refuses if .cursor/skills/golang-quality points at packs/shared
 ```
 
 PROHIBITED:
+
 ```text
 rm .cursor/skills/golang-quality
 ln -snf $MOD/ai-copilots/skills/foo .cursor/skills/golang-quality
+```
+
+---
+
+## Host workspace: three Cursor skill sources (consumers)
+
+Hosts that use **cursor-packs** plus **ai-copilots** plus **Go module** operator
+skills MUST treat each source differently in git. Untracked `.cursor/skills/*`
+after wire is often normal, not pin drift.
+
+| Source | Example path | Git |
+|--------|----------------|-----|
+| Pack shared skills | `.cursor/skills/golang-quality` → `.cursor/packs/shared/...` | Symlink from `link-into-project.sh`; **pack pin** is `.cursor/packs/shared` gitlink only |
+| Host operator skill | `.cursor/skills/<host-operator>` → `ai-copilots/skills/...` | **Commit** the symlink at `.cursor/skills/<host-operator>` (canonical body in `ai-copilots/`) |
+| Go dependency skills | `.cursor/skills/export-env-operator`, `operatorconfig-lib`, … | **Do not commit**; `ln -snf "$(go list -m -f '{{.Dir}}' <module>)/ai-copilots/skills/..."` in BOOTSTRAP / `make wire-cursor-skills`; **gitignore** those link names so `git status` stays clean |
+
+**CONSTRAINT:** When auditing pins or `git status`, MUST NOT treat gitignored
+or intentionally unwired module-cache symlinks as missing pack pins. MUST
+distinguish submodule gitlink bumps from local wire.
+
+**CONSTRAINT:** Host BOOTSTRAP or `Makefile` MUST document wire targets and
+list which `.cursor/skills/*` names are gitignored. Re-run wire after
+`go.mod` bumps the dependency module.
+
+CORRECT (host `.gitignore` fragment):
+
+```gitignore
+# Wired by make wire-cursor-skills; not committed (module cache path)
+.cursor/skills/export-env-operator
+.cursor/skills/operatorconfig-lib
+```
+
+PROHIBITED:
+
+```bash
+# Treat ?? .cursor/skills/operatorconfig-lib as "pin drift" and git add it
+git add .cursor/skills/operatorconfig-lib
 ```

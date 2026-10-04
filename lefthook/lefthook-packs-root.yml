@@ -1,0 +1,17 @@
+# Fleet hooks when cursor-packs is the git root (scripts run from repo root).
+# Consumers extend lefthook.yml instead (see lefthook/README.md).
+
+pre-commit:
+  parallel: false
+  commands:
+    default-branch-refuse:
+      run: bash lefthook/scripts/default-branch-refuse.sh
+    go-format:
+      glob: "*.go"
+      run: bash lefthook/scripts/go-format-staged.sh {staged_files}
+      stage_fixed: true
+
+pre-push:
+  commands:
+    pins-are-latest-release:
+      run: bash lefthook/scripts/pins-are-latest-release.sh

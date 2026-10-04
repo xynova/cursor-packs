@@ -1,8 +1,10 @@
 ---
 description: >-
-  Consult Gemma (or another allow-listed model) through the local Polypus
-  gateway on :1320. Load skill ask-polypus. Triggers: ask gemma, ask polypus,
-  gemma on polypus, second opinion via Polypus, POLYPUS_BASE_URL chat.
+  Consult Gemma (or another allow-listed model) through the Polypus gateway
+  (POLYPUS_BASE_URL, default http://127.0.0.1:1320). Load skill ask-polypus.
+  Triggers: ask gemma, ask polypus, gemma on polypus, second opinion via
+  Polypus, POLYPUS_BASE_URL, POLYPUS_OTLP_ENDPOINT, Phoenix OTLP, OpenInference
+  dev env.
 alwaysApply: false
 ---
 
@@ -12,14 +14,17 @@ alwaysApply: false
 
 ## MUST
 
-- Probe `GET http://127.0.0.1:1320/health` (or `POLYPUS_BASE_URL`) before chat
-- Call only the loopback OpenAI surface (`POST /v1/chat/completions`)
+- Resolve `BASE` as `${POLYPUS_BASE_URL:-http://127.0.0.1:1320}`; probe `GET ${BASE}/health` before chat
+- Call only that gateway OpenAI surface (`POST ${BASE}/v1/chat/completions`)
 - Default model: `cf_local/@cf/google/gemma-4-26b-a4b-it` when the user says Gemma / ask Polypus without another id
 - Include the artifact under review in the prompt
 - Synthesize the reply for the human; do not treat the consult as an implement order
+- On health failure with non-loopback `BASE`, report remote unreachable; do not suggest local stack restart
+- For pipelines/MCP dev: document `POLYPUS_BASE_URL` and `POLYPUS_OTLP_ENDPOINT` together; Phoenix UI on Polypus host `:6006`, OTLP `:4317` (see skill **Dev env**)
 
 ## MUST NOT
 
 - Call Cloudflare / LM Studio URLs directly from a consumer chat
-- Start `bin/polypus` ad-hoc; offer `make serve` in a Polypus checkout when health fails
+- Start `bin/polypus` ad-hoc; when loopback health fails, MAY offer `make serve` in a Polypus checkout only
+- Offer local `make serve` or consumer stack restart when `POLYPUS_BASE_URL` targets a remote host
 - Use this rule for gateway ops (allow-lists, smoke, Switchyard); that is `polypus-operator` in the Polypus repo

@@ -130,10 +130,11 @@ image:
 1. **Detect host** from `origin`.
 2. **Authenticate** (`glab` or `gh`) as Maintainer+.
 3. **Run prepare script** (`--project` / `--repo`).
-4. **Copy CI templates** from [templates/](templates/) when missing (GitLab quality + secret/SAST snippet + `goreleaser-release.yml`; GitHub `ci.yml` + secret scan).
-5. **Cross-check** checklist below.
-6. **Hand off** to `setup-goreleaser` / `manage-go-releases` if release files or auto-patch are still missing.
-7. **Verify** (optional): re-run the last failed `release` / `auto_patch_release` job.
+4. **Copy CI templates** from [templates/](templates/) when missing (GitLab `golang-quality.yml`, `goreleaser-release.yml`, `auto-patch-release.yml`; secret/SAST snippet; GitHub `ci.yml` + secret scan).
+5. **Copy Lefthook templates** when missing: [templates/lefthook/](templates/lefthook/) → repo root `lefthook.yml` + `lefthook/lefthook-go-standalone.yml`; [templates/git-hooks/](templates/git-hooks/) → `scripts/git-hooks/` (executable); merge [templates/make/hooks-install.mk](templates/make/hooks-install.mk) into the Makefile. Or run `./scripts/ensure-go-standalone-lefthook.sh --project <repo>` from cursor-packs. Then `make hooks-install` once per clone (see `install-repo-hooks`).
+6. **Cross-check** checklist below.
+7. **Hand off** to `setup-goreleaser` / `manage-go-releases` if release files or auto-patch are still missing.
+8. **Verify** (optional): re-run the last failed `release` / `auto_patch_release` job.
 
 ---
 
@@ -152,6 +153,7 @@ Binary TRUE/FALSE:
 | Release job Go version (GitLab) | Job image vs `go.mod` | Image Go >= `go.mod` | Older Go than `go.mod` |
 | Go quality CI present | File exists | `golang-quality.yml` or `.github/workflows/ci.yml` | Missing |
 | Secret scanning present | File / feature | GitLab Secret-Detection include or GitHub secret workflow | Missing |
+| Fleet Lefthook scaffold | File exists | `lefthook.yml` + `scripts/git-hooks/` or packs extends | Missing |
 
 ---
 
