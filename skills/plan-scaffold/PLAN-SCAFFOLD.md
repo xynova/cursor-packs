@@ -286,7 +286,57 @@ Example:
 
 ### 5. Implementation Phases (Standard Checklist)
 
-Use this order to avoid blocked work:
+Use this order to avoid blocked work.
+
+#### Executor stage contract (mandatory)
+
+A **phase** is an architectural bucket (Schema, Glue, CLI). An **executor stage** is one slice a smaller model can finish without the planning chat.
+
+**CONSTRAINT:** Every implementation phase MUST be split into one or more executor stages. Each stage MUST include all of the following fields.
+
+- Enforcement: If any field is missing, the plan is not done. Rewrite that stage before Build.
+- Violation: STOP, add the missing field. Do not merge stages to hide the gap.
+
+| Field | Required content |
+|---|---|
+| **Goal** | One sentence of what lands after this stage. |
+| **Paths** | Exact repo-relative files to create or edit. |
+| **Out of scope** | What this stage MUST NOT touch. |
+| **Commands** | Copy-pasteable commands with working directory. |
+| **Pass** | Observable check (named test, command exit 0, file contains a named string). |
+| **Fail closed** | What to do if Pass fails (stop; which log; do not start the next stage). |
+| **Resume** | One line for a later model that never saw the planning thread. |
+
+**CONSTRAINT:** A stage MUST be executable from its own text. MUST NOT rely on "as discussed", "the rest of the plan", or chat history.
+
+- Enforcement: Cover the stage, delete the conversation, and ask whether a new agent could run only that stage.
+- Violation: STOP, move the missing facts into the stage body.
+
+**CONSTRAINT:** One git repository per stage commit. If two repositories change, they are two stages (library first, then host pin).
+
+CORRECT:
+
+```markdown
+### Stage 3: Wire the pages command
+
+- Goal: `tool pages --help` lists the pages verb from this checkout.
+- Paths: `cmd/tool/main.go`, `pkg/pages/pages.go`
+- Out of scope: Host static HTML, claims YAML.
+- Commands: `go test ./pkg/pages/...`
+- Pass: those tests exit 0; `go run ./cmd/tool pages --help` prints usage and exits 0.
+- Fail closed: STOP; do not edit the host app. Paste the compiler or test output.
+- Resume: If `pages.go` already exists, only register the cobra command in `main.go`.
+```
+
+PROHIBITED:
+
+```markdown
+### Stage 3: Finish wiring
+
+- Implement the rest of the CLI and update the site until it looks right.
+```
+
+---
 
 #### Phase A: Schema & Config
 - [ ] Add config keys to `config.yaml` (job_configs, ai_providers)
@@ -373,6 +423,8 @@ Use this order to avoid blocked work:
 
 ### Completeness
 - [ ] Every phase has concrete tasks (not just "implement X")
+- [ ] Every executor stage has Goal, Paths, Out of scope, Commands, Pass, Fail closed, and Resume
+- [ ] A new agent could run one stage from that stage's text alone (no chat history)
 - [ ] Reference implementation is cited with file:lines
 - [ ] Data flow diagram traces CLI → DB with actual method names
 

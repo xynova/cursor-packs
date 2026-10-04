@@ -1,6 +1,6 @@
 # cursor-packs
 
-Shared Cursor **skills**, short **rules**, and gated **personas**, reusable across projects via git submodule + relative symlinks.
+Shared Cursor **skills**, short **rules**, gated **personas**, and **subagents**, reusable across projects via git submodule + relative symlinks.
 
 Repo: https://github.com/xynova/cursor-packs
 
@@ -27,7 +27,8 @@ Mount path in consumers: `.cursor/packs/shared`
 | `skills/dspy-pipeline-isolation/` | Fixture + env-gated live replay per generator/evaluator (C17) |
 | `skills/dspy-module-patterns/` | Module + interceptor wiring; `reference.md` dspy-go encyclopedia |
 | `skills/dspy-prompt-engineering/` | Compact prompt contract; `reference.md` bias/CoT/templates |
-| `skills/plan-scaffold/` | Implementation plan meta-framework |
+| `skills/plan-scaffold/` | Implementation plan meta-framework and executor stage contract |
+| `agents/plan-auditor.md` | Subagent that scores plan stages and may patch plan markdown only |
 | `skills/review-member-visibility/` | Export-only-what-is-essential audit |
 | `skills/review-code-smells/` | Code smell / maintainability review protocol |
 | `skills/install-repo-hooks/` | Verify Lefthook install + ai-copilots wire before first commit |

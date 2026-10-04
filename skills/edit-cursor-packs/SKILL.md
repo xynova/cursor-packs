@@ -1,12 +1,12 @@
 ---
 name: edit-cursor-packs
 description: >-
-  Edit shared Cursor skills, rules, and personas that live in the
+  Edit shared Cursor skills, rules, personas, and subagents that live in the
   xynova/cursor-packs submodule and are soft-linked into consumer .cursor/
-  trees. Use when changing files under .cursor/skills, .cursor/rules, or
-  .cursor/personas that symlink to packs/shared, when updating golang-quality
-  or other pack content, or when an agent would otherwise commit pack edits
-  into the wrong repo.
+  trees. Use when changing files under .cursor/skills, .cursor/rules,
+  .cursor/personas, or .cursor/agents that symlink to packs/shared, when
+  updating golang-quality or other pack content, or when an agent would
+  otherwise commit pack edits into the wrong repo.
 ---
 
 # Edit linked cursor-packs
@@ -15,7 +15,7 @@ Shared pack content is owned by **https://github.com/xynova/cursor-packs**, moun
 
 ## Detect ownership (do this first)
 
-Before editing any path under `.cursor/skills/`, `.cursor/rules/`, or `.cursor/personas/`:
+Before editing any path under `.cursor/skills/`, `.cursor/rules/`, `.cursor/personas/`, or `.cursor/agents/`:
 
 1. `readlink` / `ls -la` the path.
 2. If it is a **symlink** into `packs/shared/`, it is **pack-owned**.
@@ -23,7 +23,7 @@ Before editing any path under `.cursor/skills/`, `.cursor/rules/`, or `.cursor/p
 
 ## Pack membership gate (ask before creating)
 
-**CONSTRAINT:** Before creating or expanding any skill, rule, or persona in **cursor-packs**, MUST pass the membership gate in `.cursor/rules/cursor-packs.mdc` (same questions live there).
+**CONSTRAINT:** Before creating or expanding any skill, rule, persona, or subagent in **cursor-packs**, MUST pass the membership gate in `.cursor/rules/cursor-packs.mdc` (same questions live there).
 
 Ask yourself:
 
@@ -124,7 +124,7 @@ git submodule update --init --recursive -- .cursor/packs/shared
 
 ## Link script
 
-Allow-lists live in `scripts/link-into-project.sh` (`SKILLS=(...)`, `RULES=(...)`, `PERSONAS=(...)`). New shared skills, rules, or personas MUST be appended there or consumers will not get symlinks. MUST NOT append a name that failed the membership gate.
+Allow-lists live in `scripts/link-into-project.sh` (`SKILLS=(...)`, `RULES=(...)`, `PERSONAS=(...)`, `AGENTS=(...)`). New shared skills, rules, personas, or subagents MUST be appended there or consumers will not get symlinks. MUST NOT append a name that failed the membership gate.
 
 ## Pre-completion checklist
 

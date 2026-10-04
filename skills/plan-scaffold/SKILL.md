@@ -1,10 +1,12 @@
 ---
 name: plan-scaffold
 description: >-
-  Use when the user asks to create a new implementation plan, plan a feature, or
-  write a plan for X. Follows the Plan Scaffold meta-framework so plans include
-  glue/wiring analysis, resumable trajectories, repository boundaries, and
-  language quality gates.
+  Use when the user asks to create an implementation plan, plan a feature, write
+  a plan for X, or when working in Plan mode on a multi-step change. Follows the
+  Plan Scaffold so plans include glue analysis, staged executor contracts a
+  smaller model can run, repository boundaries, and quality gates. After the
+  draft exists, the plan-auditor subagent scores those stages and may patch
+  the plan markdown. It must not implement product code.
 ---
 
 # Plan Scaffold Skill
@@ -21,10 +23,12 @@ When the user asks to **create an implementation plan** (e.g. "plan the X featur
    - **Language & quality standards**: For Go projects, mandate `golang-quality` constraints (package layout kit vs app, typed error wrapping, constructor nil guards, config create, durable traces, and verification gates).
    - **Data flow diagram**: CLI -> service -> client -> registry/repo -> DB with real method names.
    - **Glue analysis**: Registration sequence, what depends on registration, "can I run the command?" trace.
-   - **Implementation phases**: Use the scaffold's Phase order (Schema & config -> Data access -> Modules -> Registration & clients -> Services -> CLI -> Trajectory/Resumability -> Quality Verification & E2E). Add feature-specific tasks; include checkpoints.
+   - **Implementation phases**: Use the scaffold's Phase order (Schema & config -> Data access -> Modules -> Registration & clients -> Services -> CLI -> Trajectory/Resumability -> Quality Verification & E2E). Split those phases into **executor stages** that each satisfy the scaffold's Executor stage contract (Goal, Paths, Out of scope, Commands, Pass, Fail closed, Resume).
    - **Multi-repository delivery**: If changes touch submodules or shared packs, split into Phase 1 (library commit/PR) and Phase 2 (host pin bump and adapter wiring).
 
-3. **Before calling the plan "done"**: Run the scaffold's **Plan Review Checklist** (completeness, glue, error handling, resumability, boundaries, language quality, and testing). Ensure every `Get[Thing](key)` is traceable back to a `Register[Thing](key, value)` if the feature uses a registry.
+3. **Before calling the plan "done"**: Run the scaffold's **Plan Review Checklist** (completeness, glue, executor stages, error handling, resumability, boundaries, language quality, and testing). Ensure every `Get[Thing](key)` is traceable back to a `Register[Thing](key, value)` if the feature uses a registry.
+
+4. **Independent score (when a plan file exists):** Invoke the `plan-auditor` subagent (`/plan-auditor`) with the plan file path and full markdown. It may rewrite that plan file so FAIL stages meet the executor contract. It MUST NOT implement product code. Repair any remaining `Needs from human` before Build.
 
 ## Key rule
 
@@ -36,3 +40,4 @@ When the user asks to **create an implementation plan** (e.g. "plan the X featur
 - Go quality standards: **`.cursor/skills/golang-quality/SKILL.md`**.
 - Repository boundaries: **`.cursor/rules/repository-boundaries.mdc`**.
 - Existing plans in `.cursor/plans/` and `archive/` for style and depth.
+- Plan auditor subagent: **`.cursor/agents/plan-auditor.md`**.
