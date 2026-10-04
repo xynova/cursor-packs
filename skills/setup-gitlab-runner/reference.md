@@ -5,6 +5,28 @@ local GitLab runners and Docker Desktop checkout failures.
 
 ---
 
+## runnerconcierge (macOS / Windows)
+
+Install release binary or `go install github.com/behaviorengineering/runnerconcierge/cmd/runnerconcierge@latest`.
+
+| Step | Command |
+|------|---------|
+| Seed config | `runnerconcierge init` |
+| Preflight | `runnerconcierge doctor` |
+| Setup | `runnerconcierge` or `runnerconcierge setup` |
+| Verify service | `runnerconcierge verify` |
+
+Automation flags: `--non-interactive`, `--yes`, `--resume`, `--fresh`, `--token`,
+`--pat`, `--repo`, `--executor`, `--tag-list`.
+
+Windows: service runs as `.\USER` with password at install time (memory only);
+working directory and config under `C:\GitLab-Runner`. macOS: prefer
+`brew services` for a single manager process.
+
+Manual register below remains valid for Linux docker runners and debugging.
+
+---
+
 ## Register (interactive)
 
 ```bash
