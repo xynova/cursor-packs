@@ -11,7 +11,7 @@ alwaysApply: false
 
 **Moral:** Wall clock at every write site makes jobs non-deterministic and keeps coming back in review. One job clock is injected; leaves stamp from that clock.
 
-When generating, completing, or fixing Go that records time into durable or test-sensitive state (`CreatedAt`, `GeneratedAt`, manifests, cache records, identity filenames from unix nano, job `Options.Now`):
+When generating, completing, or fixing Go that records time into durable or test-sensitive state (`CreatedAt`, `GeneratedAt`, SQL `created_at` / `updated_at`, session/event stores, manifests, cache records, identity filenames from unix nano, job `Options.Now`):
 
 1. Load `.cursor/skills/golang-quality/SKILL.md` **CONSTRAINT 25** (Injectable clocks) and follow it.
 2. Prefer a typed field on Options / the store (`Now time.Time` or `Clock func() time.Time`) filled once at the process or job entrypoint.

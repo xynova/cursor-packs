@@ -188,6 +188,7 @@ Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality
 When the review target includes a command-line runner (`cmd/`, daemon `main`, CLI package that owns process argv), MUST also Read `.cursor/skills/cli-command-surface/SKILL.md` and apply its binary checks. These checks are language-agnostic behavior gates; they apply to Go entrypoints in this review and to other-language runners when that is the stated target.
 
 - [ ] Bare invoke (no args) does not Listen/Serve; prints agent operating guide (sections: role, agent guide, lifecycle commands, automation rules) and exits 0, or legacy usage until migrated
+- [ ] Agent guide, root help, and inspect reports are multi-line labeled stdout (constraints 9–10); no wall of text or packed `os= arch= runner=<banner>`
 - [ ] Root `AGENTS.md` and in-module `ai-copilots/` operator skill exist for shipped CLI modules
 - [ ] State-mutating subcommands support `--dry-run` and headless `--yes` (or equivalent) where interactive confirm exists
 - [ ] Root `version` (or documented equivalent) prints identity without config / license Gate / network
@@ -214,7 +215,7 @@ When the review target includes a command-line runner (`cmd/`, daemon `main`, CL
 - [ ] C10: HTTP / external API only in client packages; CLI has no business logic
 - [ ] C11: comments end with period; format/lint gates known for the project (Stage 1 already ran tools when selected)
 - [ ] C12: interfaces ≤ 5–6 methods
-- [ ] C13: multi-line operator reports / diagrams use `text/template` (or `html/template`); not chained `WriteString` / `Sprintf` spaghetti — see `go-structured-strings.mdc`
+- [ ] C13: multi-line operator reports / diagrams use `text/template` (or `html/template`); not chained `WriteString` / `Sprintf` spaghetti — see `go-structured-strings.mdc`. CLI inspect/status text following cli-command-surface C9–C10 (`writeln` + `--json`) is compliant without a template.
 - [ ] C14: injected structured logger; no `fmt.Print*` / ad-hoc `logrus.New()` in services
 - [ ] C15: LLM/inference entrypoints init OTEL; OTLP when endpoint env is set; client spans on generate/evaluate (not gateway-only); named-return span defers use `err =`
 - [ ] C16: AI work dumps (RLM TraceDir, runreport, inference-failure JSON) survive process exit; not only under `defer RemoveAll` scratch; durable path logged or returned

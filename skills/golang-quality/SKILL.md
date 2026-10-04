@@ -82,7 +82,7 @@ return fmt.Errorf("post /run: %s", err.Error())
 
 **CONSTRAINT 7 — Nil guards.** Constructors MUST panic on nil required dependencies. Public API pointer inputs MUST return an error on nil (do not panic at the call site).
 
-**CONSTRAINT 8 — Context propagated; nil and outbound deadlines fail closed.** NEVER replace a received `ctx` with `context.Background()`. Check `ctx.Done()` before expensive work. When a function or Options struct takes a `context.Context` (including optional `opts.Context` fields) for work that can cancel, time out, or call the network/LLM: IF that context is **nil** → return an error and MUST NOT substitute `context.Background()`. Callers MUST pass a non-nil context (usually with a deadline from the job entrypoint). Outbound hops that need a caller-supplied bound (HTTP `Do`, forge CLI / network `exec`, LLM/gateway calls, remote `git` push/fetch) MUST require `ctx.Deadline()` (or the request’s context deadline) **before** the call: IF missing → return an error and MUST NOT call the downstream. MUST NOT invent a fallback `time.Duration` / `http.Client.Timeout` / `WithTimeout` at the leaf to “save” a missing deadline. Process entrypoints and gateways MAY call `context.WithTimeout` / `WithDeadline` once to set the job budget; that is the caller bound, not a leaf fallback. See `.cursor/rules/go-outbound-resilience.mdc` and review Stage B.
+**CONSTRAINT 8 — Context propagated; nil and outbound deadlines fail closed.** NEVER replace a received `ctx` with `context.Background()`. Check `ctx.Done()` before expensive work. When a function or Options struct takes a `context.Context` (including optional `opts.Context` fields) for work that can cancel, time out, or call the network/LLM: IF that context is **nil** → return an error and MUST NOT substitute `context.Background()`. Callers MUST pass a non-nil context (usually with a deadline from the job entrypoint). Outbound hops that need a caller-supplied bound (HTTP `Do`, forge CLI / network `exec`, LLM/gateway calls, remote `git` push/fetch, SQL pool open/ping/migrate) MUST require `ctx.Deadline()` (or the request’s context deadline) **before** the call: IF missing → return an error and MUST NOT call the downstream. MUST NOT invent a fallback `time.Duration` / `http.Client.Timeout` / `WithTimeout` at the leaf **or in adapters/facades** (for example `OpenSessionStore`, `OpenPostgresStore`, store constructors) to “save” a missing deadline. Process entrypoints and gateways MAY call `context.WithTimeout` / `WithDeadline` once to set the job budget; that is the caller bound, not a middle-layer fallback. See `.cursor/rules/go-outbound-resilience.mdc` and review Stage B.
 - Enforcement: Stage 5 / Stage B greps for `if ctx == nil` / `if opts.Context == nil` followed by `context.Background()`; greps outbound packages for leaf `Timeout:` / `WithTimeout` when the hop’s `ctx` is unchecked; generation fails closed on nil and on missing deadline.
 - Violation: STOP, return an error on nil context (no Background substitute), fail closed on missing deadline, move any budget `WithTimeout` to the caller/entrypoint, re-check.
 
@@ -111,6 +111,16 @@ if d, ok := ctx.Deadline(); ok {
 c := &http.Client{Timeout: timeout}
 ```
 
+PROHIBITED (adapter invents deadline):
+```go
+func OpenSessionStore(ctx context.Context, ...) (...) {
+    if _, ok := ctx.Deadline(); !ok {
+        ctx, _ = context.WithTimeout(ctx, 15*time.Second) // facade must fail closed
+    }
+    return openPostgres(ctx, dsn)
+}
+```
+
 **CONSTRAINT 9 — No unused work / no N+1.** Every declared variable MUST be used. Batch fetches when the same data is needed for many IDs.
 
 **CONSTRAINT 10 — CLI → Service → Client.** HTTP and external API calls ONLY in `internal/clients/<service>/` (or pipeline client packages that wrap HTTP). CLI MUST NOT contain business logic.
@@ -119,9 +129,9 @@ c := &http.Client{Timeout: timeout}
 
 **CONSTRAINT 12 — Focused interfaces.** Interfaces MUST stay ≤ 5–6 methods. Split by caller responsibility.
 
-**CONSTRAINT 13 — Report layouts use templates.** Multi-line operator-facing summaries, ASCII diagrams, and similar human reports MUST use `text/template` (or `html/template` when HTML). MUST NOT assemble those layouts with chained `WriteString` / `Sprintf`. One-line messages and tight loops MAY keep `fmt` / `strings.Builder`. See [reference.md](reference.md#text-templates-for-reports).
+**CONSTRAINT 13 — Report layouts use templates.** Multi-line operator-facing summaries, ASCII diagrams, and similar human reports MUST use `text/template` (or `html/template` when HTML). MUST NOT assemble those layouts with chained `WriteString` / `Sprintf`. One-line messages and tight loops MAY keep `fmt` / `strings.Builder`. **CLI inspect/status/doctor text** that follows `cli-command-surface` constraints 9–10 (labeled `writeln` sections, optional `--json`) is the exception: MUST NOT fail C13 solely because that renderer is not a `text/template`. See [reference.md](reference.md#text-templates-for-reports) and `.cursor/skills/cli-command-surface/SKILL.md`.
 
-**CONSTRAINT 14 — Structured logging.** Services and non-interactive commands MUST use an injected `internal/observability.Logger` (or the project's equivalent). MUST NOT use `fmt.Print*` or construct a new logger (`logrus.New()`, etc.) inside business logic. Interactive CLI MAY use pterm for operator UI. Error paths MUST log with discriminator fields (IDs, task/job names) then return the error (CONSTRAINT 4 / 6 still apply).
+**CONSTRAINT 14 — Structured logging.** Services and non-interactive commands MUST use an injected `internal/observability.Logger` (or the project's equivalent). MUST NOT use `fmt.Print*` or construct a new logger (`logrus.New()`, etc.) inside business logic. Interactive CLI MAY use pterm for operator UI. Operator inspect reports (`status`, `doctor`, inventory) MUST follow `cli-command-surface` C9–C10 (labeled sections for humans, stable headings for agents, `--json` when a report object exists). Error paths MUST log with discriminator fields (IDs, task/job names) then return the error (CONSTRAINT 4 / 6 still apply).
 - Enforcement: Every new or changed log site uses the injected logger; scan for `fmt.Print` / `logrus.New` in services.
 - Violation: STOP, inject the logger, replace the bypass, re-check.
 
@@ -392,7 +402,7 @@ if errors.Is(err, localgit.ErrMutationCanceled) {
 }
 ```
 
-**CONSTRAINT 24 — Numbered SQL migrations.** When a Go module owns durable relational schema (Postgres or other SQL), MUST keep schema changes as numbered migration files (for example `migrations/000001_init.up.sql` / `.down.sql`, or an equivalent versioned directory) and apply **pending** versions once through a migrate path (open/store bootstrap, `migrate up` CLI, or equivalent). MUST record applied versions in a version table (or the chosen migrator’s bookkeeping). MUST NOT re-run ad-hoc `CREATE TABLE IF NOT EXISTS` / full DDL on every insert, publish, or request path. MUST NOT embed a growing one-shot schema string that is executed on each write. In-memory or throwaway test DBs MAY use create-if-not-exists when they never back durable production data. SQL driver packages (providers) SHOULD stay separate from domain packages that only need DTOs so non-SQL callers do not pull a database driver. See [reference-patterns.md](reference-patterns.md#numbered-sql-migrations).
+**CONSTRAINT 24 — Numbered SQL migrations.** When a Go module owns durable relational schema (Postgres or other SQL), MUST keep schema changes as numbered migration files (for example `migrations/000001_init.up.sql` / `.down.sql`, or an equivalent versioned directory) and apply **pending** versions once through a migrate path (open/store bootstrap, `migrate up` CLI, or equivalent). Fleet default for Postgres: **[golang-migrate](https://github.com/golang-migrate/migrate)** (`embed` + `source/iofs` + database driver) at pool/store bootstrap; MUST NOT ship ad-hoc `ApplyPending` loops or inline DDL strings on every `Open`. MUST record applied versions in a version table (or the chosen migrator’s bookkeeping). MUST NOT re-run ad-hoc `CREATE TABLE IF NOT EXISTS` / full DDL on every insert, publish, or request path. MUST NOT embed a growing one-shot schema string that is executed on each write. In-memory or throwaway test DBs MAY use create-if-not-exists when they never back durable production data. SQL driver packages (providers) SHOULD stay separate from domain packages that only need DTOs so non-SQL callers do not pull a database driver. See [reference-patterns.md](reference-patterns.md#numbered-sql-migrations).
 - Enforcement: Stage 5 scans new or changed SQL schema / store open paths; flag DDL inside hot write paths and missing versioned migration dirs when durable tables are introduced.
 - Violation: STOP, extract numbered migrations, apply pending once at bootstrap/migrate, keep write paths DML-only, re-check.
 
@@ -412,7 +422,7 @@ func (s *Store) Publish(...) error {
 }
 ```
 
-**CONSTRAINT 25 — Injectable clocks.** Timestamps that affect durable state, fingerprints, ordering, manifests, or cache records (`CreatedAt`, `GeneratedAt`, job `Options.Now` consumers, identity filenames from unix nano) MUST come from an injected clock (`Options.Now`, `store.Now`, `Clock func() time.Time`, or equivalent). MUST NOT call `time.Now()` at those write sites. Process or job entrypoints MAY call `time.Now()` once to fill the injected clock when the caller omitted it. Leaf helpers and stores MUST NOT invent a wall-clock fallback when their clock field is zero or nil (fail closed). Latency and metrics timers that are not persisted as domain state MAY use local `time.Now()`. Standing Cursor rule: `.cursor/rules/go-injectable-clock.mdc`. See review Stage C and Stage 5.
+**CONSTRAINT 25 — Injectable clocks.** Timestamps that affect durable state, fingerprints, ordering, manifests, cache records, or **SQL row stamps** (`CreatedAt`, `GeneratedAt`, `updated_at`, session/event stores, job `Options.Now` consumers, identity filenames from unix nano) MUST come from an injected clock (`Options.Now`, `store.Now`, `Clock` / `WithPostgresClock`, or equivalent). MUST NOT call `time.Now()` at those write sites. Process or job entrypoints MAY call `time.Now()` once to fill the injected clock when the caller omitted it. Leaf helpers and stores MUST NOT invent a wall-clock fallback when their clock field is zero or nil (fail closed; open constructors MUST require an explicit clock). Latency and metrics timers that are not persisted as domain state MAY use local `time.Now()`. Standing Cursor rule: `.cursor/rules/go-injectable-clock.mdc`. See review Stage C and Stage 5.
 - Enforcement: Stage 5 / Stage C greps `time.Now` next to durable stamp fields and `Store*` / manifest writers; generation places the job clock on Options and threads it; stores error when the clock is missing.
 - Violation: STOP, inject the clock, remove leaf `time.Now()` fallbacks on durable stamps, re-check.
 
@@ -514,7 +524,7 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] Interfaces ≤ 6 methods
 - [ ] Only essential symbols exported
 - [ ] All comments end with a period
-- [ ] Multi-line reports/diagrams use `text/template` (not chained `WriteString`)
+- [ ] Multi-line reports/diagrams use `text/template` (not chained `WriteString`); CLI inspect stdout may use labeled `writeln` per cli-command-surface C9–C10
 - [ ] Injected structured logger; no `fmt.Print*` / ad-hoc logger in services
 - [ ] LLM/inference entrypoints init OTEL; OTLP exporter when endpoint env set; client spans on generate/evaluate (not gateway-only)
 - [ ] Package layout (C19): kit vs product kit vs app-only classified; kit/product-kit API in `pkg/<domain>/`; thin `cmd/`; implementation and quality/smoke runners in `internal/`; no grab-bags or flat `internal/` forest
