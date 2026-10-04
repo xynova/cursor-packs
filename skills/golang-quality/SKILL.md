@@ -16,7 +16,7 @@ Prevention-first Go workflow. This skill is the **procedure**. Project architect
 
 **Deep reference:** [reference.md](reference.md) (full encyclopedia). **Compact patterns:** [reference-patterns.md](reference-patterns.md).
 
-**Related:** `.cursor/skills/review-code-staged/SKILL.md` for staged review (**Stage 5** Generation Gates applies these Core constraints at review, not only while writing); `.cursor/skills/review-member-visibility/SKILL.md` for export audits. Report layouts: `.cursor/rules/go-structured-strings.mdc`.
+**Related:** `.cursor/skills/review-code-staged/SKILL.md` for staged review (**Stage 5** Generation Gates applies these Core constraints at review, not only while writing); `.cursor/skills/review-member-visibility/SKILL.md` for export audits. Report layouts: `.cursor/rules/go-structured-strings.mdc`. Batch LLM **admit pacing** (token bucket, AIMD on throttle) is **not** C22 outbound failsafe; load the linked library skill (for example `.cursor/skills/inference-pace/SKILL.md` from strop `ai-copilots`) when reviewing digest-scale or parallel inference jobs.
 
 ### External readability baseline
 

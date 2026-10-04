@@ -33,7 +33,7 @@ Pass (MAY add to the pack) only when: **yes** to (1), and **no** to (2) and (3).
 
 Fail (MUST NOT add to the pack):
 
-- (2) is yes → put it in that module's `ai-copilots/`, then **link** (or copy only as approved fallback) into the host `.cursor/` via that library's BOOTSTRAP. MUST NOT paste it into cursor-packs.
+- (2) is yes → put it in that module's `ai-copilots/`, then **link** (or copy only as approved fallback) into the host `.cursor/` via that library's BOOTSTRAP. MUST NOT paste it into cursor-packs. Library staged-review manifests (`ai-copilots/review-hooks.yaml`) stay in the library; **review-code-staged** discovers them via host symlinks only.
 - (3) is yes → put it in the **host** overlay (real file under the consumer `.cursor/`).
 - (1) is no → same as (2) or (3); do not "share" it through the pack.
 

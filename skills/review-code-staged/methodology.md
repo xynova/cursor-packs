@@ -8,7 +8,29 @@ LOAD-WHEN: `review-code-staged` skill is active.
 
 Eight stages in **two groups**. MUST present the menu as those groups first, then the stage tables, and ask which group(s) or stages to run before executing any stage.
 
-**Run order:** mechanical numbers ascending (`1`–`5`), then consultant letters ascending (`A`–`C`). When both groups are selected, run `1, 2, 3, 4, 5, A, B, C`.
+**Run order:** pack mechanical numbers ascending (`1`–`5`), then in-scope **library mechanical** stages (`<lib>-M*`, for example `strop-M1`), then consultant letters ascending (`A`–`C`). When both groups are selected, run `1, 2, 3, 4, 5`, then active library `*-M*`, then `A, B, C`.
+
+### Library hooks (soft-linked `review-hooks.yaml`)
+
+Libraries MAY ship `ai-copilots/review-hooks.yaml` (see `author-ai-copilots` reference). Hosts MUST NOT copy that YAML into cursor-packs.
+
+**CONSTRAINT:** After the review target is known and before the group menu, MUST discover library hooks:
+
+1. For each `.cursor/skills/<name>/` symlink, resolve the module root (`go list -m -f '{{.Dir}}' …` when the link targets a Go module `ai-copilots` tree).
+2. IF `<module>/ai-copilots/review-hooks.yaml` exists, Read it.
+3. IF the review target matches `in_scope` (import prefixes, path globs), activate that library's hooks for this run.
+
+When the user picks `mechanical` or `both`, MUST auto-include every activated library `mechanical_stages` entry (prefixed IDs such as `strop-M1`) in the mechanical batch without asking for extra IDs.
+
+- **Stage 1:** run pack tool slots **and** each activated library `tool_slots` (same prefer/fallback rules).
+- **Stage 5:** after `golang-quality`, Read and score each `stage5_skills` path (linked skill dirs, not pack copies).
+- **Consultant A–C:** after pack questions for that letter, ask each matching `consultant_briefs` entry (one question at a time).
+
+Record in the plan file header: `hooks: <library>@<version> stage5=<ids> mech=<ids>`.
+
+Enforcement: no library checklist bodies pasted into this methodology file; only discovery and run order.
+
+Violation: STOP, Read linked skills/YAML, append findings to the plan file.
 
 ### Group aliases (prefer these)
 
