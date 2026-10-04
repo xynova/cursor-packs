@@ -836,3 +836,40 @@ Apply pending versions once (store open, `migrate up`, or bootstrap). Record app
 - DDL inside hot write/publish loops.
 - New durable tables with no migrations directory or migrator.
 - Domain packages blank-importing SQL drivers only because schema lived beside DTOs.
+
+---
+
+## Embedded SQLite (modernc)
+
+LOAD-WHEN: adding or changing embedded SQLite via `database/sql`; Stage 5 / golang-quality CONSTRAINT 26.
+
+### MUST / MUST NOT
+
+- MUST: `import _ "modernc.org/sqlite"` and `sql.Open("sqlite", dsn)`.
+- MUST: DSN pragmas via modernc form (`_pragma=foreign_keys(1)`, `_pragma=journal_mode(WAL)`, `_pragma=busy_timeout(5000)`).
+- MUST NOT: `github.com/mattn/go-sqlite3`, driver name `sqlite3`, or CGO build flags added only for SQLite.
+- SHOULD: `SetMaxOpenConns(1)` on write-heavy embedded sqlite pools unless read/write split is documented.
+
+### CORRECT / PROHIBITED
+
+CORRECT:
+
+```go
+import _ "modernc.org/sqlite"
+
+db, err := sql.Open("sqlite", path+"?_pragma=foreign_keys(1)&_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)")
+```
+
+PROHIBITED:
+
+```go
+import _ "github.com/mattn/go-sqlite3"
+
+db, err := sql.Open("sqlite3", path+"?_foreign_keys=on")
+```
+
+### Detection (Stage 5)
+
+- New or changed `mattn/go-sqlite3` in `go.mod` / blank imports.
+- `sql.Open("sqlite3", …)` in first-party code.
+- Dockerfile or release `CGO_ENABLED=1` comments/paths tied only to SQLite.
