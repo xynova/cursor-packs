@@ -117,7 +117,10 @@ Usage: serve --config PATH --socket PATH --license PATH
 
 - MUST: update every first-party launcher when introducing `serve` (or renaming start)
 - MUST NOT: leave `go run ./cmd/x`, `python -m x`, or container entrypoints on the bare binary after the default path becomes help-only
-- Enforcement: Grep README, Makefile, compose, Dockerfile, air config for the binary name; confirm start uses the start subcommand
+- MUST NOT: reprint the CLI flag catalog as Make `##` verbs; Make help lists local-dev runners (golang-quality C20). Operators discover flags via `<binary> help`.
+- MUST: on a successful run, the CLI MUST write every artifact a later Make publish or preview step needs (golang-quality C20a). MUST NOT leave a Make-only finalize verb as the only way to produce that file.
+- Enforcement: Grep README, Makefile, compose, Dockerfile, air config for the binary name; confirm start uses the start subcommand; `make help` is not a second CLI catalog; pipeline binaries emit required sidecars on success
+- Violation: STOP, fix launchers and write sidecars in the binary before claiming done
 - Violation: STOP, fix launchers before claiming done
 
 CORRECT:

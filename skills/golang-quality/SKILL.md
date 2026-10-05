@@ -4,8 +4,9 @@ description: >-
   Go generation and completion workflow: resource cleanup, error wrapping, nil
   guards, context propagation, CLI-service-client layering, structured logging,
   OpenTelemetry / OpenInference observability, config create constructors,
-  outbound failsafe-go resilience, quality gates, self-documenting Makefile
-  verb lists, shared Make verb names (build, test, serve), and HTTP/CLI
+  outbound failsafe-go resilience, quality gates, local-dev Makefile help
+  (listed verbs vs hidden CI targets; Make sequences, binaries emit artifacts),
+  shared Make verb names (build, test, serve), and HTTP/CLI
   service-layer error boundaries. Use when generating, completing, or fixing
   Go code, authoring a Makefile, or before claiming a Go change is done.
 ---
@@ -277,25 +278,36 @@ internal/ledger/
 internal/helpers/
 ```
 
-**CONSTRAINT 20 — Makefile verb list.** When a Go module has a `Makefile`, bare `make` (and `make help`) MUST print every operator-facing target (verb) with a one-line description. MUST set `.DEFAULT_GOAL := help`. Every phony verb operators run (`format`, `lint`, `vet`, `test`, `build`, `serve`, license helpers, and similar) MUST carry a `## description` on the target line so the help recipe can list it. Recipe-only helpers MAY omit `##` so they stay off the list. MUST NOT ship a Makefile whose first response is "No targets" or a silent first recipe when quality or serve verbs exist. See [reference-patterns.md](reference-patterns.md#makefile-verb-list).
-- Enforcement: From the module root, run `make` (or `make help`); every operator verb in `.PHONY` that humans run appears with a description; `.DEFAULT_GOAL` is `help`.
-- Violation: STOP, add `.DEFAULT_GOAL := help`, annotate missing verbs with `##`, wire the help recipe, re-run `make`.
+**CONSTRAINT 20 — Makefile verb list.** When a Go module has a `Makefile`, bare `make` (and `make help`) MUST print **local-dev** verbs with a one-line description. MUST set `.DEFAULT_GOAL := help`. Shared quality and serve verbs that exist (`format`, `lint`, `vet`, `test`, `build`, `serve`, `serve-down`, `init`, `hooks-install`) MUST carry a `## description` on the target line so the help recipe can list them. MUST NOT treat every `.PHONY` name as help-listed. CI-only lanes, product benches, recipe-only helpers, license/keygen targets the CLI already documents, and static-export siblings of a live `*-dev` preview MUST omit `##` so they stay off the list. MUST NOT reprint the CLI command catalog (`<binary> help`) as Make verbs. Help `##` text MUST be a literal short line: MUST NOT put Make `$(VAR)` in `##` (grep prints the variable name). When a local pipeline needs more than one Make step, `help` MAY print a short numbered footer of at most four `make <verb>` lines (run data, doctor, rebuild warehouse, live preview). MUST NOT dump catalog source paths, bind mounts, or run-then-publish encyclopedias in that footer. A footer helper target MUST omit `##` so it does not appear twice. MUST NOT ship a Makefile whose first response is "No targets" or a silent first recipe when quality or serve verbs exist. See [reference-patterns.md](reference-patterns.md#makefile-verb-list).
+- Enforcement: From the module root, run `make` (or `make help`); listed verbs are local-dev only; `.PHONY` CI/static/helper names without `##` are absent; `.DEFAULT_GOAL` is `help`; `##` lines have no `$(`; footer is at most four Make verbs or absent.
+- Violation: STOP, drop `##` from CI/static/helper targets, fix literal `##` text, keep local-dev verbs annotated, re-run `make`.
 
 CORRECT:
 ```makefile
 .DEFAULT_GOAL := help
 
-.PHONY: help test build
-
-help: ## List available make verbs
+help: ## List local-dev make verbs
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  %-24s %s\n", $$1, $$2}'
+	@printf '\n  CLI catalog: run <binary> help\n'
+	@$(MAKE) --no-print-directory report-data-flow
 
 test: ## Run unit tests
 	go test ./...
 
-build: ## Build the binary into bin/
-	go build -o bin/app ./cmd/app
+pages-dev: ## Live preview (rebuild warehouse first)
+
+# Hidden: CI static export (no ##).
+pages:
+	docker compose run --rm pages-build
+
+# Hidden helper: not listed; help recipe calls it.
+report-data-flow:
+	@printf '\n  Reports:\n'
+	@printf '    1. make lanes\n'
+	@printf '    2. make report-doctor\n'
+	@printf '    3. make warehouse\n'
+	@printf '    4. make pages-dev\n'
 ```
 
 PROHIBITED:
@@ -304,8 +316,36 @@ PROHIBITED:
 .PHONY: test build
 test:
 	go test ./...
-build:
-	go build -o bin/app ./cmd/app
+
+# Or: ## on every CI lane; encyclopedia footer; $(VAR) in ##.
+ci-lane-honesty: ## Run honesty
+ci-lane-physics: ## Run physics
+pages: ## Static site from $(REPORT_DUCKDB)
+help:
+	@printf '  1. run suites ... 2. publish ... 3. warehouse (PRODUCT=$(PRODUCT))\n'
+	@printf '  catalog: pkg/suite/groups.go also dbt dim_*.csv\n'
+```
+
+**CONSTRAINT 20a — Make sequences; binaries emit artifacts.** Make is the human interface. The Go CLI (or other first-party binary) MUST write every artifact a later Make step or publish needs on a successful run. MUST NOT add a Make-only finalize or glue verb whose only job is to produce a file the binary should have written. A standalone CLI backfill verb MAY exist for dirty trees; it MUST omit `##` so it stays off `make help` (C20). When a listed verb runs a family of lanes or groups, the default MUST be the full set; optional `VAR=` MAY narrow. MUST NOT require the operator to remember a required `VAR=` to get the documented default path.
+- Enforcement: Trace each help-listed pipeline verb to the binary it calls; that binary writes required sidecars on success; no Make target exists solely to fill a missing sidecar; family verbs succeed with no override vars.
+- Violation: STOP, write the artifact in the binary, drop the Make glue verb from help, re-run `make help`.
+
+CORRECT:
+```makefile
+# Binary writes reports/<lane>/summary.json on success.
+lanes: ## Run all lanes then publish (LANE= optional)
+	@if [ -z "$(LANE)" ]; then $(MAKE) lanes-all; else $(MAKE) lane-$(LANE); fi
+```
+
+PROHIBITED:
+```makefile
+# Operator must run a glue verb because the binary omitted a sidecar.
+finalize: ## Write missing summary JSON
+	go run ./cmd/app finalize
+lanes: ## usage: make lanes LANE=core
+	@test -n "$(LANE)" || { echo usage; exit 1; }
+	$(MAKE) run-$(LANE)
+	# publish fails unless the operator ran finalize
 ```
 
 **CONSTRAINT 21 — Shared Make verbs.** When a Go module `Makefile` exposes operator verbs, MUST use the shared names below for those jobs. Help descriptions MUST be one short line. Product names and host paths MAY appear only in the host Makefile help text, never as pack-required brand strings. See [reference-patterns.md](reference-patterns.md#shared-make-verbs).
@@ -324,7 +364,7 @@ build:
 | `serve-down` | Stop this project's process-compose stack (preserve Docker named volumes; see process-compose-docker) |
 
 - MUST: name the long-running local stack `serve` / `serve-down` when process-compose (or equivalent) is the up path
-- MUST: keep host-only verbs (`smoke-*`, `docker-build`, `sync`, license helpers, and similar) in the host Makefile; MUST NOT invent pack constraints that require every host to ship them
+- MUST: keep host-only verbs (`smoke-*`, `docker-build`, `sync`, license helpers, and similar) as host Makefile **targets**; MUST NOT invent pack constraints that require every host to ship them; those extras MUST omit `##` when the CLI already documents them (C20)
 - MUST NOT: use `dev` / `dev-down` as the only names for the long-running stack on a new or rewritten Makefile
 - MAY: keep `dev` / `dev-down` as thin aliases that invoke `serve` / `serve-down` during migration
 - Enforcement: Read `.PHONY` and `##` help lines; shared jobs use the table names; process-compose up/down are `serve` / `serve-down` (aliases optional)
@@ -466,12 +506,12 @@ db, err := sql.Open("sqlite3", path+"?_foreign_keys=on&_journal_mode=WAL")
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
 2. **Implement** — Apply all 26 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated and outbound deadlines fail closed (C8)? logger injected? clock injected for durable stamps (C25)? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists every operator verb (C20) and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? Embedded SQLite uses modernc, not mattn/CGO (C26)? PASS or fix.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated and outbound deadlines fail closed (C8)? logger injected? clock injected for durable stamps (C25)? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists local-dev verbs only (C20), binaries emit required artifacts with no Make glue verb (C20a), and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? Embedded SQLite uses modernc, not mattn/CGO (C26)? PASS or fix.
 4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
 
 ```bash
 # Prefer (if Makefile defines them):
-make          # or: make help — lists verbs (CONSTRAINT 20)
+make          # or: make help -- lists local-dev verbs (CONSTRAINT 20)
 make format   # or: gofumpt -w . && goimports -w .
 make lint     # or: golangci-lint run ./...
 make vet      # or: go vet ./...
@@ -490,7 +530,8 @@ Do NOT complete while any of these fail. Fix, re-run, then complete.
 
 ### Tooling
 
-- [ ] Makefile help: if a `Makefile` exists, `make` / `make help` lists every operator verb (CONSTRAINT 20)
+- [ ] Makefile help: if a `Makefile` exists, `make` / `make help` lists local-dev verbs only; CI/static/helpers omit `##` (CONSTRAINT 20)
+- [ ] Makefile sequencer: listed pipeline verbs call binaries that write required artifacts; no Make-only finalize/glue; family verbs default to the full set (CONSTRAINT 20a)
 - [ ] Makefile shared verbs: shared jobs use `build` / `test` / `vet` / `tidy` / `lint` / `serve` / `serve-down` (and `init` / `ci` when applicable); no serve-only-as-`dev` (CONSTRAINT 21)
 - [ ] Format: `make format` if present, else `gofumpt`/`gofmt` + `goimports`
 - [ ] Commit hooks: `make hooks-install` once per clone (packs consumer or standalone; see `install-repo-hooks`)
@@ -530,7 +571,7 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] Package layout (C19): kit vs product kit vs app-only classified; kit/product-kit API in `pkg/<domain>/`; thin `cmd/`; implementation and quality/smoke runners in `internal/`; no grab-bags or flat `internal/` forest
 - [ ] AI work dumps (RLM TraceDir, runreport, inference-failure JSON) survive process exit; not only under `defer RemoveAll` scratch; path logged or returned
 - [ ] Multi-field construction uses config create (`cfg.Create*` / `CreateModule`); no long parallel arg lists beside a half-empty Config
-- [ ] Makefile verbs (C20–C21): help lists operators; shared jobs use shared names (`serve` not only `dev`)
+- [ ] Makefile verbs (C20–C21): help lists local-dev verbs only; binaries emit sidecars (C20a); shared jobs use shared names (`serve` not only `dev`)
 - [ ] Outbound resilience (C22): exec/HTTP hops use failsafe-go (retry + breaker); no bare Do/Command; no ad-hoc sleep retry loops
 - [ ] Error boundary (C23): inbound HTTP/CLI map service-package errors; no leaf-kit import only for sentinel checks
 - [ ] SQL migrations (C24): durable schema uses numbered up/down (or equivalent) applied once; no full DDL on every write/publish path

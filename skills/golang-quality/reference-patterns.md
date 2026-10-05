@@ -700,22 +700,30 @@ LOAD-WHEN: authoring or editing a Go module `Makefile`; Stage 5 / golang-quality
 
 ### Rules
 
-- MUST set `.DEFAULT_GOAL := help` so bare `make` lists verbs.
-- MUST annotate every operator-facing target with `## description` on the target line.
+- MUST set `.DEFAULT_GOAL := help` so bare `make` lists **local-dev** verbs.
+- MUST annotate local-dev verbs (`format`, `lint`, `vet`, `test`, `build`, `serve`, `serve-down`, `init`, `hooks-install` when they exist) with `## description` on the target line.
 - MUST implement `help` by scanning those annotations (do not hand-maintain a second echo list that can drift).
-- MUST NOT require operators to open the Makefile to discover `test`, `lint`, `build`, `serve`, or license verbs.
-- Recipe-only helpers MAY omit `##` so they stay hidden.
+- MUST NOT treat every `.PHONY` name as help-listed.
+- MUST NOT reprint the CLI command catalog (`<binary> help`) as Make `##` verbs. A one-line footer pointing at `<binary> help` MAY follow the list.
+- MUST NOT put Make `$(VAR)` in `##` text (grep prints the variable name).
+- CI-only lanes, product benches, license/keygen the CLI already documents, recipe-only helpers, and static-export siblings of a live `*-dev` preview MUST omit `##`.
+- When a local pipeline needs more than one Make step, `help` MAY print a numbered footer of at most four `make <verb>` lines (run data, doctor, rebuild warehouse, live preview). MUST NOT dump catalog paths, bind mounts, or run-then-publish encyclopedias. The footer helper target MUST omit `##`.
+- MUST NOT require operators to open the Makefile to discover `test`, `lint`, `build`, or `serve`.
+- Make is the human interface (C20a): the binary MUST write every sidecar a later step or publish needs. MUST NOT add a Make-only finalize or glue verb for a missing file. A CLI backfill verb MAY exist; it MUST omit `##`.
+- When a listed verb runs a family of lanes or groups, the default MUST be the full set; optional `VAR=` MAY narrow. MUST NOT require a required `VAR=` for the documented default path.
 
 ### Canonical help recipe
 
 ```makefile
 .DEFAULT_GOAL := help
 
-.PHONY: help format lint vet test build tidy serve serve-down
+.PHONY: help format lint vet test build tidy serve serve-down pages pages-dev
 
-help: ## List available make verbs
+help: ## List local-dev make verbs
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  %-24s %s\n", $$1, $$2}'
+	@printf '\n  CLI catalog: run <binary> help\n'
+	@$(MAKE) --no-print-directory report-data-flow
 
 format: ## Format with gofumpt and goimports
 	gofumpt -w . && goimports -w .
@@ -742,9 +750,22 @@ serve: ## process-compose TUI; rebuilds on file changes
 serve-down: ## Stop this process-compose project
 	./scripts/pc-down.sh
 
+pages-dev: ## Live preview (rebuild warehouse first)
+
+# Hidden: CI static export (no ##).
+pages:
+	docker compose run --rm pages-build
+
 # Hidden helper (no ##): not listed by `make help`.
 _ensure-bin:
 	mkdir -p bin
+
+report-data-flow:
+	@printf '\n  Reports:\n'
+	@printf '    1. make lanes\n'
+	@printf '    2. make report-doctor\n'
+	@printf '    3. make warehouse\n'
+	@printf '    4. make pages-dev\n'
 ```
 
 ### Anti-pattern
@@ -754,6 +775,12 @@ _ensure-bin:
 .PHONY: test build
 test:
 	go test ./...
+
+# Or: ## on every CI lane; $(VAR) in ##; encyclopedia footer.
+ci-lane-a: ## Run lane a
+pages: ## Static site from $(REPORT_DUCKDB)
+help:
+	@printf 'run suites, publish, warehouse, catalog paths\n'
 ```
 
 ---
@@ -779,7 +806,7 @@ LOAD-WHEN: choosing Makefile target names; Stage 5 / golang-quality CONSTRAINT 2
 
 ### Host extras (stay in the host)
 
-`smoke`, `smoke-*`, `docker-build`, `sync`, license helpers, and similar product verbs stay in the host Makefile help. The pack MUST NOT require every consumer to define them.
+`smoke`, `smoke-*`, `docker-build`, `sync`, license helpers, and similar product verbs stay as host Makefile **targets**. The pack MUST NOT require every consumer to define them. Host extras the CLI already documents MUST omit `##` (C20); operators find them via `<binary> help`.
 
 ### Migration
 
@@ -793,7 +820,7 @@ serve: ## process-compose TUI (:1325); rebuilds on file changes
 serve-down: ## Stop this process-compose project
 	./scripts/pc-down.sh
 
-init: ## Create $(CONFIG) if missing
+init: ## Create operator config if missing
 	./bin/app init -config $(CONFIG)
 ```
 
