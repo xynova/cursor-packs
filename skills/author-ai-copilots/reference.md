@@ -40,8 +40,12 @@ This module is a library and/or CLI. Humans read [README.md](README.md).
 ## Wire host discovery
 
 Skills ship under `ai-copilots/`. They are not bound to one agent product.
-Execute [ai-copilots/BOOTSTRAP.md](ai-copilots/BOOTSTRAP.md) in **wire mode**
-to symlink into `.cursor/`, `.github/`, `.claude/`, or `.codex/`.
+IF the discovery path for this IDE is missing, execute
+[ai-copilots/BOOTSTRAP.md](ai-copilots/BOOTSTRAP.md) in **wire-only** mode
+**before** you operate (phases 0 → 2 → 3 → 4).
+IF this is the first commit in a clone, also run `install-repo-hooks`
+(`make hooks-install` when wired): Lefthook plus wire verification; that is separate from operate-time wire-if-missing.
+Read skills by path under `ai-copilots/` even when links are absent.
 
 Resolve the module root when this library is only a Go dependency:
 
@@ -90,10 +94,14 @@ junctions fail and the user approves copy fallback.
 
 ## When to run
 
-| Mode | Phases |
-|------|--------|
-| **Wire only** | 0 → 2 → 3 → 4 |
-| **Refresh content + wire** | 0 → 1 → 2 → 3 → 4 |
+| Trigger | Mode | Phases |
+|---------|------|--------|
+| Missing IDE discovery links (operate) | **Wire only** | 0 → 2 → 3 → 4 |
+| User asks to refresh harness content | **Refresh content + wire** | 0 → 1 → 2 → 3 → 4 |
+| First commit in clone (with hooks) | Wire + `make hooks-install` per host BOOTSTRAP | 0 → 2 → 3 → 4 (+ hooks) |
+
+IF discovery links for the current IDE are missing → run wire-only **before** operate.
+IF first commit in this clone → also `install-repo-hooks`; do not treat that as the only wire moment.
 
 ---
 

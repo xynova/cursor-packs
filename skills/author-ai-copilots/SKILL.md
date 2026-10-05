@@ -68,10 +68,30 @@ PROHIBITED:
 - MUST list load order (index → operator / journey skills)
 - MUST stay portable (no host brand, no private host layout paths)
 - MUST NOT embed full skill bodies; link to `ai-copilots/skills/.../SKILL.md`
-- MUST document optional IDE symlink via BOOTSTRAP (or a short pointer to it)
+- MUST keep two moments distinct:
+  - **Operate:** Read skills under `ai-copilots/skills/` by path (always, even when IDE discovery links are missing).
+  - **Wire:** Execute `ai-copilots/BOOTSTRAP.md` in **wire-only** mode when this workspace lacks discovery links for the current IDE (for example `.cursor/skills/<name>/SKILL.md` or `.github/skills/<name>/SKILL.md`).
+- MUST include a **Wire host discovery** (or equivalent) section that names BOOTSTRAP wire mode and the IDE paths to check.
+- MUST NOT tell agents that BOOTSTRAP runs **only** before the first commit (that moment is `install-repo-hooks` / Lefthook plus wire verification).
+- MUST NOT treat `AGENTS.md` as the `ln` script; BOOTSTRAP owns wire commands.
 
-Enforcement: open `AGENTS.md`; first skill links resolve under `ai-copilots/`
-Violation: STOP, rewrite pointers, re-verify
+Enforcement: open `AGENTS.md`; skill links resolve under `ai-copilots/`; wire-if-missing is explicit and not collapsed into a sole "before first commit" BOOTSTRAP item
+Violation: STOP, rewrite pointers and wire section, re-verify
+
+CORRECT:
+```markdown
+## Wire host discovery
+IF `.cursor/skills/<operator>/SKILL.md` (Cursor) or `.github/skills/<operator>/SKILL.md` (Copilot Chat) is missing:
+execute ai-copilots/BOOTSTRAP.md in wire mode, then continue.
+Read skills by path even before wire.
+First commit: make hooks-install plus wire; that does not replace operate-time wire-if-missing.
+```
+
+PROHIBITED:
+```markdown
+5. Execute BOOTSTRAP before the first commit.
+# only wire instruction; operate-time agents skip symlink
+```
 
 ## Portable CLI modules
 
