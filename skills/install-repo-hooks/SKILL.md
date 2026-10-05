@@ -11,6 +11,8 @@ description: >-
 
 One-time (per clone or worktree) setup: Lefthook + ai-copilots wire. Commit-time enforcement lives in cursor-packs `lefthook/`. Pin freshness runs on pre-push.
 
+Operate-time **wire-if-missing** (before reading skills in a workspace without IDE discovery links) is owned by `AGENTS.md` and [author-ai-copilots](../author-ai-copilots/SKILL.md); it is not a substitute for this skill before the first commit.
+
 **Related:** `sync-submodules-after-merge`, `ai-readiness`, `manage-go-releases`, `lefthook/README.md` in the packs submodule.
 
 ---

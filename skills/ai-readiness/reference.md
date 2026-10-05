@@ -11,6 +11,7 @@ Run from the repository git root.
 | 1 | Git root resolved | `git rev-parse --show-toplevel` | Prints expected path | Wrong tree or not a git repo |
 | 2 | `AGENTS.md` present | `test -f AGENTS.md` | File exists | Missing |
 | 3 | AGENTS points into ai-copilots | Open `AGENTS.md`; skill links under `ai-copilots/` | All skill links resolve under `ai-copilots/` | Links missing or point elsewhere |
+| 3b | AGENTS wire vs commit moments | Open `AGENTS.md`; has Wire host discovery (or equivalent); wire-if-missing before operate; first-commit hooks separate | Distinct operate wire + load order | Sole instruction is "BOOTSTRAP before first commit" |
 | 4 | `ai-copilots/README.md` | `test -f ai-copilots/README.md` | Exists | Missing |
 | 5 | `ai-copilots/BOOTSTRAP.md` | `test -f ai-copilots/BOOTSTRAP.md` | Exists | Missing |
 | 6 | At least one skill | `ls ai-copilots/skills/*/SKILL.md` | One or more files | None |
@@ -32,7 +33,7 @@ Optional (report, do not block baseline claim if files pass):
 3. Fill module path, operator skill name, and load order.
 4. Author skill body with agent-smith (MUST/NEVER, enforcement, examples).
 5. Re-run checklist items 2–8.
-6. Wire when the user asks (BOOTSTRAP wire-only).
+6. Wire when IDE discovery links are missing (BOOTSTRAP wire-only) or when the user asks.
 
 ## Default recommendation
 
