@@ -4,9 +4,10 @@ description: >-
   Language-agnostic CLI runner contract: explicit start command, version,
   root help, no accidental service start on bare invoke, dual-audience
   inspect stdout (human sections + agent headings, optional --json).
-  Use when generating or changing command-line binaries, daemons, CLIs,
-  cmd entrypoints, click, cobra, clap, argparse, tyro, inspect/status
-  renderers, or when reviewing CLI UX.
+  Go binaries MUST use spf13/cobra (no custom argv dispatch). Use when
+  generating or changing command-line binaries, daemons, CLIs, cmd entrypoints,
+  click, cobra, clap, argparse, tyro, inspect/status renderers, or when
+  reviewing CLI UX.
 ---
 
 # CLI command surface
@@ -135,12 +136,24 @@ ENTRYPOINT ["/tool"]
 # no CMD; container starts and only prints usage
 ```
 
-**CONSTRAINT 6 — Language-agnostic, framework-local.** Prefer the ecosystem’s normal CLI framework (Go `flag`/cobra/urfave; Python argparse/click/tyro; Node commander/yargs; Rust clap). The contract is behavioral, not a required library.
+**CONSTRAINT 6 — Framework by language (Go = Cobra only).** Non-Go runners use the ecosystem norm (Python argparse/click/tyro; Node commander/yargs; Rust clap). **Go operator binaries MUST use `github.com/spf13/cobra`** and MUST meet constraints 1–10. Hand-rolled Go CLIs (manual `switch` on subcommand strings, bespoke argv routers, or growing `flag.NewFlagSet` trees without Cobra) are **prohibited** for new work and MUST NOT be extended when a file is already in scope; migrate toward Cobra instead (golang-quality **C27**).
 
-- MUST: meet constraints 1–10 regardless of framework
-- MUST NOT: rewrite a working CLI stack only to match another language’s framework
-- Enforcement: Behavior checklist above; framework choice is out of scope unless the user asks
-- Violation: STOP, restore ecosystem-local tooling; keep the behavior contract
+- MUST: Go — `cobra.Command` root, explicit subcommands, `SilenceUsage` / `SilenceErrors` as needed, agent guide on bare root invoke, `version` command, start behind `serve` (or equivalent)
+- MUST NOT: Go — add cases to a custom `Run(args []string)` switch; add another subcommand via raw `flag` parsing; adopt `urfave/cli` or ad-hoc parsers for first-party binaries
+- MAY: other languages keep their idiomatic framework; behavior contract still applies
+- Enforcement: On Go CLI changes, grep for `spf13/cobra` and absence of new `switch args[0]` / manual dispatch; Stage 5 scores C27
+- Violation: STOP, do not grow the custom CLI; scaffold Cobra and move logic behind `RunE` handlers
+
+CORRECT (Go):
+```text
+internal/cli/root.go   # cobra tree
+cmd/tool/main.go       # cli.Execute() only
+```
+
+PROHIBITED (Go):
+```text
+internal/cli/cli.go    # switch args[0] { case "serve": ... }
+```
 
 **CONSTRAINT 7 — Agent-ready default view.** Bare invoke (no args) MUST print a structured agent operating guide to stdout and exit 0.
 

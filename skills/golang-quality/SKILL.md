@@ -500,13 +500,34 @@ import _ "github.com/mattn/go-sqlite3"
 db, err := sql.Open("sqlite3", path+"?_foreign_keys=on&_journal_mode=WAL")
 ```
 
+**CONSTRAINT 27 — Go CLIs use Cobra (no custom dispatch).** Shipped Go operator binaries MUST use [github.com/spf13/cobra](https://github.com/spf13/cobra) for argv parsing, subcommands, and help. `cmd/<bin>/main.go` MUST wire `cobra.Command` trees (typically in `internal/cli/` or `pkg/<product>/cli/`). MUST meet `cli-command-surface` behavior (bare invoke → agent guide, explicit `serve`, `version`, unknown command non-zero). MUST NOT add or extend hand-rolled CLI dispatch (`switch args[0]`, manual `os.Args` routing, per-subcommand `flag.NewFlagSet` without Cobra, or a bespoke parser) for new commands or greenfield binaries. MUST NOT introduce `urfave/cli`, `kong`, or another Go CLI framework for first-party binaries. Legacy hand-rolled CLIs MAY stay until a deliberate migration slice; any CLI touch MUST move that slice toward Cobra rather than growing the custom parser. See `.cursor/skills/cli-command-surface/SKILL.md` and [reference.md](reference.md#go-cobra).
+- Enforcement: Stage 5 and generation greps `internal/cli`, `cmd/`, and `main` for `switch args`, `flag.NewFlagSet` subcommand routers, and missing `spf13/cobra` on changed CLI paths.
+- Violation: STOP, scaffold Cobra root + subcommands, delegate business logic to services; do not add another branch to a custom switch.
+
+CORRECT:
+```go
+root := &cobra.Command{Use: "tool", RunE: printAgentGuideWhenNoSubcommand}
+root.AddCommand(newServeCmd(), newVersionCmd())
+return root.Execute()
+```
+
+PROHIBITED:
+```go
+func Run(args []string) int {
+	switch args[0] {
+	case "serve": return runServe(args[1:])
+	case "version": ...
+	}
+}
+```
+
 ---
 
 ## Steps
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
-2. **Implement** — Apply all 26 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated and outbound deadlines fail closed (C8)? logger injected? clock injected for durable stamps (C25)? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists local-dev verbs only (C20), binaries emit required artifacts with no Make glue verb (C20a), and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? Embedded SQLite uses modernc, not mattn/CGO (C26)? PASS or fix.
+2. **Implement** — Apply all 27 constraints during generation. First param on I/O functions: `ctx context.Context`.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated and outbound deadlines fail closed (C8)? logger injected? clock injected for durable stamps (C25)? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists local-dev verbs only (C20), binaries emit required artifacts with no Make glue verb (C20a), and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? Embedded SQLite uses modernc, not mattn/CGO (C26)? CLI changes use Cobra, not custom argv dispatch (C27)? PASS or fix.
 4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
 
 ```bash
