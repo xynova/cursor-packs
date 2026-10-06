@@ -20,33 +20,54 @@ MUST NOT: Use `version` as the only way to learn commands exist.
 
 ---
 
-## Go (flag switch)
+## Go (Cobra)
+
+MUST: Use `github.com/spf13/cobra` for all first-party Go operator binaries (golang-quality **C27**). MUST NOT ship or extend hand-rolled `switch args` / manual subcommand routers.
 
 ```go
-func run(args []string) int {
-	if len(args) < 2 {
-		printUsage(os.Stderr)
-		return 2
+func newRoot() *cobra.Command {
+	root := &cobra.Command{
+		Use:          "tool",
+		SilenceUsage: true,
+		SilenceErrors: true,
+		Version:      version,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) > 0 {
+				return fmt.Errorf("unknown command: %s", args[0])
+			}
+			_, err := fmt.Fprint(cmd.OutOrStdout(), agentOperatingGuide(cmd))
+			return err
+		},
 	}
-	switch args[1] {
-	case "version":
-		fmt.Printf("%s %s\n", appName, reportVersion())
-		return 0
-	case "help", "-h", "--help":
-		printUsage(os.Stdout)
-		return 0
-	case "serve":
-		return runServe(args[2:])
-	default:
-		fmt.Fprintf(os.Stderr, "unknown command: %s\n\n", args[1])
-		printUsage(os.Stderr)
-		return 2
+	root.AddCommand(newServeCmd(), newVersionCmd())
+	return root
+}
+
+func main() {
+	if err := newRoot().Execute(); err != nil {
+		os.Exit(exitCode(err))
 	}
 }
 ```
 
-MUST: Call license Gate only inside `runServe` after flags, never for `version`.
-MUST: Stamp release version via ldflags / BuildInfo (see `setup-goreleaser`).
+MUST: Bare root invoke (no subcommand) prints the agent operating guide and exits 0.
+MUST: `serve` (or `run` / `start`) is a subcommand; MUST NOT Listen on bare `Execute()`.
+MUST: Call license Gate only inside the serve subcommand, never for `version`.
+MUST: Stamp release version via ldflags / `cobra.Command.Version` or explicit `version` subcommand (see `setup-goreleaser`).
+MUST: Map `RunE` errors to process exit codes via a small `exitError` type or `SilenceErrors` + `main` wrapper.
+NEVER: Add new subcommands by extending a `switch` on `os.Args` or `args[0]`.
+
+### Go (legacy flag switch — do not extend)
+
+Hand-rolled dispatch is legacy only. MUST NOT add cases or new subcommands to this pattern; migrate the binary to Cobra instead.
+
+```go
+// PROHIBITED for new code — migrate to cobra
+switch args[0] {
+case "serve":
+	return runServe(args[1:])
+}
+```
 
 ---
 
@@ -133,27 +154,10 @@ When introducing `serve` (or renaming start):
 
 ## Go (agent guide on bare invoke)
 
-```go
-func run(args []string) int {
-	if len(args) == 0 {
-		fmt.Fprint(os.Stdout, agentOperatingGuide())
-		return 0
-	}
-	switch args[0] {
-	case "help", "-h", "--help":
-		printUsage(os.Stdout)
-		return 0
-	case "version":
-		fmt.Printf("%s %s\n", appName, reportVersion())
-		return 0
-	default:
-		// dispatch subcommands
-	}
-}
-```
+Wire the guide on the **root** `cobra.Command` `RunE` when no subcommand is given (see [Go (Cobra)](#go-cobra) above). `agentOperatingGuide(cmd *cobra.Command)` SHOULD use `cmd.OutOrStdout()` for testability.
 
-MUST: `agentOperatingGuide()` includes ROLE, AGENT OPERATING GUIDE, COMMANDS BY RISK, AUTOMATION RULES.
-MUST: Unknown command prints stderr error + `printUsage` and returns non-zero.
+MUST: `agentOperatingGuide` includes ROLE, AGENT OPERATING GUIDE, COMMANDS BY RISK, AUTOMATION RULES.
+MUST: Unknown subcommand is handled by Cobra (non-zero exit); MUST NOT fall through to `serve`.
 
 ---
 

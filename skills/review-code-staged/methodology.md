@@ -66,7 +66,7 @@ Which stages? (numbers, ranges, or 'all')
 | 2 | Type Safety | `any` / `interface{}`, type assertions, nil before dereference |
 | 3 | Error Handling | typed wrap-chain, `_ =`, log-without-return, persistence, DB fallback |
 | 4 | Code Clarity | naming, godot periods, structured logs, over-export |
-| 5 | Generation Gates | `golang-quality` constraints 1–26 (templates, OTEL, durable AI dumps, resources, layering, config create, package layout, local-dev Makefile help + shared Make verbs, outbound failsafe-go resilience, HTTP/CLI service-layer error mapping, numbered SQL migrations, injectable clocks, embedded SQLite); `go-structured-strings` for report builders; **CI Quality** add-on (`manage-go-releases` when release/auto-patch CI in scope). External Uber / Code Review Comments are citations only. |
+| 5 | Generation Gates | `golang-quality` constraints 1–27 (templates, OTEL, durable AI dumps, resources, layering, config create, package layout, local-dev Makefile help + shared Make verbs, outbound failsafe-go resilience, HTTP/CLI service-layer error mapping, numbered SQL migrations, injectable clocks, embedded SQLite, Go Cobra CLIs); `go-structured-strings` for report builders; **CI Quality** add-on (`manage-go-releases` when release/auto-patch CI in scope). External Uber / Code Review Comments are citations only. |
 
 AI finds issues, reports them with code pairs in the plan file. No user input required mid-stage or between mechanical stages.
 
@@ -227,6 +227,8 @@ When the review target includes a command-line runner (`cmd/`, daemon `main`, CL
 - [ ] C23: inbound HTTP / CLI entry packages map service-layer errors (`errors.Is` / `As` / `Is*` on the commands/service package); MUST NOT import a kit/leaf package solely to check that leaf’s sentinel when the service hop owns the operation
 - [ ] C24: when durable SQL schema is in scope, numbered migration files + apply-pending-once; flag DDL (`CREATE TABLE IF NOT EXISTS` / full schema strings) on every write/publish path; SQL provider packages should not force db drivers onto DTO-only importers — see appendix pattern 20
 - [ ] C25: durable / test-sensitive timestamps use an injected clock (`Options.Now`, `store.Now`, or equivalent); flag leaf `time.Now()` on `CreatedAt` / manifests / cache `Store*`; no wall-clock fallback when the injected clock is zero/nil — MUST Read `.cursor/rules/go-injectable-clock.mdc` when timestamp write paths are in scope
+- [ ] C26: embedded SQLite uses `modernc.org/sqlite`; no new `mattn/go-sqlite3` or CGO-for-SQLite hooks — see golang-quality C26
+- [ ] C27: Go operator CLIs use `spf13/cobra`; MUST NOT add or extend hand-rolled `switch args` / custom argv routers — see golang-quality C27 and `cli-command-surface` constraint 6
 
 Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pattern 15 when TraceDir / runreport / failure dumps are in scope, pattern 16 when generator/evaluator/signature diffs are in scope, pattern 17 when package paths, `cmd` mains, or `internal/` layout are in scope, pattern 18 when CLI argv / `serve` / `version` / bare-binary start paths are in scope, pattern 19 when outbound exec/HTTP or forge CLI wrappers are in scope (also Read `.cursor/rules/go-outbound-resilience.mdc`), pattern 20 when durable SQL schema / store publish paths are in scope, pattern 21 when durable timestamp / `CreatedAt` / manifest / cache stamp paths are in scope (also Read `.cursor/rules/go-injectable-clock.mdc`), and pattern 22 when auto-patch / GoReleaser release CI is in scope.
 
