@@ -23,6 +23,7 @@ MUST NOT: Use `version` as the only way to learn commands exist.
 ## Go (Cobra)
 
 MUST: Use `github.com/spf13/cobra` for all first-party Go operator binaries (golang-quality **C27**). MUST NOT ship or extend hand-rolled `switch args` / manual subcommand routers.
+MUST: `SetArgs(args)` before `Execute()` when wrapping Cobra in a `Run(args []string)` helper so tests do not inherit `os.Args`.
 
 ```go
 func newRoot() *cobra.Command {

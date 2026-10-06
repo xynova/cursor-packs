@@ -140,7 +140,10 @@ ENTRYPOINT ["/tool"]
 
 - MUST: Go — `cobra.Command` root, explicit subcommands, `SilenceUsage` / `SilenceErrors` as needed, agent guide on bare root invoke, `version` command, start behind `serve` (or equivalent)
 - MUST NOT: Go — add cases to a custom `Run(args []string)` switch; add another subcommand via raw `flag` parsing; adopt `urfave/cli` or ad-hoc parsers for first-party binaries
+- MUST NOT: treat a Cobra import as satisfying constraints 1, 3, 7, or 8. Cobra is the Go library; `serve` / `version` / agent guide remain separate behavioral gates
+- MUST: when a Go entrypoint that only calls `flag.Parse()` is next edited, move that entrypoint to Cobra in the same change
 - MAY: other languages keep their idiomatic framework; behavior contract still applies
+- MAY: existing single-command Go tools that only call `flag.Parse()` and are not in the change set remain until that file is edited
 - Enforcement: On Go CLI changes, grep for `spf13/cobra` and absence of new `switch args[0]` / manual dispatch; Stage 5 scores C27
 - Violation: STOP, do not grow the custom CLI; scaffold Cobra and move logic behind `RunE` handlers
 
