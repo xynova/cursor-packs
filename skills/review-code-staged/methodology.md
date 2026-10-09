@@ -155,6 +155,7 @@ Do not fail pre-flight for missing `gocyclo` or `.gosec.yaml`. Do not fail pre-f
 - [ ] Pointers and map lookups are guarded before use when nil/missing is possible
 - [ ] Constructor required deps are nil-checked (panic in `New*`)
 - [ ] Public API pointer params return an error on nil
+- [ ] Enum `switch` on typed consts lists every const; a `default:` branch does not satisfy exhaustiveness (golangci `exhaustive`)
 
 ---
 
@@ -165,6 +166,7 @@ Do not fail pre-flight for missing `gocyclo` or `.gosec.yaml`. Do not fail pre-f
 - [ ] Domain `code` is an exported `Code*` constant (C5); not a string literal or `http.Status*`
 - [ ] Cause is wrapped (`Wrap` / `NewDomainError` / `fmt.Errorf("%w")` only at a stdlib leaf, then converted)
 - [ ] No `err.Error()` stringify that drops `errors.Is` / `As`
+- [ ] No `err ==` sentinel comparisons; use `errors.Is` / `errors.As`; no `fmt.Errorf` without `%w` when wrapping (errorlint)
 - [ ] No log-without-return on error paths
 - [ ] Persistence / session-refresh errors returned (see [appendix.md](appendix.md))
 - [ ] No DB-query fallback inside transactions (architecture §6.7)

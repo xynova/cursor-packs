@@ -795,7 +795,7 @@ Use this checklist when reviewing code:
 ### **Duplication**
 - [ ] No identical code blocks across files
 - [ ] No structural duplication (similar patterns)
-- [ ] No magic strings/numbers (use constants)
+- [ ] No magic strings/numbers (use constants); prefer `go tool task lint` / `make lint` (goconst) over hand grep
 - [ ] No data clumps (extract to structs)
 
 ### **Complexity**
