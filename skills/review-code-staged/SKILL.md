@@ -83,6 +83,7 @@ go tool golangci-lint run   # default on user program that should use Taskfile
 - MUST write findings to the plan file (code pairs live there, not in the chat summary).
 - MUST use [appendix.md](appendix.md) on stages 3, A, B, and 5 (pattern 14 when LLM paths are in scope).
 - MUST load `golang-quality` when running Stage 5; MUST score **C11** (`Taskfile.yml` or `Makefile`, `go.mod` tool pins, `.golangci.yml` gocognit/gosec/godot) when in scope; MUST NOT treat Stage 4 as a substitute for generation gates.
+- MUST, when Stage 5 is selected and root `Taskfile.yml` or `Makefile` exists, Read that file and score **C20** operator instructions (`desc` / `summary` / `default` footer or Make `##` / footer). MUST NOT treat `go tool task lint` or `make lint` exit 0 as proof that help text is correct. In scope even if the Git diff is only `.go`.
 - MUST load `cli-command-surface` during Stage 5 when a CLI / daemon entrypoint is in scope; MUST NOT treat missing `version` / bare-start as Stage 4 clarity only.
 - MUST score golang-quality **C27** during Stage 5 when changed paths include Go `cmd/`, `internal/cli/`, or daemon `main`; MUST NOT approve new `switch args` / custom CLI routers or extensions to legacy hand-rolled dispatch.
 - MUST load `.cursor/rules/go-outbound-resilience.mdc` (and golang-quality C22 / appendix pattern 19) during Stage 5 when changed code performs outbound HTTP `Do`, forge CLI exec, or network `git`/SCM hops; MUST NOT treat homemade sleep-retry as compliant.

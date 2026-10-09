@@ -747,8 +747,20 @@ version: "3"
 vars:
   BIN: bin/app{{exeExt}}
 tasks:
+  default:
+    desc: List local-dev tasks
+    silent: true
+    cmds:
+      - go tool task --list
+      - |
+        echo ""
+        echo "  1. go tool task init"
+        echo "  2. go tool task serve"
   lint:
     desc: Run golangci-lint
+    summary: |
+      Runs go tool golangci-lint on ./cmd/... ./internal/....
+      Host-only listed extras MAY use domain:verb (example: db:migrate).
     cmds:
       - go tool golangci-lint run --timeout 5m ./cmd/... ./internal/...
 ```
@@ -769,6 +781,21 @@ lint: ## Run golangci-lint
 brew install gocyclo gosec
 # no .golangci.yml; PATH golangci-lint only
 ```
+
+---
+
+## Taskfile verb list
+
+LOAD-WHEN: authoring or editing a user-program `Taskfile.yml`; Stage 5 / golang-quality CONSTRAINT 20.
+
+### Rules
+
+- MUST give every listed task `desc:` one short line (`go tool task --list`).
+- SHOULD give listed tasks `summary:` for `go tool task --summary <name>` (deps, `{{.CLI_ARGS}}` after `--`, platforms).
+- MUST use `internal: true` for helpers not meant for `--list`.
+- `default` MUST start with `go tool task --list` (not PATH `task --list`). MAY set `silent: true` and print at most four `go tool task <verb>` footer lines plus one short closer.
+- Host-only listed sequencers MAY use colon names (`db:migrate`, `check:health`). C21 shared names (`lint`, `build`, …) MUST stay unprefixed.
+- MUST NOT reprint the CLI catalog as Task verbs or in footers.
 
 ---
 
@@ -884,7 +911,7 @@ LOAD-WHEN: choosing Taskfile task names or Makefile target names; Stage 5 / gola
 
 ### Host extras (stay in the host)
 
-`smoke`, `smoke-*`, `docker-build`, `sync`, license helpers, and similar product verbs stay as host Task or Make targets. The pack MUST NOT require every consumer to define them. Host extras the CLI already documents MUST be `internal: true` or omit `##` (C20); operators find them via `<binary> help`.
+`smoke`, `smoke-*`, `docker-build`, `sync`, license helpers, and similar product verbs stay as host Task or Make targets. The pack MUST NOT require every consumer to define them. Catalog-only reprints of Cobra verbs MUST be `internal: true` or omit `##` (C20). Listed operator-front-door sequencers MAY use colon namespaces (`domain:verb`). Operators still use `<binary> help` for the full CLI catalog.
 
 ### Migration
 

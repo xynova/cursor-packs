@@ -312,9 +312,41 @@ internal/ledger/
 internal/helpers/
 ```
 
-**CONSTRAINT 20 — Operator verb list (Taskfile or Makefile).** User programs MUST list **local-dev** tasks in `Taskfile.yml` with `desc:`; helpers MUST use `internal: true`. Bare `go tool task` MUST run a `default` task that invokes `go tool task --list`. MUST NOT reprint the CLI command catalog (`<binary> help`) as Task verbs. Library modules MAY use a root `Makefile`; bare `make` (and `make help`) MUST print **local-dev** verbs with a one-line description. MUST set `.DEFAULT_GOAL := help`. Shared quality and serve verbs that exist (`format`, `lint`, `vet`, `test`, `build`, `serve`, `serve-down`, `init`, `hooks-install`) MUST carry a `## description` on the target line so the help recipe can list them. MUST NOT treat every `.PHONY` name as help-listed. CI-only lanes, product benches, recipe-only helpers, license/keygen targets the CLI already documents, and static-export siblings of a live `*-dev` preview MUST omit `##` so they stay off the list. MUST NOT reprint the CLI command catalog (`<binary> help`) as Make verbs. Help `##` text MUST be a literal short line: MUST NOT put Make `$(VAR)` in `##` (grep prints the variable name). When a local pipeline needs more than one Make step, `help` MAY print a short numbered footer of at most four `make <verb>` lines (run data, doctor, rebuild warehouse, live preview). MUST NOT dump catalog source paths, bind mounts, or run-then-publish encyclopedias in that footer. A footer helper target MUST omit `##` so it does not appear twice. MUST NOT ship a Makefile whose first response is "No targets" or a silent first recipe when quality or serve verbs exist. See [reference-patterns.md](reference-patterns.md#makefile-verb-list).
-- Enforcement: From the module root, run `make` (or `make help`); listed verbs are local-dev only; `.PHONY` CI/static/helper names without `##` are absent; `.DEFAULT_GOAL` is `help`; `##` lines have no `$(`; footer is at most four Make verbs or absent.
-- Violation: STOP, drop `##` from CI/static/helper targets, fix literal `##` text, keep local-dev verbs annotated, re-run `make`.
+**CONSTRAINT 20 — Operator verb list (Taskfile or Makefile).** User programs MUST list **local-dev** tasks in `Taskfile.yml` with `desc:` one short line (what `go tool task --list` prints). SHOULD add `summary:` multi-line text on listed tasks (what `go tool task --summary <name>` prints); cover `deps`, `{{.CLI_ARGS}}` after `--`, and platform limits when relevant. MUST NOT dump the Cobra catalog into `desc`, `summary`, or a footer. Helpers MUST use `internal: true`. Bare `go tool task` MUST run a `default` task whose first cmd is `go tool task --list` (never PATH `task --list`, never bare `go tool task` in that slot). MAY set `default` `silent: true` and print a numbered footer of at most four `go tool task <verb>` lines after `--list`, plus one short closer (same cap spirit as Make footers). MUST NOT reprint catalog paths, bind mounts, or encyclopedias in the footer. Library modules MAY use a root `Makefile`; bare `make` (and `make help`) MUST print **local-dev** verbs with a one-line description. MUST set `.DEFAULT_GOAL := help`. Shared quality and serve verbs that exist (`format`, `lint`, `vet`, `test`, `build`, `serve`, `serve-down`, `init`, `hooks-install`) MUST carry a `## description` on the target line so the help recipe can list them. MUST NOT treat every `.PHONY` name as help-listed. CI-only lanes, product benches, recipe-only helpers, license/keygen targets the CLI already documents, and static-export siblings of a live `*-dev` preview MUST omit `##` so they stay off the list. MUST NOT reprint the CLI command catalog (`<binary> help`) as Make verbs. Help `##` text MUST be a literal short line: MUST NOT put Make `$(VAR)` in `##` (grep prints the variable name). When a local pipeline needs more than one Make step, `help` MAY print a short numbered footer of at most four `make <verb>` lines (run data, doctor, rebuild warehouse, live preview). MUST NOT dump catalog source paths, bind mounts, or run-then-publish encyclopedias in that footer. A footer helper target MUST omit `##` so it does not appear twice. MUST NOT ship a Makefile whose first response is "No targets" or a silent first recipe when quality or serve verbs exist. See [reference-patterns.md](reference-patterns.md#makefile-verb-list).
+- Enforcement: Libraries: run `make` (or `make help`); listed verbs are local-dev only; `.PHONY` CI/static/helper names without `##` are absent; `.DEFAULT_GOAL` is `help`; `##` lines have no `$(`; footer is at most four Make verbs or absent. User programs: run `go tool task --list` and, when `default` customizes help, bare `go tool task`; Read `desc`/`summary` for stale or encyclopedic operator text; listed tasks only; helpers `internal: true`.
+- Violation: STOP, drop `##` from CI/static/helper targets or fix Task `desc`/`summary`/footer; keep local-dev verbs annotated; re-run `make help` or `go tool task --list`.
+
+CORRECT (Taskfile):
+```yaml
+version: "3"
+tasks:
+  default:
+    desc: List local-dev tasks
+    silent: true
+    cmds:
+      - go tool task --list
+      - |
+        echo ""
+        echo "Next steps:"
+        echo "  1. go tool task init"
+        echo "  2. go tool task serve"
+  lint:
+    desc: Run golangci-lint
+    summary: |
+      Runs go tool golangci-lint on ./cmd/... ./internal/....
+      Pass flags after -- when the recipe uses {{.CLI_ARGS}}.
+    cmds:
+      - go tool golangci-lint run --timeout 5m ./cmd/... ./internal/...
+```
+
+PROHIBITED (Taskfile):
+```yaml
+quality:lint:   # namespaces C21 shared lint
+  desc: encyclopedic paragraph...
+default:
+  cmds:
+    - task --list   # PATH task; or bare go tool task (recursion)
+```
 
 CORRECT:
 ```makefile
@@ -398,7 +430,7 @@ lanes: ## usage: make lanes LANE=core
 | `serve-down` | Stop this project's process-compose stack (preserve Docker named volumes; see process-compose-docker) |
 
 - MUST: name the long-running local stack `serve` / `serve-down` when process-compose (or equivalent) is the up path
-- MUST: keep host-only verbs (`smoke-*`, `docker-build`, `sync`, license helpers, and similar) as host Task or Make targets; MUST NOT invent pack constraints that require every host to ship them; those extras MUST be `internal: true` or omit `##` when the CLI already documents them (C20)
+- MUST: keep host-only verbs (`smoke-*`, `docker-build`, `sync`, license helpers, and similar) as host Task or Make targets; MUST NOT invent pack constraints that require every host to ship them. IF a host extra only reprints a Cobra verb with no sequencer value (no `deps`, build, or `--` args) THEN it MUST be `internal: true` (Task) or omit `##` (Make). IF it is an operator-front-door sequencer (listed `init`, listed `db:migrate`, listed `check:health`) THEN it MAY be listed and MAY use a colon namespace (`domain:verb`). Shared C21 names (`lint`, `build`, …) MUST stay unprefixed. MUST NOT list the full CLI catalog as Task verbs (C20)
 - MUST NOT: use `dev` / `dev-down` as the only names for the long-running stack on a new or rewritten Taskfile or Makefile
 - MAY: keep `dev` / `dev-down` as thin aliases that invoke `serve` / `serve-down` during migration
 - Enforcement: Read `.PHONY` and `##` help lines; shared jobs use the table names; process-compose up/down are `serve` / `serve-down` (aliases optional)
