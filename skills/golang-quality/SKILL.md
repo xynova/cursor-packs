@@ -127,9 +127,9 @@ func OpenSessionStore(ctx context.Context, ...) (...) {
 
 **CONSTRAINT 10 — CLI → Service → Client.** HTTP and external API calls ONLY in `internal/clients/<service>/` (or pipeline client packages that wrap HTTP). CLI MUST NOT contain business logic.
 
-**CONSTRAINT 11 — Format and lint.** Comments MUST end with a period (`godot`). Go modules on Go 1.24+ MUST pin lint and format binaries in `go.mod` with `go get -tool`: `github.com/golangci/golangci-lint/v2/cmd/golangci-lint` and `mvdan.cc/gofumpt`. MUST ship a root `.golangci.yml` with `version: "2"` that enables `gocognit`, `gosec`, and `godot`, and enables the `gofumpt` formatter. `gocognit` MUST run as a golangci-lint linter (default `min-complexity: 20` on new modules; existing modules MAY raise the threshold with an explicit setting until complexity debt is paid). MUST NOT require a PATH-installed `golangci-lint`, `gofumpt`, `gosec`, or `gocyclo` binary. MUST NOT add a standalone `gocyclo` tool as a required gate. A standalone `github.com/uudashr/gocognit/cmd/gocognit` `tool` line MAY exist for ad-hoc `go tool gocognit` scans; it MUST NOT replace golangci `gocognit`. `make lint` MUST invoke `go tool golangci-lint run --timeout 5m` (package scope `./cmd/...` `./internal/...` `./pkg/...` when those trees exist). `make format` MUST invoke `go tool gofumpt -w` (and `goimports` only when the host already uses it). Nested provider or submodule trees MUST NOT be included in the host lint scope. Run Makefile gates before completing (see below). See [reference-patterns.md](reference-patterns.md#go-module-tools-lint-and-format).
-- Enforcement: Read `go.mod` `tool` and root `.golangci.yml`; `make lint` / `make format` recipes call `go tool`; Stage 1 of `review-code-staged` uses the same prefer chain.
-- Violation: STOP, add the `tool` pins, v2 config, and `go tool` Make recipes; do not document brew/PATH-only lint as the default.
+**CONSTRAINT 11 — Format and lint.** Comments MUST end with a period (`godot`). Go modules on Go 1.24+ MUST pin lint and format binaries in `go.mod` with `go get -tool`: `github.com/golangci/golangci-lint/v2/cmd/golangci-lint` and `mvdan.cc/gofumpt`. MUST ship a root `.golangci.yml` with `version: "2"` that enables `gocognit`, `gosec`, and `godot`, and enables the `gofumpt` formatter. MUST ship a root `Makefile` with `.DEFAULT_GOAL := help` and listed local-dev targets at minimum `help`, `format`, `lint`, `vet`, and `test`; MUST include `build` when `./cmd/...` exists (golang-quality C20–C21). `gocognit` MUST run as a golangci-lint linter (default `min-complexity: 20` on new modules; existing modules MAY raise the threshold with an explicit setting until complexity debt is paid). MUST NOT require a PATH-installed `golangci-lint`, `gofumpt`, `gosec`, or `gocyclo` binary. MUST NOT add a standalone `gocyclo` tool as a required gate. A standalone `github.com/uudashr/gocognit/cmd/gocognit` `tool` line MAY exist for ad-hoc `go tool gocognit` scans; it MUST NOT replace golangci `gocognit`. `make lint` MUST invoke `go tool golangci-lint run --timeout 5m` (package scope `./cmd/...` `./internal/...` `./pkg/...` when those trees exist). `make format` MUST invoke `go tool gofumpt -w` (and `goimports` only when the host already uses it). Operators and agents MUST run quality gates through `make` on C11 modules, not ad-hoc PATH binaries. Nested provider or submodule trees MUST NOT be included in the host lint scope. Run Makefile gates before completing (see below). See [reference-patterns.md](reference-patterns.md#go-module-tools-lint-and-format).
+- Enforcement: Read root `Makefile`, `go.mod` `tool`, and root `.golangci.yml`; `make lint` / `make format` recipes call `go tool`; Stage 1 of `review-code-staged` runs `make vet` / `make lint` / format check via Make when C11 applies.
+- Violation: STOP, add the `Makefile`, `tool` pins, v2 config, and `go tool` Make recipes; do not document brew/PATH-only lint as the default.
 
 CORRECT:
 ```text
@@ -139,6 +139,7 @@ go.mod:
     mvdan.cc/gofumpt
   )
 .golangci.yml: version "2"; linters enable gocognit, gosec, godot; formatters enable gofumpt
+Makefile: .DEFAULT_GOAL := help; targets help, format, lint, vet, test, build (when cmd/)
 make lint: go tool golangci-lint run --timeout 5m ./cmd/... ./internal/...
 ```
 
@@ -147,6 +148,7 @@ PROHIBITED:
 make lint: golangci-lint run   # PATH-only; not pinned
 require brew install gocyclo / gosec
 no .golangci.yml; gocognit never enabled
+no root Makefile on a Go 1.24+ C11 module; operators run go tool golangci-lint by hand instead of make lint
 go get golangci-lint into require as a runtime library
 ```
 
@@ -300,7 +302,7 @@ internal/ledger/
 internal/helpers/
 ```
 
-**CONSTRAINT 20 — Makefile verb list.** When a Go module has a `Makefile`, bare `make` (and `make help`) MUST print **local-dev** verbs with a one-line description. MUST set `.DEFAULT_GOAL := help`. Shared quality and serve verbs that exist (`format`, `lint`, `vet`, `test`, `build`, `serve`, `serve-down`, `init`, `hooks-install`) MUST carry a `## description` on the target line so the help recipe can list them. MUST NOT treat every `.PHONY` name as help-listed. CI-only lanes, product benches, recipe-only helpers, license/keygen targets the CLI already documents, and static-export siblings of a live `*-dev` preview MUST omit `##` so they stay off the list. MUST NOT reprint the CLI command catalog (`<binary> help`) as Make verbs. Help `##` text MUST be a literal short line: MUST NOT put Make `$(VAR)` in `##` (grep prints the variable name). When a local pipeline needs more than one Make step, `help` MAY print a short numbered footer of at most four `make <verb>` lines (run data, doctor, rebuild warehouse, live preview). MUST NOT dump catalog source paths, bind mounts, or run-then-publish encyclopedias in that footer. A footer helper target MUST omit `##` so it does not appear twice. MUST NOT ship a Makefile whose first response is "No targets" or a silent first recipe when quality or serve verbs exist. See [reference-patterns.md](reference-patterns.md#makefile-verb-list).
+**CONSTRAINT 20 — Makefile verb list.** Go modules covered by C11 MUST have a root `Makefile`. Bare `make` (and `make help`) MUST print **local-dev** verbs with a one-line description. MUST set `.DEFAULT_GOAL := help`. Shared quality and serve verbs that exist (`format`, `lint`, `vet`, `test`, `build`, `serve`, `serve-down`, `init`, `hooks-install`) MUST carry a `## description` on the target line so the help recipe can list them. MUST NOT treat every `.PHONY` name as help-listed. CI-only lanes, product benches, recipe-only helpers, license/keygen targets the CLI already documents, and static-export siblings of a live `*-dev` preview MUST omit `##` so they stay off the list. MUST NOT reprint the CLI command catalog (`<binary> help`) as Make verbs. Help `##` text MUST be a literal short line: MUST NOT put Make `$(VAR)` in `##` (grep prints the variable name). When a local pipeline needs more than one Make step, `help` MAY print a short numbered footer of at most four `make <verb>` lines (run data, doctor, rebuild warehouse, live preview). MUST NOT dump catalog source paths, bind mounts, or run-then-publish encyclopedias in that footer. A footer helper target MUST omit `##` so it does not appear twice. MUST NOT ship a Makefile whose first response is "No targets" or a silent first recipe when quality or serve verbs exist. See [reference-patterns.md](reference-patterns.md#makefile-verb-list).
 - Enforcement: From the module root, run `make` (or `make help`); listed verbs are local-dev only; `.PHONY` CI/static/helper names without `##` are absent; `.DEFAULT_GOAL` is `help`; `##` lines have no `$(`; footer is at most four Make verbs or absent.
 - Violation: STOP, drop `##` from CI/static/helper targets, fix literal `##` text, keep local-dev verbs annotated, re-run `make`.
 
@@ -550,15 +552,15 @@ func Run(args []string) int {
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
 2. **Implement** — Apply all 27 constraints during generation. First param on I/O functions: `ctx context.Context`.
 3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated and outbound deadlines fail closed (C8)? logger injected? clock injected for durable stamps (C25)? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If `go.mod` / Makefile / `.golangci.yml` are in scope: lint and format use `go tool` pins and v2 golangci config with gocognit/gosec/godot (C11)? If a Makefile exists or was edited: `make` lists local-dev verbs only (C20), binaries emit required artifacts with no Make glue verb (C20a), and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? Embedded SQLite uses modernc, not mattn/CGO (C26)? CLI changes use Cobra, not custom argv dispatch (C27)? PASS or fix.
-4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
+4. **Run quality gates** on changed packages through the root `Makefile` (C11):
 
 ```bash
-# Prefer (if Makefile defines them):
-make          # or: make help -- lists local-dev verbs (CONSTRAINT 20)
-make format   # or: go tool gofumpt -w .
-make lint     # or: go tool golangci-lint run --timeout 5m
-make vet      # or: go vet ./...
-make test     # or: go test ./...
+make          # lists local-dev verbs (CONSTRAINT 20)
+make format
+make lint
+make vet
+make test
+make build    # when ./cmd/... exists
 ```
 
 Scope to `./cmd/...` `./internal/...` `./pkg/...` (or the packages the project uses) when that is the local convention. If dependencies changed: `go mod tidy`.
@@ -573,15 +575,15 @@ Do NOT complete while any of these fail. Fix, re-run, then complete.
 
 ### Tooling
 
-- [ ] Makefile help: if a `Makefile` exists, `make` / `make help` lists local-dev verbs only; CI/static/helpers omit `##` (CONSTRAINT 20)
+- [ ] Root `Makefile` exists (CONSTRAINT 11); `make` / `make help` lists local-dev verbs only; CI/static/helpers omit `##` (CONSTRAINT 20)
 - [ ] Makefile sequencer: listed pipeline verbs call binaries that write required artifacts; no Make-only finalize/glue; family verbs default to the full set (CONSTRAINT 20a)
 - [ ] Makefile shared verbs: shared jobs use `build` / `test` / `vet` / `tidy` / `lint` / `serve` / `serve-down` (and `init` / `ci` when applicable); no serve-only-as-`dev` (CONSTRAINT 21)
-- [ ] Format: `make format` if present, else `go tool gofumpt -w .` (PATH `gofumpt`/`gofmt` only if no `tool` pin)
+- [ ] Format: `make format` (C11; `go tool gofumpt` inside the recipe)
 - [ ] Commit hooks: `make hooks-install` once per clone (packs consumer or standalone; see `install-repo-hooks`)
-- [ ] Lint: `make lint` if present, else `go tool golangci-lint run` (gosec, godot, gocognit via `.golangci.yml`)
+- [ ] Lint: `make lint` (gosec, godot, gocognit via `.golangci.yml`; `go tool golangci-lint` inside the recipe)
 - [ ] `go.mod` `tool` pins golangci-lint v2 and gofumpt; root `.golangci.yml` is v2 with gocognit/gosec/godot (CONSTRAINT 11)
-- [ ] Vet: `make vet` if present, else `go vet ./...`
-- [ ] Test: `make test` if present, else `go test` on changed packages
+- [ ] Vet: `make vet`
+- [ ] Test: `make test`
 - [ ] `go mod tidy` if `go.mod` / imports changed
 
 Do **not** require a standalone `gosec`, `gocyclo`, or `.gosec.yaml` unless the project documents them. Prefer `gosec` and `gocognit` as golangci linters when enabled.

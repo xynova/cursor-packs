@@ -702,9 +702,10 @@ LOAD-WHEN: scaffolding or editing `go.mod`, `.golangci.yml`, `make lint` / `make
 
 - MUST pin `github.com/golangci/golangci-lint/v2/cmd/golangci-lint` and `mvdan.cc/gofumpt` with `go get -tool` (Go 1.24+ `tool` directive).
 - MUST ship root `.golangci.yml` with `version: "2"`.
+- MUST ship root `Makefile` with `help`, `format`, `lint`, `vet`, `test`, and `build` when `./cmd/...` exists (C20–C21).
 - MUST enable golangci linters `gocognit`, `gosec`, and `godot`, and formatter `gofumpt`.
 - MUST set `gocognit` `min-complexity` explicitly (`20` for new modules; existing hosts MAY raise it until debt is paid).
-- MUST invoke those binaries via `go tool` from `make lint` / `make format`.
+- MUST invoke those binaries via `go tool` from `make lint` / `make format`; operators run `make lint`, not bare PATH `golangci-lint`.
 - MUST NOT treat a PATH `golangci-lint` / `gofumpt` as the default when `go.mod` has `tool` pins.
 - MUST NOT require standalone `gosec` or `gocyclo` binaries.
 - MUST NOT lint nested provider or submodule trees from the host config (scope `./cmd/...` `./internal/...` `./pkg/...` when those exist).

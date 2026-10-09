@@ -46,36 +46,37 @@ Resume: if the user says "continue" / "resume" / "next stage" without context, l
 
 Do **not** stop because a standalone `gosec` or `gocyclo` binary is missing. Do **not** require `.gosec.yaml`.
 
-Prefer Makefile targets when present; else `go tool` from `go.mod` `tool`; else PATH:
+On Go 1.24+ modules under golang-quality **C11**, Stage 1 MUST use the root `Makefile`. IF `Makefile` is missing → record a **C11** finding (High); still run `go tool` diagnostics so the review has signal. Else PATH only when `go tool` is not pinned:
 
-| Slot | Prefer | Fallback |
-|------|--------|----------|
+| Slot | C11 module | Fallback (legacy / missing Makefile only) |
+|------|------------|-------------------------------------------|
 | Static analysis | `make vet` | `go vet ./...` |
 | Lint + security | `make lint` | `go tool golangci-lint run --timeout 5m`, then PATH `golangci-lint run` |
-| Format check | `make format` (dry if the recipe rewrites) | `go tool gofumpt -l .`, then `gofmt -l .` |
-| Complexity | golangci `gocognit` via lint | `go tool gocognit` if pinned; skip standalone `gocyclo` |
+| Format check | `make format` (or `go tool gofumpt -l` after `make format` if the recipe writes) | `go tool gofumpt -l .`, then `gofmt -l .` |
+| Complexity | golangci `gocognit` via `make lint` | `go tool gocognit` if pinned; skip standalone `gocyclo` |
 
-**CONSTRAINT:** Stage 1 MUST run lint through `make lint` or `go tool golangci-lint` when either exists. MUST NOT treat a missing PATH `golangci-lint` as a Stage 1 stop when `go.mod` lists the tool. IF `make lint` is absent AND `go tool golangci-lint` fails because it is not pinned AND PATH `golangci-lint` is missing → report that and stop Stage 1 only. MUST record gocognit findings from golangci (or `go tool gocognit` when pinned). MUST NOT require `gocyclo`.
-- Enforcement: Pre-flight tries `make lint`, then `go tool golangci-lint version`, then PATH; plan file records which slot ran.
-- Violation: STOP, rerun via `go tool`; do not skip lint solely because Homebrew golangci-lint is missing.
+**CONSTRAINT:** Stage 1 MUST run `make vet` and `make lint` on C11 modules. MUST NOT treat a missing PATH `golangci-lint` as a Stage 1 stop when `go.mod` lists the tool. IF `make lint` is absent on a C11 module → record C11 violation; MAY run `go tool golangci-lint` for diagnostics. IF `go tool golangci-lint` is not pinned and PATH `golangci-lint` is missing → report that and stop Stage 1 lint only. MUST record gocognit and gosec findings from golangci. MUST NOT require `gocyclo`.
+- Enforcement: Pre-flight runs `make vet` / `make lint` when `Makefile` exists; plan file records exit codes; missing Makefile is a scored C11 gap.
+- Violation: STOP on C11 repos without scaffolding `Makefile` + `make lint`; do not skip lint solely because Homebrew golangci-lint is missing.
 
 CORRECT:
 ```text
+make vet
 make lint
-# or: go tool golangci-lint run --timeout 5m ./cmd/... ./internal/...
 ```
 
 PROHIBITED:
 ```text
 golangci-lint: command not found → skip Stage 1
 # even though go.mod has tool github.com/golangci/golangci-lint/v2/cmd/golangci-lint
+go tool golangci-lint run   # default path on a C11 module that has no Makefile
 ```
 
 ---
 
 ## Rules
 
-- MUST run Stage 1 lint via `make lint` or `go tool golangci-lint` when either exists (golang-quality C11); MUST NOT skip lint solely because PATH `golangci-lint` is missing.
+- MUST run Stage 1 via `make vet` and `make lint` on C11 modules (golang-quality C11); MUST NOT skip lint solely because PATH `golangci-lint` is missing when `make lint` uses `go tool`.
 - MUST wait for stage or group selection (`mechanical`, `consultant`, `both`/`all`, `1`–`5`, `A`–`C`, or ranges).
 - MUST expand group aliases before running stages.
 - MUST run selected mechanical stages (`1`–`5`) back-to-back without "Continue?" or other mid-batch waits.
