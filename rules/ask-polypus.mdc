@@ -15,7 +15,7 @@ alwaysApply: false
 
 ## MUST
 
-- Discover `BASE` before chat: non-empty `POLYPUS_BASE_URL` in the agent environment, else host-resolved `polypus.base_url` when the repo documents it (`operator-config` / `config show`), else `http://127.0.0.1:1320`; then probe `GET ${BASE}/health` (or run the host's `make polypus-check` / `./scripts/check-polypus.sh` when documented, which discovers BASE and fails closed)
+- Discover `BASE` before chat: non-empty `POLYPUS_BASE_URL` in the agent environment, else host-resolved `polypus.base_url` when the repo documents it (`operator-config` / `config show`), else `http://127.0.0.1:1320`; then probe `GET ${BASE}/health` (or run the host's `go tool task polypus-check`, `make polypus-check`, or `./scripts/check-polypus.sh` when documented, which discovers BASE and fails closed)
 - Call only that gateway OpenAI surface (`POST ${BASE}/v1/chat/completions`)
 - Default model: `cf_local/@cf/google/gemma-4-26b-a4b-it` when the user says Gemma / ask Polypus without another id
 - Include the artifact under review in the prompt

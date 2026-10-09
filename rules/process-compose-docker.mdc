@@ -15,7 +15,7 @@ alwaysApply: false
 
 ## MUST
 
-- Name stack up/down `make serve` / `make serve-down` (not only `dev` / `dev-down`)
+- Name stack up/down `go tool task serve` / `serve-down` or `make serve` / `make serve-down` (not only `dev` / `dev-down`)
 - Timed Docker daemon probe before optional container namespaces start
 - Ask before continuing without those containers when the probe fails on a TTY
 - Stop stacks without `-v` / `--volumes` / `docker volume rm` on the default down path

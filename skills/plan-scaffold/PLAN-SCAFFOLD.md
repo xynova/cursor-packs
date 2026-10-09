@@ -159,7 +159,7 @@
 - **Context propagation**: Never discard incoming `ctx` or replace with `context.Background()`. Check `ctx.Done()` before expensive loops.
 - **Durable AI work dumps**: AI traces (RLM traces, runreports, failure dumps) must be written to durable paths that survive process exit, never solely in `os.RemoveAll` temp trees.
 - **Structured logging**: Use injected logger with field key-value pairs; no raw `fmt.Printf` or inline `logrus.New()` in services.
-- **Verification gates**: Plan must include running `make format`, `make lint`, `make vet`, `make test`, and `godot` period comment checks.
+- **Verification gates**: Plan must include running format/lint/vet/test via `go tool task` (user program) or `make` (library), and `godot` period comment checks.
 
 ---
 

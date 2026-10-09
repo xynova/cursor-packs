@@ -26,7 +26,7 @@ Load when authoring or changing process-compose launchers that start Docker cont
 
 ## Core constraints
 
-**CONSTRAINT:** When a Makefile (or documented operator entrypoint) starts or stops a process-compose local stack, MUST name those verbs `serve` and `serve-down`. MUST NOT expose the long-running stack only as `dev` / `dev-down` on a new or rewritten Makefile. MAY keep `dev` / `dev-down` as thin aliases that invoke `serve` / `serve-down` during migration. Help lines MUST be one short product-neutral or host-specific description (host MAY name itself; pack docs MUST NOT require a brand). MUST NOT put Make `$(VAR)` in `##` (golang-quality C20).
+**CONSTRAINT:** When a Taskfile or Makefile (or documented operator entrypoint) starts or stops a process-compose local stack, MUST name those verbs `serve` and `serve-down`. MUST NOT expose the long-running stack only as `dev` / `dev-down` on a new or rewritten Taskfile or Makefile. MAY keep `dev` / `dev-down` as thin aliases that invoke `serve` / `serve-down` during migration. Help lines MUST be one short product-neutral or host-specific description (host MAY name itself; pack docs MUST NOT require a brand). MUST NOT put Make `$(VAR)` in `##` (golang-quality C20).
 
 - Enforcement: Read Makefile `.PHONY` / `##` lines and pc-up/pc-down wiring; up/down are `serve` / `serve-down`
 - Violation: STOP, add or rename to `serve` / `serve-down`, optionally alias old names, re-verify
@@ -149,8 +149,8 @@ services:
 
 ## Pre-completion checklist
 
-- [ ] **Serve verbs:** Makefile (if present) exposes `serve` / `serve-down` for the process-compose stack
-      Method: `rg -n '^serve|^serve-down|dev-down' Makefile`
+- [ ] **Serve verbs:** Taskfile or Makefile (if present) exposes `serve` / `serve-down` for the process-compose stack
+      Method: `rg -n 'serve|serve-down|dev-down' Taskfile.yml Makefile`
       Pass: `serve` and `serve-down` exist; `dev` only as optional alias
       Fail: Stack only under `dev` → STOP, rename
 - [ ] **Timed probe:** Up script cannot hang forever on `docker info`

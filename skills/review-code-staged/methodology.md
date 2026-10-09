@@ -62,7 +62,7 @@ Which stages? (numbers, ranges, or 'all')
 
 | # | Stage | What it covers |
 |---|-------|----------------|
-| 1 | Automated Tools | `make vet`, `make lint` (`go tool golangci-lint` including gocognit/gosec/godot), format check; capture exit codes and raw output |
+| 1 | Automated Tools | `go tool task vet` / `go tool task lint` (user program) or `make vet` / `make lint` (library); golangci gocognit/gosec/godot; format check; capture exit codes |
 | 2 | Type Safety | `any` / `interface{}`, type assertions, nil before dereference |
 | 3 | Error Handling | typed wrap-chain, `_ =`, log-without-return, persistence, DB fallback |
 | 4 | Code Clarity | naming, godot periods, structured logs, over-export |
@@ -124,17 +124,25 @@ If a plan file still lists old IDs, map with this table, then continue.
 
 ## Stage 1: Automated Tools — Detect
 
-On C11 modules, run the root `Makefile` (missing `Makefile` → C11 finding, then `go tool` fallback for diagnostics):
+User program (`Taskfile.yml`):
+
+```bash
+go tool task vet
+go tool task lint
+go tool task format   # or go tool gofumpt -l if format writes
+```
+
+Library (`Makefile`):
 
 ```bash
 make vet
 make lint
-make format   # then verify clean tree or use go tool gofumpt -l if format is write-only
+make format
 ```
 
-Legacy repos without a `Makefile`: `go vet`, `go tool golangci-lint run --timeout 5m`, then PATH `golangci-lint`; `go tool gofumpt -l .` or `gofmt -l`.
+Missing `Taskfile.yml` on `cmd/` CLI → C11 finding; MAY run `go tool golangci-lint` for diagnostics. Legacy with neither runner: `go vet`, `go tool golangci-lint run --timeout 5m`.
 
-Record exit codes and relevant output. Each reported issue is a finding (severity from the tool when obvious; otherwise Medium). `make lint` MUST cover `gosec`, `godot`, and `gocognit` when `.golangci.yml` is C11-compliant. Optional extra scan: `go tool gocognit` when that binary is pinned (diagnostics only; not a substitute for `make lint`).
+Record exit codes. `task lint` / `make lint` MUST cover `gosec`, `godot`, and `gocognit` when `.golangci.yml` is C11-compliant. Optional: `go tool gocognit` when pinned (diagnostics only).
 
 Do not fail pre-flight for missing `gocyclo` or `.gosec.yaml`. Do not fail pre-flight for a missing PATH `golangci-lint` when `go tool golangci-lint` works.
 
@@ -215,7 +223,7 @@ When the review target includes a command-line runner (`cmd/`, daemon `main`, CL
 - [ ] C8: no replacing received `ctx` with `context.Background()`; nil `opts.Context` / context params fail closed (no Background substitute); `ctx.Done()` before expensive work; outbound hops fail closed when `ctx`/`req.Context()` has no deadline (no leaf `Timeout` / `WithTimeout` fallback) — see `go-outbound-resilience.mdc`
 - [ ] C9: no unused work; no N+1 when a batch exists
 - [ ] C10: HTTP / external API only in client packages; CLI has no business logic
-- [ ] C11: root `Makefile` with help/format/lint/vet/test (and build when `cmd/`); comments end with period; `go.mod` `tool` pins golangci-lint v2 and gofumpt; `.golangci.yml` v2 enables gocognit/gosec/godot; Stage 1 already ran `make vet` / `make lint` when selected
+- [ ] C11: user program has `Taskfile.yml` + `task` tool pin (or library `Makefile`); comments end with period; `go.mod` pins golangci-lint v2 and gofumpt; `.golangci.yml` v2 enables gocognit/gosec/godot; Stage 1 ran the correct runner when selected
 - [ ] C12: interfaces ≤ 5–6 methods
 - [ ] C13: multi-line operator reports / diagrams use `text/template` (or `html/template`); not chained `WriteString` / `Sprintf` spaghetti — see `go-structured-strings.mdc`. CLI inspect/status text following cli-command-surface C9–C10 (`writeln` + `--json`) is compliant without a template.
 - [ ] C14: injected structured logger; no `fmt.Print*` / ad-hoc `logrus.New()` in services

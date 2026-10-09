@@ -696,16 +696,18 @@ import (
 
 ## Go module tools (lint and format)
 
-LOAD-WHEN: scaffolding or editing `go.mod`, `.golangci.yml`, `make lint` / `make format`; golang-quality **CONSTRAINT 11**; staged review Stage 1.
+LOAD-WHEN: scaffolding or editing `go.mod`, `.golangci.yml`, `Taskfile.yml`, `make lint` / `go tool task lint`; golang-quality **CONSTRAINT 11**; staged review Stage 1.
 
 ### Rules
 
 - MUST pin `github.com/golangci/golangci-lint/v2/cmd/golangci-lint` and `mvdan.cc/gofumpt` with `go get -tool` (Go 1.24+ `tool` directive).
+- User programs (`./cmd/...`): MUST ship root `Taskfile.yml` (version `"3"`); MUST pin `github.com/go-task/task/v3/cmd/task`; listed tasks `format`, `lint`, `vet`, `test`, `build` (C20–C21).
+- Library modules: MAY ship root `Makefile` with `help`, `format`, `lint`, `vet`, `test`, `build` when applicable.
 - MUST ship root `.golangci.yml` with `version: "2"`.
-- MUST ship root `Makefile` with `help`, `format`, `lint`, `vet`, `test`, and `build` when `./cmd/...` exists (C20–C21).
 - MUST enable golangci linters `gocognit`, `gosec`, and `godot`, and formatter `gofumpt`.
 - MUST set `gocognit` `min-complexity` explicitly (`20` for new modules; existing hosts MAY raise it until debt is paid).
-- MUST invoke those binaries via `go tool` from `make lint` / `make format`; operators run `make lint`, not bare PATH `golangci-lint`.
+- MUST invoke those binaries via `go tool` from Task or Make recipes; operators run `go tool task lint` or `make lint`, not bare PATH `golangci-lint`.
+- Listed Task recipes MUST use forward slashes, `{{exeExt}}` for binaries, Task `vars:` / `env:` (no `mkdir -p`, `rm`, `export`, heredocs).
 - MUST NOT treat a PATH `golangci-lint` / `gofumpt` as the default when `go.mod` has `tool` pins.
 - MUST NOT require standalone `gosec` or `gocyclo` binaries.
 - MUST NOT lint nested provider or submodule trees from the host config (scope `./cmd/...` `./internal/...` `./pkg/...` when those exist).
@@ -740,9 +742,21 @@ formatters:
     - gofumpt
 ```
 
+```yaml
+version: "3"
+vars:
+  BIN: bin/app{{exeExt}}
+tasks:
+  lint:
+    desc: Run golangci-lint
+    cmds:
+      - go tool golangci-lint run --timeout 5m ./cmd/... ./internal/...
+```
+
 ```text
 go get -tool github.com/golangci/golangci-lint/v2/cmd/golangci-lint
 go get -tool mvdan.cc/gofumpt
+go get -tool github.com/go-task/task/v3/cmd/task
 ```
 
 PROHIBITED:
@@ -849,9 +863,9 @@ help:
 
 ---
 
-## Shared Make verbs
+## Shared operator verbs
 
-LOAD-WHEN: choosing Makefile target names; Stage 5 / golang-quality CONSTRAINT 21; aligning hosts with process-compose-docker.
+LOAD-WHEN: choosing Taskfile task names or Makefile target names; Stage 5 / golang-quality CONSTRAINT 21; aligning hosts with process-compose-docker.
 
 ### Shared core (use these names when the job exists)
 
@@ -870,7 +884,7 @@ LOAD-WHEN: choosing Makefile target names; Stage 5 / golang-quality CONSTRAINT 2
 
 ### Host extras (stay in the host)
 
-`smoke`, `smoke-*`, `docker-build`, `sync`, license helpers, and similar product verbs stay as host Makefile **targets**. The pack MUST NOT require every consumer to define them. Host extras the CLI already documents MUST omit `##` (C20); operators find them via `<binary> help`.
+`smoke`, `smoke-*`, `docker-build`, `sync`, license helpers, and similar product verbs stay as host Task or Make targets. The pack MUST NOT require every consumer to define them. Host extras the CLI already documents MUST be `internal: true` or omit `##` (C20); operators find them via `<binary> help`.
 
 ### Migration
 

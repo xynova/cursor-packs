@@ -659,7 +659,7 @@ func longRunningOperation(ctx context.Context) error {
 
 **Run these commands and review their output:**
 
-- [ ] **golangci-lint**: Run `make lint` or `go tool golangci-lint run` to detect common issues
+- [ ] **golangci-lint**: Run `go tool task lint`, `make lint`, or `go tool golangci-lint run` to detect common issues
 - [ ] **go vet**: Run `go vet ./...` for static analysis
 - [ ] **go fmt**: Run `go tool gofumpt -l .` or `gofmt -d .` to check formatting issues
 - [ ] **unused**: Check for unused code with golangci `unused` (via `make lint`)
@@ -847,7 +847,7 @@ Use this checklist when reviewing code:
 - [ ] Mutexes unlocked with `defer`
 
 ### **Tooling**
-- [ ] `make lint` or `go tool golangci-lint run` passes
+- [ ] `go tool task lint`, `make lint`, or `go tool golangci-lint run` passes
 - [ ] `go vet ./...` passes
 - [ ] `gofmt -d .` shows no changes
 - [ ] No unused code warnings

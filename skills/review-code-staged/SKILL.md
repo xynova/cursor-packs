@@ -46,44 +46,43 @@ Resume: if the user says "continue" / "resume" / "next stage" without context, l
 
 Do **not** stop because a standalone `gosec` or `gocyclo` binary is missing. Do **not** require `.gosec.yaml`.
 
-On Go 1.24+ modules under golang-quality **C11**, Stage 1 MUST use the root `Makefile`. IF `Makefile` is missing → record a **C11** finding (High); still run `go tool` diagnostics so the review has signal. Else PATH only when `go tool` is not pinned:
+On Go 1.24+ modules under golang-quality **C11**: IF root `Taskfile.yml` (user program with `cmd/`) → Stage 1 MUST use `go tool task vet` and `go tool task lint`. IF missing `Taskfile.yml` on a user program → **C11** finding (High). IF library (no operator `cmd/`) with `Makefile` → `make vet` / `make lint`. IF neither runner → C11 High; MAY run `go tool` diagnostics.
 
-| Slot | C11 module | Fallback (legacy / missing Makefile only) |
-|------|------------|-------------------------------------------|
-| Static analysis | `make vet` | `go vet ./...` |
-| Lint + security | `make lint` | `go tool golangci-lint run --timeout 5m`, then PATH `golangci-lint run` |
-| Format check | `make format` (or `go tool gofumpt -l` after `make format` if the recipe writes) | `go tool gofumpt -l .`, then `gofmt -l .` |
-| Complexity | golangci `gocognit` via `make lint` | `go tool gocognit` if pinned; skip standalone `gocyclo` |
+| Slot | User program (`Taskfile.yml`) | Library (`Makefile`) | Fallback |
+|------|-------------------------------|----------------------|----------|
+| Static analysis | `go tool task vet` | `make vet` | `go vet ./...` |
+| Lint + security | `go tool task lint` | `make lint` | `go tool golangci-lint run --timeout 5m` |
+| Format check | `go tool task format` or `go tool gofumpt -l` | `make format` or `go tool gofumpt -l` | `gofmt -l` |
+| Complexity | gocognit via `task lint` | gocognit via `make lint` | `go tool gocognit` if pinned |
 
-**CONSTRAINT:** Stage 1 MUST run `make vet` and `make lint` on C11 modules. MUST NOT treat a missing PATH `golangci-lint` as a Stage 1 stop when `go.mod` lists the tool. IF `make lint` is absent on a C11 module → record C11 violation; MAY run `go tool golangci-lint` for diagnostics. IF `go tool golangci-lint` is not pinned and PATH `golangci-lint` is missing → report that and stop Stage 1 lint only. MUST record gocognit and gosec findings from golangci. MUST NOT require `gocyclo`.
-- Enforcement: Pre-flight runs `make vet` / `make lint` when `Makefile` exists; plan file records exit codes; missing Makefile is a scored C11 gap.
-- Violation: STOP on C11 repos without scaffolding `Makefile` + `make lint`; do not skip lint solely because Homebrew golangci-lint is missing.
+**CONSTRAINT:** Stage 1 MUST run vet and lint through the correct runner. MUST NOT treat a missing PATH `golangci-lint` as a Stage 1 stop when `go.mod` lists the tool. MUST record gocognit and gosec from golangci. MUST NOT require `gocyclo`.
+- Enforcement: Pre-flight records runner and exit codes; missing `Taskfile.yml` on `cmd/` CLI is C11.
+- Violation: STOP on user programs without `Taskfile.yml` + `go tool task lint`; do not skip lint solely because Homebrew golangci-lint is missing.
 
 CORRECT:
 ```text
-make vet
-make lint
+go tool task vet
+go tool task lint
 ```
 
 PROHIBITED:
 ```text
 golangci-lint: command not found → skip Stage 1
-# even though go.mod has tool github.com/golangci/golangci-lint/v2/cmd/golangci-lint
-go tool golangci-lint run   # default path on a C11 module that has no Makefile
+go tool golangci-lint run   # default on user program that should use Taskfile
 ```
 
 ---
 
 ## Rules
 
-- MUST run Stage 1 via `make vet` and `make lint` on C11 modules (golang-quality C11); MUST NOT skip lint solely because PATH `golangci-lint` is missing when `make lint` uses `go tool`.
+- MUST run Stage 1 via `go tool task vet` / `go tool task lint` on user programs or `make vet` / `make lint` on libraries (golang-quality C11); MUST NOT skip lint solely because PATH `golangci-lint` is missing when recipes use `go tool`.
 - MUST wait for stage or group selection (`mechanical`, `consultant`, `both`/`all`, `1`–`5`, `A`–`C`, or ranges).
 - MUST expand group aliases before running stages.
 - MUST run selected mechanical stages (`1`–`5`) back-to-back without "Continue?" or other mid-batch waits.
 - MUST pause for user input only during consultant stages (`A`–`C`) and at the final completion handoff.
 - MUST write findings to the plan file (code pairs live there, not in the chat summary).
 - MUST use [appendix.md](appendix.md) on stages 3, A, B, and 5 (pattern 14 when LLM paths are in scope).
-- MUST load `golang-quality` when running Stage 5; MUST score **C11** (`go.mod` tool pins, `.golangci.yml` gocognit/gosec/godot) when `go.mod` / Makefile / `.golangci.yml` are in scope; MUST NOT treat Stage 4 as a substitute for generation gates.
+- MUST load `golang-quality` when running Stage 5; MUST score **C11** (`Taskfile.yml` or `Makefile`, `go.mod` tool pins, `.golangci.yml` gocognit/gosec/godot) when in scope; MUST NOT treat Stage 4 as a substitute for generation gates.
 - MUST load `cli-command-surface` during Stage 5 when a CLI / daemon entrypoint is in scope; MUST NOT treat missing `version` / bare-start as Stage 4 clarity only.
 - MUST score golang-quality **C27** during Stage 5 when changed paths include Go `cmd/`, `internal/cli/`, or daemon `main`; MUST NOT approve new `switch args` / custom CLI routers or extensions to legacy hand-rolled dispatch.
 - MUST load `.cursor/rules/go-outbound-resilience.mdc` (and golang-quality C22 / appendix pattern 19) during Stage 5 when changed code performs outbound HTTP `Do`, forge CLI exec, or network `git`/SCM hops; MUST NOT treat homemade sleep-retry as compliant.

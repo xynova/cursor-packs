@@ -41,7 +41,7 @@ Discovery order:
 2. When step 1 is empty and the host documents operator config, read expanded `polypus.base_url` (for example `config show` JSON, or a probe script that prints `Polypus base URL:`).
 3. `http://127.0.0.1:1320` only when 1–2 yield no URL.
 
-When the host documents `make polypus-check` or `./scripts/check-polypus.sh`, SHOULD run it before manual curl; it discovers BASE and fails closed on `/health` (and often `/v1/models`).
+When the host documents `go tool task polypus-check`, `make polypus-check`, or `./scripts/check-polypus.sh`, SHOULD run it before manual curl; it discovers BASE and fails closed on `/health` (and often `/v1/models`).
 
 ```bash
 resolve_base() {
