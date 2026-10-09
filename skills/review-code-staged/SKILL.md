@@ -2,7 +2,8 @@
 name: review-code-staged
 description: >-
   Staged Go code review with mechanical (1–5) vs consultant (A–C) stage groups,
-  a group menu, Makefile tool slots, and a tmp/review plan file. Use when the
+  a group menu, Makefile and go.mod tool slots (go tool golangci-lint,
+  gofumpt, gocognit via golangci), and a tmp/review plan file. Use when the
   user asks to review, audit, rate quality, check code, or check production
   readiness of Go changes.
 ---
@@ -45,28 +46,43 @@ Resume: if the user says "continue" / "resume" / "next stage" without context, l
 
 Do **not** stop because a standalone `gosec` or `gocyclo` binary is missing. Do **not** require `.gosec.yaml`.
 
-Prefer Makefile targets when present; else the Go toolchain:
+Prefer Makefile targets when present; else `go tool` from `go.mod` `tool`; else PATH:
 
 | Slot | Prefer | Fallback |
 |------|--------|----------|
 | Static analysis | `make vet` | `go vet ./...` |
-| Lint + security | `make lint` | `golangci-lint run` |
-| Format check | `gofmt -l .` (or project pkgs) | note `make format` would rewrite |
-| Complexity | Optional via golangci/`gocritic` | skip if unavailable |
+| Lint + security | `make lint` | `go tool golangci-lint run --timeout 5m`, then PATH `golangci-lint run` |
+| Format check | `make format` (dry if the recipe rewrites) | `go tool gofumpt -l .`, then `gofmt -l .` |
+| Complexity | golangci `gocognit` via lint | `go tool gocognit` if pinned; skip standalone `gocyclo` |
 
-Pre-flight: confirm lint and vet can run. If lint fails because golangci-lint is missing, report that and stop Stage 1 only.
+**CONSTRAINT:** Stage 1 MUST run lint through `make lint` or `go tool golangci-lint` when either exists. MUST NOT treat a missing PATH `golangci-lint` as a Stage 1 stop when `go.mod` lists the tool. IF `make lint` is absent AND `go tool golangci-lint` fails because it is not pinned AND PATH `golangci-lint` is missing → report that and stop Stage 1 only. MUST record gocognit findings from golangci (or `go tool gocognit` when pinned). MUST NOT require `gocyclo`.
+- Enforcement: Pre-flight tries `make lint`, then `go tool golangci-lint version`, then PATH; plan file records which slot ran.
+- Violation: STOP, rerun via `go tool`; do not skip lint solely because Homebrew golangci-lint is missing.
+
+CORRECT:
+```text
+make lint
+# or: go tool golangci-lint run --timeout 5m ./cmd/... ./internal/...
+```
+
+PROHIBITED:
+```text
+golangci-lint: command not found → skip Stage 1
+# even though go.mod has tool github.com/golangci/golangci-lint/v2/cmd/golangci-lint
+```
 
 ---
 
 ## Rules
 
+- MUST run Stage 1 lint via `make lint` or `go tool golangci-lint` when either exists (golang-quality C11); MUST NOT skip lint solely because PATH `golangci-lint` is missing.
 - MUST wait for stage or group selection (`mechanical`, `consultant`, `both`/`all`, `1`–`5`, `A`–`C`, or ranges).
 - MUST expand group aliases before running stages.
 - MUST run selected mechanical stages (`1`–`5`) back-to-back without "Continue?" or other mid-batch waits.
 - MUST pause for user input only during consultant stages (`A`–`C`) and at the final completion handoff.
 - MUST write findings to the plan file (code pairs live there, not in the chat summary).
 - MUST use [appendix.md](appendix.md) on stages 3, A, B, and 5 (pattern 14 when LLM paths are in scope).
-- MUST load `golang-quality` when running Stage 5; MUST NOT treat Stage 4 as a substitute for generation gates.
+- MUST load `golang-quality` when running Stage 5; MUST score **C11** (`go.mod` tool pins, `.golangci.yml` gocognit/gosec/godot) when `go.mod` / Makefile / `.golangci.yml` are in scope; MUST NOT treat Stage 4 as a substitute for generation gates.
 - MUST load `cli-command-surface` during Stage 5 when a CLI / daemon entrypoint is in scope; MUST NOT treat missing `version` / bare-start as Stage 4 clarity only.
 - MUST score golang-quality **C27** during Stage 5 when changed paths include Go `cmd/`, `internal/cli/`, or daemon `main`; MUST NOT approve new `switch args` / custom CLI routers or extensions to legacy hand-rolled dispatch.
 - MUST load `.cursor/rules/go-outbound-resilience.mdc` (and golang-quality C22 / appendix pattern 19) during Stage 5 when changed code performs outbound HTTP `Do`, forge CLI exec, or network `git`/SCM hops; MUST NOT treat homemade sleep-retry as compliant.

@@ -690,7 +690,70 @@ import (
 ```
 
 - Group: stdlib → third-party → internal, blank lines between groups.
-- `make format` runs gofumpt + goimports.
+- `make format` runs `go tool gofumpt` (and `goimports` only when the host already uses it).
+
+---
+
+## Go module tools (lint and format)
+
+LOAD-WHEN: scaffolding or editing `go.mod`, `.golangci.yml`, `make lint` / `make format`; golang-quality **CONSTRAINT 11**; staged review Stage 1.
+
+### Rules
+
+- MUST pin `github.com/golangci/golangci-lint/v2/cmd/golangci-lint` and `mvdan.cc/gofumpt` with `go get -tool` (Go 1.24+ `tool` directive).
+- MUST ship root `.golangci.yml` with `version: "2"`.
+- MUST enable golangci linters `gocognit`, `gosec`, and `godot`, and formatter `gofumpt`.
+- MUST set `gocognit` `min-complexity` explicitly (`20` for new modules; existing hosts MAY raise it until debt is paid).
+- MUST invoke those binaries via `go tool` from `make lint` / `make format`.
+- MUST NOT treat a PATH `golangci-lint` / `gofumpt` as the default when `go.mod` has `tool` pins.
+- MUST NOT require standalone `gosec` or `gocyclo` binaries.
+- MUST NOT lint nested provider or submodule trees from the host config (scope `./cmd/...` `./internal/...` `./pkg/...` when those exist).
+- NEVER: add golangci-lint to `require` as a runtime library.
+
+CORRECT:
+```makefile
+lint: ## Run golangci-lint
+	go tool golangci-lint run --timeout 5m ./cmd/... ./internal/...
+
+format: ## Format with gofumpt
+	go tool gofumpt -w ./cmd ./internal
+```
+
+```yaml
+version: "2"
+
+linters:
+  enable:
+    - gocognit
+    - gosec
+    - godot
+  settings:
+    gocognit:
+      min-complexity: 20
+    godot:
+      period: true
+      capital: true
+
+formatters:
+  enable:
+    - gofumpt
+```
+
+```text
+go get -tool github.com/golangci/golangci-lint/v2/cmd/golangci-lint
+go get -tool mvdan.cc/gofumpt
+```
+
+PROHIBITED:
+```makefile
+lint: ## Run golangci-lint
+	golangci-lint run
+```
+
+```text
+brew install gocyclo gosec
+# no .golangci.yml; PATH golangci-lint only
+```
 
 ---
 
@@ -725,11 +788,11 @@ help: ## List local-dev make verbs
 	@printf '\n  CLI catalog: run <binary> help\n'
 	@$(MAKE) --no-print-directory report-data-flow
 
-format: ## Format with gofumpt and goimports
-	gofumpt -w . && goimports -w .
+format: ## Format with gofumpt
+	go tool gofumpt -w .
 
 lint: ## Run golangci-lint
-	golangci-lint run --timeout 5m
+	go tool golangci-lint run --timeout 5m
 
 vet: ## Run go vet
 	go vet ./...
@@ -797,8 +860,8 @@ LOAD-WHEN: choosing Makefile target names; Stage 5 / golang-quality CONSTRAINT 2
 | `test` | Run Go tests |
 | `vet` | `go vet ./...` |
 | `tidy` | `go mod tidy` |
-| `lint` | golangci-lint |
-| `format` | Project formatter |
+| `lint` | `go tool golangci-lint` (pinned in `go.mod`) |
+| `format` | `go tool gofumpt` |
 | `ci` | tidy + gofmt + vet + race tests + build |
 | `init` | Create `~/.config/<app>/...` config if missing |
 | `serve` | Long-running process-compose local stack |

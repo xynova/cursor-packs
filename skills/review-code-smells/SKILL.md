@@ -659,11 +659,11 @@ func longRunningOperation(ctx context.Context) error {
 
 **Run these commands and review their output:**
 
-- [ ] **golangci-lint**: Run `make lint` or `golangci-lint run` to detect common issues
+- [ ] **golangci-lint**: Run `make lint` or `go tool golangci-lint run` to detect common issues
 - [ ] **go vet**: Run `go vet ./...` for static analysis
-- [ ] **go fmt**: Run `gofmt -d .` to check formatting issues
-- [ ] **unused**: Check for unused code with `golangci-lint run --enable=unused`
-- [ ] **gocyclo**: Check cyclomatic complexity (if available)
+- [ ] **go fmt**: Run `go tool gofumpt -l .` or `gofmt -d .` to check formatting issues
+- [ ] **unused**: Check for unused code with golangci `unused` (via `make lint`)
+- [ ] **gocognit**: Cognitive complexity via golangci (or `go tool gocognit` if pinned); do not require `gocyclo`
 - [ ] **dupl**: Check for code duplication (if available)
 
 **Common golangci-lint checks to review:**
@@ -681,12 +681,10 @@ func longRunningOperation(ctx context.Context) error {
 ```bash
 # Run comprehensive linting
 make lint
-
-# Check for specific issues
-golangci-lint run --enable=errcheck,unused,goconst
+# or: go tool golangci-lint run --timeout 5m
 
 # Check formatting
-gofmt -d .
+go tool gofumpt -l .
 ```
 
 ---
@@ -849,7 +847,7 @@ Use this checklist when reviewing code:
 - [ ] Mutexes unlocked with `defer`
 
 ### **Tooling**
-- [ ] `golangci-lint run` passes
+- [ ] `make lint` or `go tool golangci-lint run` passes
 - [ ] `go vet ./...` passes
 - [ ] `gofmt -d .` shows no changes
 - [ ] No unused code warnings

@@ -62,11 +62,11 @@ Which stages? (numbers, ranges, or 'all')
 
 | # | Stage | What it covers |
 |---|-------|----------------|
-| 1 | Automated Tools | `make vet`, `make lint`, format check; capture exit codes and raw output |
+| 1 | Automated Tools | `make vet`, `make lint` (`go tool golangci-lint` including gocognit/gosec/godot), format check; capture exit codes and raw output |
 | 2 | Type Safety | `any` / `interface{}`, type assertions, nil before dereference |
 | 3 | Error Handling | typed wrap-chain, `_ =`, log-without-return, persistence, DB fallback |
 | 4 | Code Clarity | naming, godot periods, structured logs, over-export |
-| 5 | Generation Gates | `golang-quality` constraints 1–27 (templates, OTEL, durable AI dumps, resources, layering, config create, package layout, local-dev Makefile help + shared Make verbs, outbound failsafe-go resilience, HTTP/CLI service-layer error mapping, numbered SQL migrations, injectable clocks, embedded SQLite, Go Cobra CLIs); `go-structured-strings` for report builders; **CI Quality** add-on (`manage-go-releases` when release/auto-patch CI in scope). External Uber / Code Review Comments are citations only. |
+| 5 | Generation Gates | `golang-quality` constraints 1–27 (templates, OTEL, durable AI dumps, resources, layering, config create, package layout, format/lint `go.mod` tool + `.golangci.yml` C11, local-dev Makefile help + shared Make verbs, outbound failsafe-go resilience, HTTP/CLI service-layer error mapping, numbered SQL migrations, injectable clocks, embedded SQLite, Go Cobra CLIs); `go-structured-strings` for report builders; **CI Quality** add-on (`manage-go-releases` when release/auto-patch CI in scope). External Uber / Code Review Comments are citations only. |
 
 AI finds issues, reports them with code pairs in the plan file. No user input required mid-stage or between mechanical stages.
 
@@ -124,17 +124,18 @@ If a plan file still lists old IDs, map with this table, then continue.
 
 ## Stage 1: Automated Tools — Detect
 
-Run (prefer Makefile when targets exist):
+Run (prefer Makefile when targets exist; else `go tool` from `go.mod`; else PATH):
 
 ```bash
-make vet    # or: go vet ./...
-make lint   # or: golangci-lint run
-gofmt -l .  # or project packages such as ./cmd ./internal
+make vet     # or: go vet ./...
+make lint    # or: go tool golangci-lint run --timeout 5m
+             # then: golangci-lint run
+go tool gofumpt -l .   # or: gofmt -l .  on ./cmd ./internal ./pkg
 ```
 
-Record exit codes and relevant output. Each reported issue is a finding (severity from the tool when obvious; otherwise Medium). When golangci is configured with `gosec`/`godot`, lint covers those.
+Record exit codes and relevant output. Each reported issue is a finding (severity from the tool when obvious; otherwise Medium). When golangci is configured with `gosec` / `godot` / `gocognit`, lint covers those. Optional extra scan: `go tool gocognit` when that binary is pinned.
 
-Do not fail pre-flight for missing `gocyclo` or `.gosec.yaml`.
+Do not fail pre-flight for missing `gocyclo` or `.gosec.yaml`. Do not fail pre-flight for a missing PATH `golangci-lint` when `go tool golangci-lint` works.
 
 ---
 
@@ -213,7 +214,7 @@ When the review target includes a command-line runner (`cmd/`, daemon `main`, CL
 - [ ] C8: no replacing received `ctx` with `context.Background()`; nil `opts.Context` / context params fail closed (no Background substitute); `ctx.Done()` before expensive work; outbound hops fail closed when `ctx`/`req.Context()` has no deadline (no leaf `Timeout` / `WithTimeout` fallback) — see `go-outbound-resilience.mdc`
 - [ ] C9: no unused work; no N+1 when a batch exists
 - [ ] C10: HTTP / external API only in client packages; CLI has no business logic
-- [ ] C11: comments end with period; format/lint gates known for the project (Stage 1 already ran tools when selected)
+- [ ] C11: comments end with period; `go.mod` `tool` pins golangci-lint v2 and gofumpt; `.golangci.yml` v2 enables gocognit/gosec/godot; Stage 1 already ran `make lint` / `go tool golangci-lint` when selected
 - [ ] C12: interfaces ≤ 5–6 methods
 - [ ] C13: multi-line operator reports / diagrams use `text/template` (or `html/template`); not chained `WriteString` / `Sprintf` spaghetti — see `go-structured-strings.mdc`. CLI inspect/status text following cli-command-surface C9–C10 (`writeln` + `--json`) is compliant without a template.
 - [ ] C14: injected structured logger; no `fmt.Print*` / ad-hoc `logrus.New()` in services
