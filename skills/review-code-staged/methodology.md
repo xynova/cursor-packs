@@ -62,7 +62,7 @@ Which stages? (numbers, ranges, or 'all')
 
 | # | Stage | What it covers |
 |---|-------|----------------|
-| 1 | Automated Tools | `go tool task vet` / `go tool task lint` (user program) or `make vet` / `make lint` (library); golangci gocognit/gosec/godot; format check; capture exit codes |
+| 1 | Automated Tools | `go tool task vet` / `go tool task lint` (user program) or `make vet` / `make lint` (library); golangci errorlint/exhaustive/goconst/gocognit/gosec/godot; format check; capture exit codes |
 | 2 | Type Safety | `any` / `interface{}`, type assertions, nil before dereference |
 | 3 | Error Handling | typed wrap-chain, `_ =`, log-without-return, persistence, DB fallback |
 | 4 | Code Clarity | naming, godot periods, structured logs, over-export |
@@ -142,7 +142,7 @@ make format
 
 Missing `Taskfile.yml` on `cmd/` CLI → C11 finding; MAY run `go tool golangci-lint` for diagnostics. Legacy with neither runner: `go vet`, `go tool golangci-lint run --timeout 5m`.
 
-Record exit codes. `task lint` / `make lint` MUST cover `gosec`, `godot`, and `gocognit` when `.golangci.yml` is C11-compliant. Optional: `go tool gocognit` when pinned (diagnostics only).
+Record exit codes. `task lint` / `make lint` MUST cover `errorlint`, `exhaustive`, `goconst`, `gosec`, `godot`, and `gocognit` when `.golangci.yml` is C11-compliant. Optional: `go tool gocognit` when pinned (diagnostics only).
 
 Do not fail pre-flight for missing `gocyclo` or `.gosec.yaml`. Do not fail pre-flight for a missing PATH `golangci-lint` when `go tool golangci-lint` works.
 
@@ -162,6 +162,7 @@ Do not fail pre-flight for missing `gocyclo` or `.gosec.yaml`. Do not fail pre-f
 
 - [ ] No `_ =` except defer cleanup
 - [ ] Each hop returns a typed domain error (code, op, optional fields, `Unwrap`); not a bare `err`
+- [ ] Domain `code` is an exported `Code*` constant (C5); not a string literal or `http.Status*`
 - [ ] Cause is wrapped (`Wrap` / `NewDomainError` / `fmt.Errorf("%w")` only at a stdlib leaf, then converted)
 - [ ] No `err.Error()` stringify that drops `errors.Is` / `As`
 - [ ] No log-without-return on error paths
@@ -223,7 +224,8 @@ When the review target includes a command-line runner (`cmd/`, daemon `main`, CL
 - [ ] C8: no replacing received `ctx` with `context.Background()`; nil `opts.Context` / context params fail closed (no Background substitute); `ctx.Done()` before expensive work; outbound hops fail closed when `ctx`/`req.Context()` has no deadline (no leaf `Timeout` / `WithTimeout` fallback) — see `go-outbound-resilience.mdc`
 - [ ] C9: no unused work; no N+1 when a batch exists
 - [ ] C10: HTTP / external API only in client packages; CLI has no business logic
-- [ ] C11: user program has `Taskfile.yml` + `task` tool pin (or library `Makefile`); comments end with period; `go.mod` pins golangci-lint v2 and gofumpt; `.golangci.yml` v2 enables gocognit/gosec/godot; Stage 1 ran the correct runner when selected
+- [ ] C5: domain Wrap/New `code` is exported `Code*`; not string literals at call sites
+- [ ] C11: user program has `Taskfile.yml` + `task` tool pin (or library `Makefile`); comments end with period; `go.mod` pins golangci-lint v2 and gofumpt; `.golangci.yml` v2 enables errorlint/exhaustive/goconst/gocognit/gosec/godot; Stage 1 ran the correct runner when selected
 - [ ] C12: interfaces ≤ 5–6 methods
 - [ ] C13: multi-line operator reports / diagrams use `text/template` (or `html/template`); not chained `WriteString` / `Sprintf` spaghetti — see `go-structured-strings.mdc`. CLI inspect/status text following cli-command-surface C9–C10 (`writeln` + `--json`) is compliant without a template.
 - [ ] C14: injected structured logger; no `fmt.Print*` / ad-hoc `logrus.New()` in services

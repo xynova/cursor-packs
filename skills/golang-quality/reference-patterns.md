@@ -96,7 +96,7 @@ defer file.Close()
 
 ### Typed domain error at each hop
 
-MUST wrap the incoming cause in a typed domain error (stable code, layer `op`, message, optional fields, `Unwrap`). Go has no Java-style stack on error values; the Unwrap chain plus fields is the breadcrumb.
+MUST wrap the incoming cause in a typed domain error (stable code, layer `op`, message, optional fields, `Unwrap`). The `code` argument MUST be an exported `Code*` constant (C5), not a string literal or HTTP status int. Go has no Java-style stack on error values; the Unwrap chain plus fields is the breadcrumb.
 
 ```go
 if err != nil {
@@ -704,7 +704,7 @@ LOAD-WHEN: scaffolding or editing `go.mod`, `.golangci.yml`, `Taskfile.yml`, `ma
 - User programs (`./cmd/...`): MUST ship root `Taskfile.yml` (version `"3"`); MUST pin `github.com/go-task/task/v3/cmd/task`; listed tasks `format`, `lint`, `vet`, `test`, `build` (C20–C21).
 - Library modules: MAY ship root `Makefile` with `help`, `format`, `lint`, `vet`, `test`, `build` when applicable.
 - MUST ship root `.golangci.yml` with `version: "2"`.
-- MUST enable golangci linters `gocognit`, `gosec`, and `godot`, and formatter `gofumpt`.
+- MUST enable golangci linters `errorlint`, `exhaustive`, `goconst`, `gocognit`, `gosec`, and `godot`, and formatter `gofumpt`.
 - MUST set `gocognit` `min-complexity` explicitly (`20` for new modules; existing hosts MAY raise it until debt is paid).
 - MUST invoke those binaries via `go tool` from Task or Make recipes; operators run `go tool task lint` or `make lint`, not bare PATH `golangci-lint`.
 - Listed Task recipes MUST use forward slashes, `{{exeExt}}` for binaries, Task `vars:` / `env:` (no `mkdir -p`, `rm`, `export`, heredocs).
@@ -727,10 +727,22 @@ version: "2"
 
 linters:
   enable:
+    - errorlint
+    - exhaustive
     - gocognit
-    - gosec
+    - goconst
     - godot
+    - gosec
   settings:
+    errorlint:
+      errorf: true
+      asserts: true
+      comparison: true
+    exhaustive:
+      default-signifies-exhaustive: false
+    goconst:
+      min-len: 3
+      min-occurrences: 3
     gocognit:
       min-complexity: 20
     godot:

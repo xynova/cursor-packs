@@ -65,7 +65,7 @@ Apply these **while writing** and again when staged review **Stage 5** runs. Do 
 
 **CONSTRAINT 4 — Errors handled.** NEVER discard with `_ =` except inside defer cleanup. NEVER log an error without returning it (except defer where return is impossible).
 
-**CONSTRAINT 5 — Typed domain errors.** MUST return a typed domain error with a stable code, layer `op`, message, optional fields, and `Unwrap`. MUST wrap the incoming cause at each hop (client → plugin/service → gateway). MUST NOT return a bare `err`. MUST NOT stringify a cause with `err.Error()` and drop the chain. `fmt.Errorf("%w")` MAY wrap a stdlib cause at the leaf, then MUST convert to a domain error before leaving the package.
+**CONSTRAINT 5 — Typed domain errors.** MUST return a typed domain error with a stable code, layer `op`, message, optional fields, and `Unwrap`. The Wrap/New `code` argument MUST be a typed exported constant of the package `Code` type (for example `derrors.CodeUnavailable`). MUST NOT pass a string literal, `http.Status*`, or process exit int as the domain code. `type Code string` still accepts a literal at compile time; goconst `ignore-calls` does not catch call-site code strings. MUST wrap the incoming cause at each hop (client → plugin/service → gateway). MUST NOT return a bare `err`. MUST NOT stringify a cause with `err.Error()` and drop the chain. `fmt.Errorf("%w")` MAY wrap a stdlib cause at the leaf, then MUST convert to a domain error before leaving the package.
 - Enforcement: Every new or changed error return is a typed wrap; `errors.Is`/`As` still reach the cause.
 - Violation: STOP, wrap with the package `internal/errors` (or project equivalent) and re-check.
 
@@ -79,6 +79,8 @@ PROHIBITED:
 ```go
 return err
 return fmt.Errorf("post /run: %s", err.Error())
+return derrors.Wrap(err, "unavailable", "cloudflare.Synthesize", "post /run")
+return derrors.Wrap(err, http.StatusBadGateway, "op", "msg")
 ```
 
 **CONSTRAINT 6 — Persistence errors returned.** State-save failures MUST be returned. Log first, then return. Silent continue causes inconsistent state and loops.
@@ -128,7 +130,7 @@ func OpenSessionStore(ctx context.Context, ...) (...) {
 
 **CONSTRAINT 10 — CLI → Service → Client.** HTTP and external API calls ONLY in `internal/clients/<service>/` (or pipeline client packages that wrap HTTP). CLI MUST NOT contain business logic.
 
-**CONSTRAINT 11 — Format and lint.** Comments MUST end with a period (`godot`). Go modules on Go 1.24+ MUST pin lint and format binaries in `go.mod` with `go get -tool`: `github.com/golangci/golangci-lint/v2/cmd/golangci-lint` and `mvdan.cc/gofumpt`. MUST ship a root `.golangci.yml` with `version: "2"` that enables `gocognit`, `gosec`, and `godot`, and enables the `gofumpt` formatter. **User programs** (modules that ship an operator CLI or daemon under `cmd/`) MUST ship root `Taskfile.yml` (version `"3"`), MUST pin `github.com/go-task/task/v3/cmd/task` in `go.mod` `tool`, and MUST expose listed tasks at minimum `format`, `lint`, `vet`, `test`, and `build` (C20–C21). **Library modules** (no operator `cmd/`) MAY ship a root `Makefile` instead; when present, C20 Make help applies. `gocognit` MUST run as a golangci-lint linter (default `min-complexity: 20` on new modules; existing modules MAY raise the threshold with an explicit setting until complexity debt is paid). MUST NOT require a PATH-installed `golangci-lint`, `gofumpt`, `gosec`, `gocyclo`, or `task` binary. MUST NOT add a standalone `gocyclo` tool as a required gate. A standalone `github.com/uudashr/gocognit/cmd/gocognit` `tool` line MAY exist for ad-hoc `go tool gocognit` scans; it MUST NOT replace golangci `gocognit`. `lint` / `format` tasks MUST invoke `go tool golangci-lint run --timeout 5m` and `go tool gofumpt -w` (package scope `./cmd/...` `./internal/...` `./pkg/...` when those trees exist; `goimports` only when the host already uses it). Operators and agents MUST run quality gates through `go tool task` on user programs or `make` on libraries, not ad-hoc PATH binaries. Task recipes MUST be portable (forward slashes; Task `vars:` / `env:`; no `mkdir -p`, `rm`, `export`, or heredocs in listed quality tasks; use `{{exeExt}}` for built binaries). Nested provider or submodule trees MUST NOT be included in the host lint scope. Run operator-runner gates before completing (see below). See [reference-patterns.md](reference-patterns.md#go-module-tools-lint-and-format).
+**CONSTRAINT 11 — Format and lint.** Comments MUST end with a period (`godot`). Go modules on Go 1.24+ MUST pin lint and format binaries in `go.mod` with `go get -tool`: `github.com/golangci/golangci-lint/v2/cmd/golangci-lint` and `mvdan.cc/gofumpt`. MUST ship a root `.golangci.yml` with `version: "2"` that enables `errorlint`, `exhaustive`, `goconst`, `gocognit`, `gosec`, and `godot`, and enables the `gofumpt` formatter. MUST set `exhaustive.default-signifies-exhaustive: false`. MAY set `goconst.min-len` / `min-occurrences` and `ignore-tests: true` on hosts with fixture debt. **User programs** (modules that ship an operator CLI or daemon under `cmd/`) MUST ship root `Taskfile.yml` (version `"3"`), MUST pin `github.com/go-task/task/v3/cmd/task` in `go.mod` `tool`, and MUST expose listed tasks at minimum `format`, `lint`, `vet`, `test`, and `build` (C20–C21). **Library modules** (no operator `cmd/`) MAY ship a root `Makefile` instead; when present, C20 Make help applies. `gocognit` MUST run as a golangci-lint linter (default `min-complexity: 20` on new modules; existing modules MAY raise the threshold with an explicit setting until complexity debt is paid). MUST NOT require a PATH-installed `golangci-lint`, `gofumpt`, `gosec`, `gocyclo`, or `task` binary. MUST NOT add a standalone `gocyclo` tool as a required gate. A standalone `github.com/uudashr/gocognit/cmd/gocognit` `tool` line MAY exist for ad-hoc `go tool gocognit` scans; it MUST NOT replace golangci `gocognit`. `lint` / `format` tasks MUST invoke `go tool golangci-lint run --timeout 5m` and `go tool gofumpt -w` (package scope `./cmd/...` `./internal/...` `./pkg/...` when those trees exist; `goimports` only when the host already uses it). Operators and agents MUST run quality gates through `go tool task` on user programs or `make` on libraries, not ad-hoc PATH binaries. Task recipes MUST be portable (forward slashes; Task `vars:` / `env:`; no `mkdir -p`, `rm`, `export`, or heredocs in listed quality tasks; use `{{exeExt}}` for built binaries). Nested provider or submodule trees MUST NOT be included in the host lint scope. Run operator-runner gates before completing (see below). See [reference-patterns.md](reference-patterns.md#go-module-tools-lint-and-format).
 - Enforcement: Read `Taskfile.yml` or `Makefile`, `go.mod` `tool`, and root `.golangci.yml`; lint/format recipes call `go tool`; Stage 1 runs `go tool task vet` / `go tool task lint` on user programs or `make vet` / `make lint` on libraries.
 - Violation: STOP, add `Taskfile.yml` or `Makefile`, `tool` pins, v2 config, and `go tool` recipes; do not document brew/PATH-only lint or task as the default.
 
@@ -149,7 +151,7 @@ tasks:
 
 ```text
 go.mod tool: golangci-lint/v2, gofumpt, go-task/task/v3/cmd/task
-.golangci.yml: version "2"; gocognit, gosec, godot; formatter gofumpt
+.golangci.yml: version "2"; errorlint, exhaustive, goconst, gocognit, gosec, godot; formatter gofumpt
 ```
 
 PROHIBITED:
@@ -627,7 +629,7 @@ Do NOT complete while any of these fail. Fix, re-run, then complete.
 - [ ] Format: `go tool task format` or `make format` (C11; `go tool gofumpt` inside the recipe)
 - [ ] Commit hooks: `go tool task hooks-install` or `make hooks-install` once per clone (see `install-repo-hooks`)
 - [ ] Lint: `go tool task lint` or `make lint` (gosec, godot, gocognit via `.golangci.yml`)
-- [ ] `go.mod` `tool` pins golangci-lint v2, gofumpt, and `task` when Taskfile; root `.golangci.yml` is v2 with gocognit/gosec/godot (CONSTRAINT 11)
+- [ ] `go.mod` `tool` pins golangci-lint v2, gofumpt, and `task` when Taskfile; root `.golangci.yml` is v2 with errorlint/exhaustive/goconst/gocognit/gosec/godot (CONSTRAINT 11)
 - [ ] Vet: `go tool task vet` or `make vet`
 - [ ] Test: `go tool task test` or `make test`
 - [ ] `go mod tidy` if `go.mod` / imports changed

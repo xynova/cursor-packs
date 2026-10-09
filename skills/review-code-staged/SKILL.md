@@ -55,7 +55,7 @@ On Go 1.24+ modules under golang-quality **C11**: IF root `Taskfile.yml` (user p
 | Format check | `go tool task format` or `go tool gofumpt -l` | `make format` or `go tool gofumpt -l` | `gofmt -l` |
 | Complexity | gocognit via `task lint` | gocognit via `make lint` | `go tool gocognit` if pinned |
 
-**CONSTRAINT:** Stage 1 MUST run vet and lint through the correct runner. MUST NOT treat a missing PATH `golangci-lint` as a Stage 1 stop when `go.mod` lists the tool. MUST record gocognit and gosec from golangci. MUST NOT require `gocyclo`.
+**CONSTRAINT:** Stage 1 MUST run vet and lint through the correct runner. MUST NOT treat a missing PATH `golangci-lint` as a Stage 1 stop when `go.mod` lists the tool. MUST record gocognit, gosec, goconst, exhaustive, and errorlint from golangci when C11 enables them. MUST NOT require `gocyclo`.
 - Enforcement: Pre-flight records runner and exit codes; missing `Taskfile.yml` on `cmd/` CLI is C11.
 - Violation: STOP on user programs without `Taskfile.yml` + `go tool task lint`; do not skip lint solely because Homebrew golangci-lint is missing.
 
@@ -90,6 +90,6 @@ go tool golangci-lint run   # default on user program that should use Taskfile
 - MUST load `.cursor/rules/go-injectable-clock.mdc` (and golang-quality C25 / appendix pattern 21) during Stage 5 / Stage C when changed code stamps durable or test-sensitive time; MUST NOT treat leaf `time.Now()` on `CreatedAt` / manifests / cache stores as compliant.
 - MUST score golang-quality **C26** during Stage 5 when changed paths include embedded SQLite (`modernc.org/sqlite`, `sql.Open("sqlite", …)`); MUST NOT treat new `mattn/go-sqlite3` or CGO-for-SQLite build hooks as compliant.
 - MUST load `manage-go-releases` / `go-releases.mdc` during Stage 5 **CI Quality** when changed paths include `.github/workflows/*release*`, `.gitlab/ci/*release*`, `**/auto-patch-release.yml`, `.goreleaser.yaml`, or `scripts/auto-patch-decide.sh` / `auto-patch-path-predicates.sh`; MUST NOT approve subject-only auto-patch or tag-wake-only Docker after auto-patch.
-- MUST score Stage 5 Go gates against `golang-quality` Core constraints only (plus `cli-command-surface` when in scope, plus outbound resilience when in scope, plus injectable clocks when in scope, plus embedded SQLite C26 when in scope, plus manage-go-releases when release CI is in scope); MUST NOT treat Go Code Review Comments or Uber Go Style Guide as a parallel scored checklist.
+- MUST score Stage 5 Go gates against `golang-quality` Core constraints only (plus `cli-command-surface` when in scope, plus outbound resilience when in scope, plus injectable clocks when in scope, plus embedded SQLite C26 when in scope, plus manage-go-releases when release CI is in scope); MUST NOT treat Go Code Review Comments or Uber Go Style Guide as a parallel scored checklist. MUST score **C5** domain `code` arguments as exported `Code*` constants, not string literals or `http.Status*`.
 - MUST NOT bypass, omit, or deprioritize **Low** findings when they are fixable. Prefer fixing them with the rest of the findings (see methodology completion handoff).
 - If the project has `/review-architecture` or `/review-code-smells`, point the user there when that is the whole ask — do not replace those commands.

@@ -659,7 +659,7 @@ func longRunningOperation(ctx context.Context) error {
 
 **Run these commands and review their output:**
 
-- [ ] **golangci-lint**: Run `go tool task lint`, `make lint`, or `go tool golangci-lint run` to detect common issues
+- [ ] **golangci-lint**: Prefer `go tool task lint` or `make lint` (C11) over bare `golangci-lint` on PATH
 - [ ] **go vet**: Run `go vet ./...` for static analysis
 - [ ] **go fmt**: Run `go tool gofumpt -l .` or `gofmt -d .` to check formatting issues
 - [ ] **unused**: Check for unused code with golangci `unused` (via `make lint`)
