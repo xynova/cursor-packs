@@ -1,7 +1,8 @@
 ---
 description: >-
   Consult Gemma (or another allow-listed model) through the Polypus gateway
-  (POLYPUS_BASE_URL, default http://127.0.0.1:1320). Load skill ask-polypus.
+  (discover POLYPUS_BASE_URL / operator config, then loopback health). Load
+  skill ask-polypus.
   Triggers: ask gemma, ask polypus, gemma on polypus, second opinion via
   Polypus, POLYPUS_BASE_URL, POLYPUS_OTLP_ENDPOINT, Phoenix OTLP, OpenInference
   dev env.
@@ -14,7 +15,7 @@ alwaysApply: false
 
 ## MUST
 
-- Resolve `BASE` as `${POLYPUS_BASE_URL:-http://127.0.0.1:1320}`; probe `GET ${BASE}/health` before chat
+- Discover `BASE` before chat: non-empty `POLYPUS_BASE_URL` in the agent environment, else host-resolved `polypus.base_url` when the repo documents it (`operator-config` / `config show`), else `http://127.0.0.1:1320`; then probe `GET ${BASE}/health` (or run the host's `make polypus-check` / `./scripts/check-polypus.sh` when documented, which discovers BASE and fails closed)
 - Call only that gateway OpenAI surface (`POST ${BASE}/v1/chat/completions`)
 - Default model: `cf_local/@cf/google/gemma-4-26b-a4b-it` when the user says Gemma / ask Polypus without another id
 - Include the artifact under review in the prompt
