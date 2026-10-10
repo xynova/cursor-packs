@@ -231,6 +231,14 @@ MUST NOT: `fmt.Fprintf(w, "os=%s arch=%s runner=%s\n", ..., fullVersionBanner)`.
 
 ---
 
+## Operator list colors (Taskfile)
+
+LOAD-WHEN: branding `go tool task --list` to match human CLI output.
+
+MUST follow golang-quality **C20** and [reference-patterns.md § Taskfile list branding](../golang-quality/reference-patterns.md#taskfile-list-branding) (`OPERATOR_CLI_THEME_ACCENT`, `OPERATOR_CLI_THEME_MARK`, `TASK_COLOR_*`, piped-list `FORCE_COLOR`).
+
+---
+
 ## Review mapping
 
 | Check | Mechanical (Stage 5 when CLI in scope) | Consultant (Stage A) |
