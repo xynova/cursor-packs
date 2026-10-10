@@ -2,7 +2,7 @@
 name: operator-config
 description: >-
   Operator app configuration discovery, init, and secret resolution for Go CLIs
-  and daemons: XDG user config.yaml, make init / binary init, no literal secrets,
+  and daemons: XDG user config.yaml, go tool task init / make init / binary init,
   ${VAR} expand, zalando/go-keyring (Keychain / Credential Manager / Secret Service).
   Use when adding config.yaml, UserConfig paths, CORTEX_CONFIG/POLYPUS_CONFIG-style
   overrides, init targets, env placeholders, keyring-backed secrets, or .env.example.
@@ -50,7 +50,7 @@ PROHIBITED:
 open("config.yaml")
 ```
 
-**CONSTRAINT:** When the app has a durable operator config file, MUST provide `make init` and/or `<bin> init` that creates the user config directory and writes `config.yaml` only if missing (unless `--force`). MUST refresh `config.yaml.example` under the user config dir (or document a shipped example in-repo). Live `config.yaml` MUST be mode `0600` when the host creates it. MUST NOT overwrite an existing live config without an explicit force flag.
+**CONSTRAINT:** When the app has a durable operator config file, MUST provide `go tool task init`, `make init`, and/or `<bin> init` that creates the user config directory and writes `config.yaml` only if missing (unless `--force`). MUST refresh `config.yaml.example` under the user config dir (or document a shipped example in-repo). Live `config.yaml` MUST be mode `0600` when the host creates it. MUST NOT overwrite an existing live config without an explicit force flag.
 
 - Enforcement: Trace init command and Make target; missing-file create; force gate; file mode
 - Violation: STOP, add init that writes under the user config dir, re-verify

@@ -62,11 +62,11 @@ Which stages? (numbers, ranges, or 'all')
 
 | # | Stage | What it covers |
 |---|-------|----------------|
-| 1 | Automated Tools | `make vet`, `make lint`, format check; capture exit codes and raw output |
+| 1 | Automated Tools | `go tool task vet` / `go tool task lint` (user program) or `make vet` / `make lint` (library); golangci errorlint/exhaustive/goconst/gocognit/gosec/godot; format check; capture exit codes |
 | 2 | Type Safety | `any` / `interface{}`, type assertions, nil before dereference |
 | 3 | Error Handling | typed wrap-chain, `_ =`, log-without-return, persistence, DB fallback |
 | 4 | Code Clarity | naming, godot periods, structured logs, over-export |
-| 5 | Generation Gates | `golang-quality` constraints 1–27 (templates, OTEL, durable AI dumps, resources, layering, config create, package layout, local-dev Makefile help + shared Make verbs, outbound failsafe-go resilience, HTTP/CLI service-layer error mapping, numbered SQL migrations, injectable clocks, embedded SQLite, Go Cobra CLIs); `go-structured-strings` for report builders; **CI Quality** add-on (`manage-go-releases` when release/auto-patch CI in scope). External Uber / Code Review Comments are citations only. |
+| 5 | Generation Gates | `golang-quality` constraints 1–27 (templates, OTEL, durable AI dumps, resources, layering, config create, package layout, format/lint `go.mod` tool + `.golangci.yml` C11, local-dev Task `desc`/`summary`/footer or Makefile help + shared verbs, outbound failsafe-go resilience, HTTP/CLI service-layer error mapping, numbered SQL migrations, injectable clocks, embedded SQLite, Go Cobra CLIs); `go-structured-strings` for report builders; **CI Quality** add-on (`manage-go-releases` when release/auto-patch CI in scope). External Uber / Code Review Comments are citations only. |
 
 AI finds issues, reports them with code pairs in the plan file. No user input required mid-stage or between mechanical stages.
 
@@ -124,17 +124,27 @@ If a plan file still lists old IDs, map with this table, then continue.
 
 ## Stage 1: Automated Tools — Detect
 
-Run (prefer Makefile when targets exist):
+User program (`Taskfile.yml`):
 
 ```bash
-make vet    # or: go vet ./...
-make lint   # or: golangci-lint run
-gofmt -l .  # or project packages such as ./cmd ./internal
+go tool task vet
+go tool task lint
+go tool task format   # or go tool gofumpt -l if format writes
 ```
 
-Record exit codes and relevant output. Each reported issue is a finding (severity from the tool when obvious; otherwise Medium). When golangci is configured with `gosec`/`godot`, lint covers those.
+Library (`Makefile`):
 
-Do not fail pre-flight for missing `gocyclo` or `.gosec.yaml`.
+```bash
+make vet
+make lint
+make format
+```
+
+Missing `Taskfile.yml` on `cmd/` CLI → C11 finding; MAY run `go tool golangci-lint` for diagnostics. Legacy with neither runner: `go vet`, `go tool golangci-lint run --timeout 5m`.
+
+Record exit codes. `task lint` / `make lint` MUST cover `errorlint`, `exhaustive`, `goconst`, `gosec`, `godot`, and `gocognit` when `.golangci.yml` is C11-compliant. Optional: `go tool gocognit` when pinned (diagnostics only).
+
+Do not fail pre-flight for missing `gocyclo` or `.gosec.yaml`. Do not fail pre-flight for a missing PATH `golangci-lint` when `go tool golangci-lint` works.
 
 ---
 
@@ -145,6 +155,7 @@ Do not fail pre-flight for missing `gocyclo` or `.gosec.yaml`.
 - [ ] Pointers and map lookups are guarded before use when nil/missing is possible
 - [ ] Constructor required deps are nil-checked (panic in `New*`)
 - [ ] Public API pointer params return an error on nil
+- [ ] Enum `switch` on typed consts lists every const; a `default:` branch does not satisfy exhaustiveness (golangci `exhaustive`)
 
 ---
 
@@ -152,8 +163,10 @@ Do not fail pre-flight for missing `gocyclo` or `.gosec.yaml`.
 
 - [ ] No `_ =` except defer cleanup
 - [ ] Each hop returns a typed domain error (code, op, optional fields, `Unwrap`); not a bare `err`
+- [ ] Domain `code` is an exported `Code*` constant (C5); not a string literal or `http.Status*`
 - [ ] Cause is wrapped (`Wrap` / `NewDomainError` / `fmt.Errorf("%w")` only at a stdlib leaf, then converted)
 - [ ] No `err.Error()` stringify that drops `errors.Is` / `As`
+- [ ] No `err ==` sentinel comparisons; use `errors.Is` / `errors.As`; no `fmt.Errorf` without `%w` when wrapping (errorlint)
 - [ ] No log-without-return on error paths
 - [ ] Persistence / session-refresh errors returned (see [appendix.md](appendix.md))
 - [ ] No DB-query fallback inside transactions (architecture §6.7)
@@ -213,7 +226,8 @@ When the review target includes a command-line runner (`cmd/`, daemon `main`, CL
 - [ ] C8: no replacing received `ctx` with `context.Background()`; nil `opts.Context` / context params fail closed (no Background substitute); `ctx.Done()` before expensive work; outbound hops fail closed when `ctx`/`req.Context()` has no deadline (no leaf `Timeout` / `WithTimeout` fallback) — see `go-outbound-resilience.mdc`
 - [ ] C9: no unused work; no N+1 when a batch exists
 - [ ] C10: HTTP / external API only in client packages; CLI has no business logic
-- [ ] C11: comments end with period; format/lint gates known for the project (Stage 1 already ran tools when selected)
+- [ ] C5: domain Wrap/New `code` is exported `Code*`; not string literals at call sites
+- [ ] C11: user program has `Taskfile.yml` + `task` tool pin (or library `Makefile`); comments end with period; `go.mod` pins golangci-lint v2 and gofumpt; `.golangci.yml` v2 enables errorlint/exhaustive/goconst/gocognit/gosec/godot; Stage 1 ran the correct runner when selected
 - [ ] C12: interfaces ≤ 5–6 methods
 - [ ] C13: multi-line operator reports / diagrams use `text/template` (or `html/template`); not chained `WriteString` / `Sprintf` spaghetti — see `go-structured-strings.mdc`. CLI inspect/status text following cli-command-surface C9–C10 (`writeln` + `--json`) is compliant without a template.
 - [ ] C14: injected structured logger; no `fmt.Print*` / ad-hoc `logrus.New()` in services
@@ -222,7 +236,7 @@ When the review target includes a command-line runner (`cmd/`, daemon `main`, CL
 - [ ] C17: when generators/evaluators/signatures change: discrete contracts are structured signature fields; env-gated live opt-in replay exists (or PR documents offline-only); full reseed is not the only exercise path — see `dspy-pipeline-isolation`
 - [ ] C18: multi-field construction uses config create (`cfg.Create*` / `CreateModule`); no long parallel arg lists beside a half-empty Config
 - [ ] C19: kit vs app classified; kit public API in `pkg/<domain>/` (not trapped in `internal/`); app `main` is wiring only (no mux/handlers/routing in `package main`); new files sit under `internal/<domain>/` rather than a new root sibling or grab-bag (`util`, `common`, `helpers`, `shared`, `misc`, `tools`); `internal/` is not a flat dumping ground; app modules do not grow a mixed host `pkg/` unless they are also a published kit. See appendix pattern 17.
-- [ ] C20 / C20a / C21: if a Makefile is in scope, help lists **local-dev** verbs only (CI/static/helpers omit `##`; no `$(VAR)` in `##`; optional footer at most four `make <verb>` lines); binaries emit required sidecars (no Make-only finalize; family verbs default to the full set); shared jobs use shared names (`serve` / `serve-down`, not only `dev`)
+- [ ] C20 / C20a / C21: if `Taskfile.yml` or `Makefile` is in scope, Read operator text (not lint exit code alone). Task: `desc:` / Make `##` one accurate line; listed `summary:` matches deps, cmds, `{{.CLI_ARGS}}` after `--`, platforms; missing `summary` is SHOULD Low; `default` uses `go tool task --list` first, `silent: true` when footer exists, footer at most four verb lines, not PATH `task --list`; C21 shared names unprefixed; host extras MAY `domain:verb`; CLI-duplicate helpers `internal: true`; stale help Medium (High if wrong command). Make: local-dev verbs only; footer cap; binaries emit sidecars; shared names (`serve` / `serve-down`)
 - [ ] C22: outbound process exec and HTTP client hops use failsafe-go (retry with exponential backoff + jitter, circuit breaker for shared network-backed deps); flag bare `Do` / `Command` / `CommandContext` in client/exec packages; no ad-hoc sleep retry loops; classify retryable vs permanent errors — MUST Read `.cursor/rules/go-outbound-resilience.mdc` when outbound hops are in scope; see appendix pattern 19
 - [ ] C23: inbound HTTP / CLI entry packages map service-layer errors (`errors.Is` / `As` / `Is*` on the commands/service package); MUST NOT import a kit/leaf package solely to check that leaf’s sentinel when the service hop owns the operation
 - [ ] C24: when durable SQL schema is in scope, numbered migration files + apply-pending-once; flag DDL (`CREATE TABLE IF NOT EXISTS` / full schema strings) on every write/publish path; SQL provider packages should not force db drivers onto DTO-only importers — see appendix pattern 20

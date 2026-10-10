@@ -2,7 +2,8 @@
 name: review-code-staged
 description: >-
   Staged Go code review with mechanical (1–5) vs consultant (A–C) stage groups,
-  a group menu, Makefile tool slots, and a tmp/review plan file. Use when the
+  a group menu, Makefile and go.mod tool slots (go tool golangci-lint,
+  gofumpt, gocognit via golangci), and a tmp/review plan file. Use when the
   user asks to review, audit, rate quality, check code, or check production
   readiness of Go changes.
 ---
@@ -45,34 +46,50 @@ Resume: if the user says "continue" / "resume" / "next stage" without context, l
 
 Do **not** stop because a standalone `gosec` or `gocyclo` binary is missing. Do **not** require `.gosec.yaml`.
 
-Prefer Makefile targets when present; else the Go toolchain:
+On Go 1.24+ modules under golang-quality **C11**: IF root `Taskfile.yml` (user program with `cmd/`) → Stage 1 MUST use `go tool task vet` and `go tool task lint`. IF missing `Taskfile.yml` on a user program → **C11** finding (High). IF library (no operator `cmd/`) with `Makefile` → `make vet` / `make lint`. IF neither runner → C11 High; MAY run `go tool` diagnostics.
 
-| Slot | Prefer | Fallback |
-|------|--------|----------|
-| Static analysis | `make vet` | `go vet ./...` |
-| Lint + security | `make lint` | `golangci-lint run` |
-| Format check | `gofmt -l .` (or project pkgs) | note `make format` would rewrite |
-| Complexity | Optional via golangci/`gocritic` | skip if unavailable |
+| Slot | User program (`Taskfile.yml`) | Library (`Makefile`) | Fallback |
+|------|-------------------------------|----------------------|----------|
+| Static analysis | `go tool task vet` | `make vet` | `go vet ./...` |
+| Lint + security | `go tool task lint` | `make lint` | `go tool golangci-lint run --timeout 5m` |
+| Format check | `go tool task format` or `go tool gofumpt -l` | `make format` or `go tool gofumpt -l` | `gofmt -l` |
+| Complexity | gocognit via `task lint` | gocognit via `make lint` | `go tool gocognit` if pinned |
 
-Pre-flight: confirm lint and vet can run. If lint fails because golangci-lint is missing, report that and stop Stage 1 only.
+**CONSTRAINT:** Stage 1 MUST run vet and lint through the correct runner. MUST NOT treat a missing PATH `golangci-lint` as a Stage 1 stop when `go.mod` lists the tool. MUST record gocognit, gosec, goconst, exhaustive, and errorlint from golangci when C11 enables them. MUST NOT require `gocyclo`.
+- Enforcement: Pre-flight records runner and exit codes; missing `Taskfile.yml` on `cmd/` CLI is C11.
+- Violation: STOP on user programs without `Taskfile.yml` + `go tool task lint`; do not skip lint solely because Homebrew golangci-lint is missing.
+
+CORRECT:
+```text
+go tool task vet
+go tool task lint
+```
+
+PROHIBITED:
+```text
+golangci-lint: command not found → skip Stage 1
+go tool golangci-lint run   # default on user program that should use Taskfile
+```
 
 ---
 
 ## Rules
 
+- MUST run Stage 1 via `go tool task vet` / `go tool task lint` on user programs or `make vet` / `make lint` on libraries (golang-quality C11); MUST NOT skip lint solely because PATH `golangci-lint` is missing when recipes use `go tool`.
 - MUST wait for stage or group selection (`mechanical`, `consultant`, `both`/`all`, `1`–`5`, `A`–`C`, or ranges).
 - MUST expand group aliases before running stages.
 - MUST run selected mechanical stages (`1`–`5`) back-to-back without "Continue?" or other mid-batch waits.
 - MUST pause for user input only during consultant stages (`A`–`C`) and at the final completion handoff.
 - MUST write findings to the plan file (code pairs live there, not in the chat summary).
 - MUST use [appendix.md](appendix.md) on stages 3, A, B, and 5 (pattern 14 when LLM paths are in scope).
-- MUST load `golang-quality` when running Stage 5; MUST NOT treat Stage 4 as a substitute for generation gates.
+- MUST load `golang-quality` when running Stage 5; MUST score **C11** (`Taskfile.yml` or `Makefile`, `go.mod` tool pins, `.golangci.yml` gocognit/gosec/godot) when in scope; MUST NOT treat Stage 4 as a substitute for generation gates.
+- MUST, when Stage 5 is selected and root `Taskfile.yml` or `Makefile` exists, Read that file and score **C20** operator instructions (`desc` / `summary` / `default` footer or Make `##` / footer). MUST NOT treat `go tool task lint` or `make lint` exit 0 as proof that help text is correct. In scope even if the Git diff is only `.go`.
 - MUST load `cli-command-surface` during Stage 5 when a CLI / daemon entrypoint is in scope; MUST NOT treat missing `version` / bare-start as Stage 4 clarity only.
 - MUST score golang-quality **C27** during Stage 5 when changed paths include Go `cmd/`, `internal/cli/`, or daemon `main`; MUST NOT approve new `switch args` / custom CLI routers or extensions to legacy hand-rolled dispatch.
 - MUST load `.cursor/rules/go-outbound-resilience.mdc` (and golang-quality C22 / appendix pattern 19) during Stage 5 when changed code performs outbound HTTP `Do`, forge CLI exec, or network `git`/SCM hops; MUST NOT treat homemade sleep-retry as compliant.
 - MUST load `.cursor/rules/go-injectable-clock.mdc` (and golang-quality C25 / appendix pattern 21) during Stage 5 / Stage C when changed code stamps durable or test-sensitive time; MUST NOT treat leaf `time.Now()` on `CreatedAt` / manifests / cache stores as compliant.
 - MUST score golang-quality **C26** during Stage 5 when changed paths include embedded SQLite (`modernc.org/sqlite`, `sql.Open("sqlite", …)`); MUST NOT treat new `mattn/go-sqlite3` or CGO-for-SQLite build hooks as compliant.
 - MUST load `manage-go-releases` / `go-releases.mdc` during Stage 5 **CI Quality** when changed paths include `.github/workflows/*release*`, `.gitlab/ci/*release*`, `**/auto-patch-release.yml`, `.goreleaser.yaml`, or `scripts/auto-patch-decide.sh` / `auto-patch-path-predicates.sh`; MUST NOT approve subject-only auto-patch or tag-wake-only Docker after auto-patch.
-- MUST score Stage 5 Go gates against `golang-quality` Core constraints only (plus `cli-command-surface` when in scope, plus outbound resilience when in scope, plus injectable clocks when in scope, plus embedded SQLite C26 when in scope, plus manage-go-releases when release CI is in scope); MUST NOT treat Go Code Review Comments or Uber Go Style Guide as a parallel scored checklist.
+- MUST score Stage 5 Go gates against `golang-quality` Core constraints only (plus `cli-command-surface` when in scope, plus outbound resilience when in scope, plus injectable clocks when in scope, plus embedded SQLite C26 when in scope, plus manage-go-releases when release CI is in scope); MUST NOT treat Go Code Review Comments or Uber Go Style Guide as a parallel scored checklist. MUST score **C5** domain `code` arguments as exported `Code*` constants, not string literals or `http.Status*`.
 - MUST NOT bypass, omit, or deprioritize **Low** findings when they are fixable. Prefer fixing them with the rest of the findings (see methodology completion handoff).
 - If the project has `/review-architecture` or `/review-code-smells`, point the user there when that is the whole ask — do not replace those commands.

@@ -96,7 +96,7 @@ defer file.Close()
 
 ### Typed domain error at each hop
 
-MUST wrap the incoming cause in a typed domain error (stable code, layer `op`, message, optional fields, `Unwrap`). Go has no Java-style stack on error values; the Unwrap chain plus fields is the breadcrumb.
+MUST wrap the incoming cause in a typed domain error (stable code, layer `op`, message, optional fields, `Unwrap`). The `code` argument MUST be an exported `Code*` constant (C5), not a string literal or HTTP status int. Go has no Java-style stack on error values; the Unwrap chain plus fields is the breadcrumb.
 
 ```go
 if err != nil {
@@ -690,7 +690,124 @@ import (
 ```
 
 - Group: stdlib → third-party → internal, blank lines between groups.
-- `make format` runs gofumpt + goimports.
+- `make format` runs `go tool gofumpt` (and `goimports` only when the host already uses it).
+
+---
+
+## Go module tools (lint and format)
+
+LOAD-WHEN: scaffolding or editing `go.mod`, `.golangci.yml`, `Taskfile.yml`, `make lint` / `go tool task lint`; golang-quality **CONSTRAINT 11**; staged review Stage 1.
+
+### Rules
+
+- MUST pin `github.com/golangci/golangci-lint/v2/cmd/golangci-lint` and `mvdan.cc/gofumpt` with `go get -tool` (Go 1.24+ `tool` directive).
+- User programs (`./cmd/...`): MUST ship root `Taskfile.yml` (version `"3"`); MUST pin `github.com/go-task/task/v3/cmd/task`; listed tasks `format`, `lint`, `vet`, `test`, `build` (C20–C21).
+- Library modules: MAY ship root `Makefile` with `help`, `format`, `lint`, `vet`, `test`, `build` when applicable.
+- MUST ship root `.golangci.yml` with `version: "2"`.
+- MUST enable golangci linters `errorlint`, `exhaustive`, `goconst`, `gocognit`, `gosec`, and `godot`, and formatter `gofumpt`.
+- MUST set `gocognit` `min-complexity` explicitly (`20` for new modules; existing hosts MAY raise it until debt is paid).
+- MUST invoke those binaries via `go tool` from Task or Make recipes; operators run `go tool task lint` or `make lint`, not bare PATH `golangci-lint`.
+- Listed Task recipes MUST use forward slashes, `{{exeExt}}` for binaries, Task `vars:` / `env:` (no `mkdir -p`, `rm`, `export`, heredocs).
+- MUST NOT treat a PATH `golangci-lint` / `gofumpt` as the default when `go.mod` has `tool` pins.
+- MUST NOT require standalone `gosec` or `gocyclo` binaries.
+- MUST NOT lint nested provider or submodule trees from the host config (scope `./cmd/...` `./internal/...` `./pkg/...` when those exist).
+- NEVER: add golangci-lint to `require` as a runtime library.
+
+CORRECT:
+```makefile
+lint: ## Run golangci-lint
+	go tool golangci-lint run --timeout 5m ./cmd/... ./internal/...
+
+format: ## Format with gofumpt
+	go tool gofumpt -w ./cmd ./internal
+```
+
+```yaml
+version: "2"
+
+linters:
+  enable:
+    - errorlint
+    - exhaustive
+    - gocognit
+    - goconst
+    - godot
+    - gosec
+  settings:
+    errorlint:
+      errorf: true
+      asserts: true
+      comparison: true
+    exhaustive:
+      default-signifies-exhaustive: false
+    goconst:
+      min-len: 3
+      min-occurrences: 3
+    gocognit:
+      min-complexity: 20
+    godot:
+      period: true
+      capital: true
+
+formatters:
+  enable:
+    - gofumpt
+```
+
+```yaml
+version: "3"
+vars:
+  BIN: bin/app{{exeExt}}
+tasks:
+  default:
+    desc: List local-dev tasks
+    silent: true
+    cmds:
+      - go tool task --list
+      - |
+        echo ""
+        echo "  1. go tool task init"
+        echo "  2. go tool task serve"
+  lint:
+    desc: Run golangci-lint
+    summary: |
+      Runs go tool golangci-lint on ./cmd/... ./internal/....
+      Host-only listed extras MAY use domain:verb (example: db:migrate).
+    cmds:
+      - go tool golangci-lint run --timeout 5m ./cmd/... ./internal/...
+```
+
+```text
+go get -tool github.com/golangci/golangci-lint/v2/cmd/golangci-lint
+go get -tool mvdan.cc/gofumpt
+go get -tool github.com/go-task/task/v3/cmd/task
+```
+
+PROHIBITED:
+```makefile
+lint: ## Run golangci-lint
+	golangci-lint run
+```
+
+```text
+brew install gocyclo gosec
+# no .golangci.yml; PATH golangci-lint only
+```
+
+---
+
+## Taskfile verb list
+
+LOAD-WHEN: authoring or editing a user-program `Taskfile.yml`; Stage 5 / golang-quality CONSTRAINT 20.
+
+### Rules
+
+- MUST give every listed task `desc:` one short line (`go tool task --list`).
+- SHOULD give listed tasks `summary:` for `go tool task --summary <name>` (deps, `{{.CLI_ARGS}}` after `--`, platforms).
+- MUST use `internal: true` for helpers not meant for `--list`.
+- `default` MUST start with `go tool task --list` (not PATH `task --list`). MAY set `silent: true` and print at most four `go tool task <verb>` footer lines plus one short closer.
+- Host-only listed sequencers MAY use colon names (`db:migrate`, `check:health`). C21 shared names (`lint`, `build`, …) MUST stay unprefixed.
+- MUST NOT reprint the CLI catalog as Task verbs or in footers.
 
 ---
 
@@ -725,11 +842,11 @@ help: ## List local-dev make verbs
 	@printf '\n  CLI catalog: run <binary> help\n'
 	@$(MAKE) --no-print-directory report-data-flow
 
-format: ## Format with gofumpt and goimports
-	gofumpt -w . && goimports -w .
+format: ## Format with gofumpt
+	go tool gofumpt -w .
 
 lint: ## Run golangci-lint
-	golangci-lint run --timeout 5m
+	go tool golangci-lint run --timeout 5m
 
 vet: ## Run go vet
 	go vet ./...
@@ -785,9 +902,9 @@ help:
 
 ---
 
-## Shared Make verbs
+## Shared operator verbs
 
-LOAD-WHEN: choosing Makefile target names; Stage 5 / golang-quality CONSTRAINT 21; aligning hosts with process-compose-docker.
+LOAD-WHEN: choosing Taskfile task names or Makefile target names; Stage 5 / golang-quality CONSTRAINT 21; aligning hosts with process-compose-docker.
 
 ### Shared core (use these names when the job exists)
 
@@ -797,8 +914,8 @@ LOAD-WHEN: choosing Makefile target names; Stage 5 / golang-quality CONSTRAINT 2
 | `test` | Run Go tests |
 | `vet` | `go vet ./...` |
 | `tidy` | `go mod tidy` |
-| `lint` | golangci-lint |
-| `format` | Project formatter |
+| `lint` | `go tool golangci-lint` (pinned in `go.mod`) |
+| `format` | `go tool gofumpt` |
 | `ci` | tidy + gofmt + vet + race tests + build |
 | `init` | Create `~/.config/<app>/...` config if missing |
 | `serve` | Long-running process-compose local stack |
@@ -806,7 +923,7 @@ LOAD-WHEN: choosing Makefile target names; Stage 5 / golang-quality CONSTRAINT 2
 
 ### Host extras (stay in the host)
 
-`smoke`, `smoke-*`, `docker-build`, `sync`, license helpers, and similar product verbs stay as host Makefile **targets**. The pack MUST NOT require every consumer to define them. Host extras the CLI already documents MUST omit `##` (C20); operators find them via `<binary> help`.
+`smoke`, `smoke-*`, `docker-build`, `sync`, license helpers, and similar product verbs stay as host Task or Make targets. The pack MUST NOT require every consumer to define them. Catalog-only reprints of Cobra verbs MUST be `internal: true` or omit `##` (C20). Listed operator-front-door sequencers MAY use colon namespaces (`domain:verb`). Operators still use `<binary> help` for the full CLI catalog.
 
 ### Migration
 

@@ -55,7 +55,7 @@ Project architecture / logging / domain rules (if present) still apply and take 
 - **DRY (Don't Repeat Yourself)**: Eliminate code duplication through abstraction and reuse
 - **Type Safety**: Full type safety with comprehensive type annotations and interfaces
 - **Data Validation**: Use struct tags and validation for all data structures
-- **Code Quality**: Format with gofmt, lint with golangci-lint, vet with go vet
+- **Code Quality**: Format with `go tool gofumpt`, lint with `go tool golangci-lint`, vet with go vet
 - **Modern Go**: Use Go 1.21+ features and best practices
 - **Dependency Injection**: Proper DI patterns for testability and maintainability
 - **SOLID Principles**: Follow Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, and Dependency Inversion principles
@@ -475,8 +475,8 @@ if !exists {
 ## 📝 **CODE FORMATTING REQUIREMENTS**
 
 ### **MANDATORY FORMATTING STEPS:**
-1. **ALWAYS** run `gofmt -w .` before claiming work is complete
-2. **ALWAYS** run `golangci-lint run` to check for style issues
+1. **ALWAYS** run `go tool gofumpt -w .` (or `make format`) before claiming work is complete
+2. **ALWAYS** run `go tool golangci-lint run` (or `make lint`) to check for style issues
 3. **ALWAYS** run `go vet ./...` to verify code quality
 4. **ALWAYS** run `go mod tidy` to clean dependencies
 5. **NEVER** submit unformatted code
@@ -1008,8 +1008,8 @@ Before claiming completion, you MUST:
 - [ ] **Verify no broken references** remain in the codebase
 
 #### **3. Build Verification**
-- [ ] **Run `gofmt -w .`** to ensure code formatting is correct
-- [ ] **Run `golangci-lint run`** to check for style issues
+- [ ] **Run `make format`** or `go tool gofumpt -w .` to ensure code formatting is correct
+- [ ] **Run `make lint`** or `go tool golangci-lint run` to check for style issues
 - [ ] **Run `go vet ./...`** to verify code quality
 - [ ] **Run `go test ./...`** to ensure all tests pass
 - [ ] **Run `go mod tidy`** to clean dependencies
@@ -1040,7 +1040,7 @@ find internal/ -name "*.go" -exec grep -l "import.*filename" {} \;
 #### **For Build Verification:**
 ```bash
 # Format and lint
-gofmt -w . && golangci-lint run && go vet ./...
+go tool gofumpt -w . && go tool golangci-lint run --timeout 5m && go vet ./...
 # Run tests
 go test ./...
 # Clean dependencies
@@ -1086,8 +1086,8 @@ go run ./cmd --help
 - [ ] Cleaned up references: X references updated
 
 ### **Build Verification:**
-- [ ] `gofmt -w .` → ✅ Passed
-- [ ] `golangci-lint run` → ✅ Passed  
+- [ ] `go tool gofumpt -w .` / `make format` → ✅ Passed
+- [ ] `go tool golangci-lint run` / `make lint` → ✅ Passed
 - [ ] `go vet ./...` → ✅ Passed
 - [ ] `go test ./...` → ✅ Passed
 - [ ] `go mod tidy` → ✅ Passed
@@ -1407,8 +1407,8 @@ gofmt -w .
 
 ### 2. Linting
 ```bash
-# Use golangci-lint for comprehensive linting
-golangci-lint run
+# Use golangci-lint for comprehensive linting (pinned via go.mod tool)
+go tool golangci-lint run --timeout 5m
 
 # Use go vet for basic checks
 go vet ./...

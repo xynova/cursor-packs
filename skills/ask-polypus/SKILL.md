@@ -1,8 +1,9 @@
 ---
 name: ask-polypus
 description: >-
-  Consult a second model through the Polypus OpenAI gateway (default
-  http://127.0.0.1:1320; override with POLYPUS_BASE_URL for a remote host),
+  Consult a second model through the Polypus OpenAI gateway: discover
+  POLYPUS_BASE_URL and operator polypus.base_url before loopback default;
+  probe /health (or host polypus-check) before chat.
   defaulting to Gemma 4 on cf_local. Use when the user says ask Gemma, ask
   Polypus, go ask gemma on polypus, second opinion via Polypus, or wants a
   gateway chat completion without editing Polypus itself. Not for operating or
@@ -12,7 +13,7 @@ description: >-
 
 # Ask Polypus (Gemma consult)
 
-**Moral:** When the human wants a second brain through Polypus, call the configured gateway OpenAI chat API (`POLYPUS_BASE_URL` or loopback default). Do not invent a cloud URL or edit the Polypus repo for a consult.
+**Moral:** When the human wants a second brain through Polypus, discover the gateway base URL (`POLYPUS_BASE_URL`, then operator config when env is unset), probe health at that origin, then call the OpenAI chat API. Do not assume loopback without checking env first. Do not invent a cloud URL or edit the Polypus repo for a consult.
 
 Upstream product: [behaviorengineering/polypus](https://github.com/behaviorengineering/polypus). Gateway operator skill lives in that repo (`ai-copilots/skills/polypus-operator/`), not here.
 
@@ -26,16 +27,34 @@ Upstream product: [behaviorengineering/polypus](https://github.com/behaviorengin
 
 | Setting | Value |
 | --- | --- |
-| Base URL | `http://127.0.0.1:1320` (override with `POLYPUS_BASE_URL`) |
+| Base URL | Discover `POLYPUS_BASE_URL`, then operator `polypus.base_url`; loopback `http://127.0.0.1:1320` only when both are empty |
 | Chat path | `POST /v1/chat/completions` |
 | Default model | `cf_local/@cf/google/gemma-4-26b-a4b-it` |
 | Health | `GET /health` |
 | Enabled models | `GET /v1/models` |
 
-Resolve `BASE` once per consult:
+**CONSTRAINT:** Resolve `BASE` once per consult. MUST discover `POLYPUS_BASE_URL` before assuming loopback. MUST probe `GET ${BASE}/health` before chat (loopback default counts as the localhost check only after discovery steps 1–2 yield no URL).
+
+Discovery order:
+
+1. Non-empty `POLYPUS_BASE_URL` in the agent shell environment.
+2. When step 1 is empty and the host documents operator config, read expanded `polypus.base_url` (for example `config show` JSON, or a probe script that prints `Polypus base URL:`).
+3. `http://127.0.0.1:1320` only when 1–2 yield no URL.
+
+When the host documents `go tool task polypus-check`, `make polypus-check`, or `./scripts/check-polypus.sh`, SHOULD run it before manual curl; it discovers BASE and fails closed on `/health` (and often `/v1/models`).
 
 ```bash
-BASE="${POLYPUS_BASE_URL:-http://127.0.0.1:1320}"
+resolve_base() {
+  if [[ -n "${POLYPUS_BASE_URL:-}" ]]; then
+    printf '%s' "${POLYPUS_BASE_URL}"
+    return
+  fi
+  # Host-specific: e.g. jq -r '.polypus.base_url // empty' from operator config show
+  printf '%s' "http://127.0.0.1:1320"
+}
+BASE="$(resolve_base)"
+BASE="${BASE%/}"
+curl -sf --max-time 5 "${BASE}/health"
 ```
 
 ## Dev env (gateway + Phoenix / OpenInference OTLP)
@@ -75,7 +94,7 @@ export POLYPUS_OTLP_ENDPOINT=127.0.0.1:4317
 
 ## Core constraints
 
-**CONSTRAINT:** Before the consult call, MUST probe `GET ${BASE}/health` where `BASE` is `${POLYPUS_BASE_URL:-http://127.0.0.1:1320}`. MUST NOT POST chat while health is down.
+**CONSTRAINT:** Before the consult call, MUST resolve `BASE` using discovery order above, then probe `GET ${BASE}/health`. MUST NOT POST chat while health is down.
 
 - Enforcement: Run a bounded curl/http GET; require HTTP 2xx and a JSON body
 - Violation: STOP, report gateway down; follow the recovery branch below (MUST NOT start `bin/polypus` ad-hoc in a random shell)
@@ -102,9 +121,10 @@ PROHIBITED:
 Remote POLYPUS_BASE_URL failed → offer make serve on the laptop
 ```
 
-CORRECT (health probe):
+CORRECT (health probe after discovery):
 ```bash
-curl -sf --max-time 5 "${POLYPUS_BASE_URL:-http://127.0.0.1:1320}/health"
+BASE="${POLYPUS_BASE_URL:-}"; [[ -z "$BASE" ]] && BASE="http://127.0.0.1:1320"
+curl -sf --max-time 5 "${BASE%/}/health"
 ```
 
 PROHIBITED:
@@ -153,8 +173,8 @@ https://api.cloudflare.com/.../ai/v1/chat/completions
 
 ## Steps
 
-1. **Resolve BASE** — `${POLYPUS_BASE_URL:-http://127.0.0.1:1320}`.
-2. **Health** — `GET ${BASE}/health` (fail → report using loopback vs remote recovery branch).
+1. **Discover BASE** — `POLYPUS_BASE_URL`, then operator `polypus.base_url` when documented, else loopback default.
+2. **Health** — `GET ${BASE}/health` or host `polypus-check` script (fail → report using loopback vs remote recovery branch).
 3. **Model** — Gemma default, or the id the human named.
 4. **Prompt** — system role as a concise reviewer/editor; user role = artifact + ask.
 5. **Call** — `POST ${BASE}/v1/chat/completions` with a bounded timeout (at least 120s for chat).
@@ -164,7 +184,7 @@ https://api.cloudflare.com/.../ai/v1/chat/completions
 ## Example call
 
 ```bash
-BASE="${POLYPUS_BASE_URL:-http://127.0.0.1:1320}"
+BASE="${POLYPUS_BASE_URL:-http://127.0.0.1:1320}"  # after discovery; empty env → loopback only here
 MODEL='cf_local/@cf/google/gemma-4-26b-a4b-it'
 curl -sS --max-time 180 "$BASE/v1/chat/completions" \
   -H 'content-type: application/json' \
@@ -187,6 +207,10 @@ Python `urllib` is fine when the shell JSON is awkward. Use the gateway already 
 
 ## Pre-completion checklist
 
+- [ ] **BASE discovered:** `POLYPUS_BASE_URL` or operator config read before loopback default
+      Method: Inspect env and any config show / polypus-check output
+      Pass: Non-loopback BASE came from env or config, not an unprobed guess
+      Fail: STOP, discover URL, then health
 - [ ] **Health checked:** Gateway returned 2xx before chat
       Method: Inspect the health probe result
       Pass: JSON status ok (or equivalent 2xx)

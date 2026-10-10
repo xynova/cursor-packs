@@ -4,11 +4,13 @@ description: >-
   Go generation and completion workflow: resource cleanup, error wrapping, nil
   guards, context propagation, CLI-service-client layering, structured logging,
   OpenTelemetry / OpenInference observability, config create constructors,
-  outbound failsafe-go resilience, quality gates, local-dev Makefile help
-  (listed verbs vs hidden CI targets; Make sequences, binaries emit artifacts),
-  shared Make verb names (build, test, serve), and HTTP/CLI
-  service-layer error boundaries. Use when generating, completing, or fixing
-  Go code, authoring a Makefile, or before claiming a Go change is done.
+  outbound failsafe-go resilience, quality gates, go.mod tool pins (golangci-lint v2, gofumpt),
+  Taskfile.yml for user-facing CLIs (go tool task), Makefile for libraries,
+  portable cross-platform task recipes, go.mod tool pins (golangci-lint v2,
+  gofumpt, task), shared operator verb names (build, test, serve, lint),
+  and HTTP/CLI service-layer error boundaries. Use when generating, completing,
+  or fixing Go code, authoring Taskfile.yml / Makefile / .golangci.yml, pinning
+  go.mod tools, or before claiming a Go change is done.
 ---
 
 # Go Quality
@@ -63,7 +65,7 @@ Apply these **while writing** and again when staged review **Stage 5** runs. Do 
 
 **CONSTRAINT 4 — Errors handled.** NEVER discard with `_ =` except inside defer cleanup. NEVER log an error without returning it (except defer where return is impossible).
 
-**CONSTRAINT 5 — Typed domain errors.** MUST return a typed domain error with a stable code, layer `op`, message, optional fields, and `Unwrap`. MUST wrap the incoming cause at each hop (client → plugin/service → gateway). MUST NOT return a bare `err`. MUST NOT stringify a cause with `err.Error()` and drop the chain. `fmt.Errorf("%w")` MAY wrap a stdlib cause at the leaf, then MUST convert to a domain error before leaving the package.
+**CONSTRAINT 5 — Typed domain errors.** MUST return a typed domain error with a stable code, layer `op`, message, optional fields, and `Unwrap`. The Wrap/New `code` argument MUST be a typed exported constant of the package `Code` type (for example `derrors.CodeUnavailable`). MUST NOT pass a string literal, `http.Status*`, or process exit int as the domain code. `type Code string` still accepts a literal at compile time; goconst `ignore-calls` does not catch call-site code strings. MUST wrap the incoming cause at each hop (client → plugin/service → gateway). MUST NOT return a bare `err`. MUST NOT stringify a cause with `err.Error()` and drop the chain. `fmt.Errorf("%w")` MAY wrap a stdlib cause at the leaf, then MUST convert to a domain error before leaving the package.
 - Enforcement: Every new or changed error return is a typed wrap; `errors.Is`/`As` still reach the cause.
 - Violation: STOP, wrap with the package `internal/errors` (or project equivalent) and re-check.
 
@@ -77,6 +79,8 @@ PROHIBITED:
 ```go
 return err
 return fmt.Errorf("post /run: %s", err.Error())
+return derrors.Wrap(err, "unavailable", "cloudflare.Synthesize", "post /run")
+return derrors.Wrap(err, http.StatusBadGateway, "op", "msg")
 ```
 
 **CONSTRAINT 6 — Persistence errors returned.** State-save failures MUST be returned. Log first, then return. Silent continue causes inconsistent state and loops.
@@ -126,7 +130,39 @@ func OpenSessionStore(ctx context.Context, ...) (...) {
 
 **CONSTRAINT 10 — CLI → Service → Client.** HTTP and external API calls ONLY in `internal/clients/<service>/` (or pipeline client packages that wrap HTTP). CLI MUST NOT contain business logic.
 
-**CONSTRAINT 11 — Format and lint.** Comments MUST end with a period (`godot`). Run Makefile gates before completing (see below).
+**CONSTRAINT 11 — Format and lint.** Comments MUST end with a period (`godot`). Go modules on Go 1.24+ MUST pin lint and format binaries in `go.mod` with `go get -tool`: `github.com/golangci/golangci-lint/v2/cmd/golangci-lint` and `mvdan.cc/gofumpt`. MUST ship a root `.golangci.yml` with `version: "2"` that enables `errorlint`, `exhaustive`, `goconst`, `gocognit`, `gosec`, and `godot`, and enables the `gofumpt` formatter. MUST set `exhaustive.default-signifies-exhaustive: false`. MAY set `goconst.min-len` / `min-occurrences` and `ignore-tests: true` on hosts with fixture debt. **User programs** (modules that ship an operator CLI or daemon under `cmd/`) MUST ship root `Taskfile.yml` (version `"3"`), MUST pin `github.com/go-task/task/v3/cmd/task` in `go.mod` `tool`, and MUST expose listed tasks at minimum `format`, `lint`, `vet`, `test`, and `build` (C20–C21). **Library modules** (no operator `cmd/`) MAY ship a root `Makefile` instead; when present, C20 Make help applies. `gocognit` MUST run as a golangci-lint linter (default `min-complexity: 20` on new modules; existing modules MAY raise the threshold with an explicit setting until complexity debt is paid). MUST NOT require a PATH-installed `golangci-lint`, `gofumpt`, `gosec`, `gocyclo`, or `task` binary. MUST NOT add a standalone `gocyclo` tool as a required gate. A standalone `github.com/uudashr/gocognit/cmd/gocognit` `tool` line MAY exist for ad-hoc `go tool gocognit` scans; it MUST NOT replace golangci `gocognit`. `lint` / `format` tasks MUST invoke `go tool golangci-lint run --timeout 5m` and `go tool gofumpt -w` (package scope `./cmd/...` `./internal/...` `./pkg/...` when those trees exist; `goimports` only when the host already uses it). Operators and agents MUST run quality gates through `go tool task` on user programs or `make` on libraries, not ad-hoc PATH binaries. Task recipes MUST be portable (forward slashes; Task `vars:` / `env:`; no `mkdir -p`, `rm`, `export`, or heredocs in listed quality tasks; use `{{exeExt}}` for built binaries). Nested provider or submodule trees MUST NOT be included in the host lint scope. Run operator-runner gates before completing (see below). See [reference-patterns.md](reference-patterns.md#go-module-tools-lint-and-format).
+- Enforcement: Read `Taskfile.yml` or `Makefile`, `go.mod` `tool`, and root `.golangci.yml`; lint/format recipes call `go tool`; Stage 1 runs `go tool task vet` / `go tool task lint` on user programs or `make vet` / `make lint` on libraries.
+- Violation: STOP, add `Taskfile.yml` or `Makefile`, `tool` pins, v2 config, and `go tool` recipes; do not document brew/PATH-only lint or task as the default.
+
+CORRECT:
+```yaml
+version: "3"
+vars:
+  VERSION: '{{.VERSION | default "dev"}}'
+  BIN: bin/app{{exeExt}}
+tasks:
+  default:
+    desc: List local-dev tasks
+    cmds: [go tool task --list]
+  lint:
+    desc: Run golangci-lint
+    cmds: [go tool golangci-lint run --timeout 5m ./cmd/... ./internal/...]
+```
+
+```text
+go.mod tool: golangci-lint/v2, gofumpt, go-task/task/v3/cmd/task
+.golangci.yml: version "2"; errorlint, exhaustive, goconst, gocognit, gosec, godot; formatter gofumpt
+```
+
+PROHIBITED:
+```text
+golangci-lint run   # PATH-only; not pinned
+require brew install gocyclo / gosec / task
+no .golangci.yml; gocognit never enabled
+user program with Makefile only and no Taskfile.yml
+mkdir -p bin; export VERSION=dev go build; sh: git describe in listed tasks
+go get golangci-lint into require as a runtime library
+```
 
 **CONSTRAINT 12 — Focused interfaces.** Interfaces MUST stay ≤ 5–6 methods. Split by caller responsibility.
 
@@ -278,9 +314,41 @@ internal/ledger/
 internal/helpers/
 ```
 
-**CONSTRAINT 20 — Makefile verb list.** When a Go module has a `Makefile`, bare `make` (and `make help`) MUST print **local-dev** verbs with a one-line description. MUST set `.DEFAULT_GOAL := help`. Shared quality and serve verbs that exist (`format`, `lint`, `vet`, `test`, `build`, `serve`, `serve-down`, `init`, `hooks-install`) MUST carry a `## description` on the target line so the help recipe can list them. MUST NOT treat every `.PHONY` name as help-listed. CI-only lanes, product benches, recipe-only helpers, license/keygen targets the CLI already documents, and static-export siblings of a live `*-dev` preview MUST omit `##` so they stay off the list. MUST NOT reprint the CLI command catalog (`<binary> help`) as Make verbs. Help `##` text MUST be a literal short line: MUST NOT put Make `$(VAR)` in `##` (grep prints the variable name). When a local pipeline needs more than one Make step, `help` MAY print a short numbered footer of at most four `make <verb>` lines (run data, doctor, rebuild warehouse, live preview). MUST NOT dump catalog source paths, bind mounts, or run-then-publish encyclopedias in that footer. A footer helper target MUST omit `##` so it does not appear twice. MUST NOT ship a Makefile whose first response is "No targets" or a silent first recipe when quality or serve verbs exist. See [reference-patterns.md](reference-patterns.md#makefile-verb-list).
-- Enforcement: From the module root, run `make` (or `make help`); listed verbs are local-dev only; `.PHONY` CI/static/helper names without `##` are absent; `.DEFAULT_GOAL` is `help`; `##` lines have no `$(`; footer is at most four Make verbs or absent.
-- Violation: STOP, drop `##` from CI/static/helper targets, fix literal `##` text, keep local-dev verbs annotated, re-run `make`.
+**CONSTRAINT 20 — Operator verb list (Taskfile or Makefile).** User programs MUST list **local-dev** tasks in `Taskfile.yml` with `desc:` one short line (what `go tool task --list` prints). SHOULD add `summary:` multi-line text on listed tasks (what `go tool task --summary <name>` prints); cover `deps`, `{{.CLI_ARGS}}` after `--`, and platform limits when relevant. MUST NOT dump the Cobra catalog into `desc`, `summary`, or a footer. Helpers MUST use `internal: true`. Bare `go tool task` MUST run a `default` task whose first cmd is `go tool task --list` (never PATH `task --list`, never bare `go tool task` in that slot). MAY set `default` `silent: true` and print a numbered footer of at most four `go tool task <verb>` lines after `--list`, plus one short closer (same cap spirit as Make footers). MUST NOT reprint catalog paths, bind mounts, or encyclopedias in the footer. Library modules MAY use a root `Makefile`; bare `make` (and `make help`) MUST print **local-dev** verbs with a one-line description. MUST set `.DEFAULT_GOAL := help`. Shared quality and serve verbs that exist (`format`, `lint`, `vet`, `test`, `build`, `serve`, `serve-down`, `init`, `hooks-install`) MUST carry a `## description` on the target line so the help recipe can list them. MUST NOT treat every `.PHONY` name as help-listed. CI-only lanes, product benches, recipe-only helpers, license/keygen targets the CLI already documents, and static-export siblings of a live `*-dev` preview MUST omit `##` so they stay off the list. MUST NOT reprint the CLI command catalog (`<binary> help`) as Make verbs. Help `##` text MUST be a literal short line: MUST NOT put Make `$(VAR)` in `##` (grep prints the variable name). When a local pipeline needs more than one Make step, `help` MAY print a short numbered footer of at most four `make <verb>` lines (run data, doctor, rebuild warehouse, live preview). MUST NOT dump catalog source paths, bind mounts, or run-then-publish encyclopedias in that footer. A footer helper target MUST omit `##` so it does not appear twice. MUST NOT ship a Makefile whose first response is "No targets" or a silent first recipe when quality or serve verbs exist. See [reference-patterns.md](reference-patterns.md#makefile-verb-list).
+- Enforcement: Libraries: run `make` (or `make help`); listed verbs are local-dev only; `.PHONY` CI/static/helper names without `##` are absent; `.DEFAULT_GOAL` is `help`; `##` lines have no `$(`; footer is at most four Make verbs or absent. User programs: run `go tool task --list` and, when `default` customizes help, bare `go tool task`; Read `desc`/`summary` for stale or encyclopedic operator text; listed tasks only; helpers `internal: true`.
+- Violation: STOP, drop `##` from CI/static/helper targets or fix Task `desc`/`summary`/footer; keep local-dev verbs annotated; re-run `make help` or `go tool task --list`.
+
+CORRECT (Taskfile):
+```yaml
+version: "3"
+tasks:
+  default:
+    desc: List local-dev tasks
+    silent: true
+    cmds:
+      - go tool task --list
+      - |
+        echo ""
+        echo "Next steps:"
+        echo "  1. go tool task init"
+        echo "  2. go tool task serve"
+  lint:
+    desc: Run golangci-lint
+    summary: |
+      Runs go tool golangci-lint on ./cmd/... ./internal/....
+      Pass flags after -- when the recipe uses {{.CLI_ARGS}}.
+    cmds:
+      - go tool golangci-lint run --timeout 5m ./cmd/... ./internal/...
+```
+
+PROHIBITED (Taskfile):
+```yaml
+quality:lint:   # namespaces C21 shared lint
+  desc: encyclopedic paragraph...
+default:
+  cmds:
+    - task --list   # PATH task; or bare go tool task (recursion)
+```
 
 CORRECT:
 ```makefile
@@ -326,9 +394,9 @@ help:
 	@printf '  catalog: pkg/suite/groups.go also dbt dim_*.csv\n'
 ```
 
-**CONSTRAINT 20a — Make sequences; binaries emit artifacts.** Make is the human interface. The Go CLI (or other first-party binary) MUST write every artifact a later Make step or publish needs on a successful run. MUST NOT add a Make-only finalize or glue verb whose only job is to produce a file the binary should have written. A standalone CLI backfill verb MAY exist for dirty trees; it MUST omit `##` so it stays off `make help` (C20). When a listed verb runs a family of lanes or groups, the default MUST be the full set; optional `VAR=` MAY narrow. MUST NOT require the operator to remember a required `VAR=` to get the documented default path.
-- Enforcement: Trace each help-listed pipeline verb to the binary it calls; that binary writes required sidecars on success; no Make target exists solely to fill a missing sidecar; family verbs succeed with no override vars.
-- Violation: STOP, write the artifact in the binary, drop the Make glue verb from help, re-run `make help`.
+**CONSTRAINT 20a — Task/Make sequences; binaries emit artifacts.** The operator runner (Task or Make) sequences work; the Go CLI (or other first-party binary) MUST write every artifact a later step or publish needs on a successful run. MUST NOT add a runner-only finalize or glue verb whose only job is to produce a file the binary should have written. A standalone CLI backfill verb MAY exist for dirty trees; it MUST stay off the listed help (`internal: true` or no `##`). When a listed verb runs a family of lanes or groups, the default MUST be the full set; optional Task `{{.CLI_ARGS}}` after `--` or Make `VAR=` MAY narrow. MUST NOT require the operator to remember a required flag or `VAR=` to get the documented default path.
+- Enforcement: Trace each help-listed pipeline verb to the binary it calls; that binary writes required sidecars on success; no Task/Make target exists solely to fill a missing sidecar; family verbs succeed with no override vars.
+- Violation: STOP, write the artifact in the binary, drop the glue verb from help, re-run `go tool task --list` or `make help`.
 
 CORRECT:
 ```makefile
@@ -348,7 +416,7 @@ lanes: ## usage: make lanes LANE=core
 	# publish fails unless the operator ran finalize
 ```
 
-**CONSTRAINT 21 — Shared Make verbs.** When a Go module `Makefile` exposes operator verbs, MUST use the shared names below for those jobs. Help descriptions MUST be one short line. Product names and host paths MAY appear only in the host Makefile help text, never as pack-required brand strings. See [reference-patterns.md](reference-patterns.md#shared-make-verbs).
+**CONSTRAINT 21 — Shared operator verbs.** When a user program `Taskfile.yml` or library `Makefile` exposes operator verbs, MUST use the shared names below for those jobs. Help descriptions MUST be one short line (`desc:` or `##`). Product names and host paths MAY appear only in host help text, never as pack-required brand strings. Invoke as `go tool task <verb>` on user programs or `make <verb>` on libraries. See [reference-patterns.md](reference-patterns.md#shared-operator-verbs).
 
 | Verb | Job |
 |------|-----|
@@ -356,16 +424,16 @@ lanes: ## usage: make lanes LANE=core
 | `test` | Run Go tests |
 | `vet` | `go vet ./...` |
 | `tidy` | `go mod tidy` |
-| `lint` | golangci-lint (skip or `go run` when not installed, per host) |
-| `format` | gofumpt / goimports (or project formatter) |
+| `lint` | `go tool golangci-lint run` (pinned in `go.mod` `tool`; PATH binary is not the default) |
+| `format` | `go tool gofumpt` (and `goimports` only when the host already uses it) |
 | `ci` | When present: tidy + gofmt check + vet + race tests + build |
 | `init` | When the app has a config file: create it under `~/.config/<app>/` (or `$XDG_CONFIG_HOME`) if missing |
 | `serve` | Long-running local stack via process-compose (TUI; rebuild on change when air/hot-reload is wired) |
 | `serve-down` | Stop this project's process-compose stack (preserve Docker named volumes; see process-compose-docker) |
 
 - MUST: name the long-running local stack `serve` / `serve-down` when process-compose (or equivalent) is the up path
-- MUST: keep host-only verbs (`smoke-*`, `docker-build`, `sync`, license helpers, and similar) as host Makefile **targets**; MUST NOT invent pack constraints that require every host to ship them; those extras MUST omit `##` when the CLI already documents them (C20)
-- MUST NOT: use `dev` / `dev-down` as the only names for the long-running stack on a new or rewritten Makefile
+- MUST: keep host-only verbs (`smoke-*`, `docker-build`, `sync`, license helpers, and similar) as host Task or Make targets; MUST NOT invent pack constraints that require every host to ship them. IF a host extra only reprints a Cobra verb with no sequencer value (no `deps`, build, or `--` args) THEN it MUST be `internal: true` (Task) or omit `##` (Make). IF it is an operator-front-door sequencer (listed `init`, listed `db:migrate`, listed `check:health`) THEN it MAY be listed and MAY use a colon namespace (`domain:verb`). Shared C21 names (`lint`, `build`, …) MUST stay unprefixed. MUST NOT list the full CLI catalog as Task verbs (C20)
+- MUST NOT: use `dev` / `dev-down` as the only names for the long-running stack on a new or rewritten Taskfile or Makefile
 - MAY: keep `dev` / `dev-down` as thin aliases that invoke `serve` / `serve-down` during migration
 - Enforcement: Read `.PHONY` and `##` help lines; shared jobs use the table names; process-compose up/down are `serve` / `serve-down` (aliases optional)
 - Violation: STOP, rename to shared verbs (add aliases if needed), re-run `make help`
@@ -527,16 +595,20 @@ func Run(args []string) int {
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
 2. **Implement** — Apply all 27 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated and outbound deadlines fail closed (C8)? logger injected? clock injected for durable stamps (C25)? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If a Makefile exists or was edited: `make` lists local-dev verbs only (C20), binaries emit required artifacts with no Make glue verb (C20a), and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? Embedded SQLite uses modernc, not mattn/CGO (C26)? CLI changes use Cobra, not custom argv dispatch (C27)? PASS or fix.
-4. **Run quality gates** on changed packages. Prefer project Makefile targets when they exist; otherwise use the Go toolchain directly:
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated and outbound deadlines fail closed (C8)? logger injected? clock injected for durable stamps (C25)? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If `go.mod` / Makefile / `.golangci.yml` are in scope: lint and format use `go tool` pins and v2 golangci config with gocognit/gosec/godot (C11)? If a Makefile exists or was edited: `make` lists local-dev verbs only (C20), binaries emit required artifacts with no Make glue verb (C20a), and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? Embedded SQLite uses modernc, not mattn/CGO (C26)? CLI changes use Cobra, not custom argv dispatch (C27)? PASS or fix.
+4. **Run quality gates** on changed packages through the operator runner (C11):
 
 ```bash
-# Prefer (if Makefile defines them):
-make          # or: make help -- lists local-dev verbs (CONSTRAINT 20)
-make format   # or: gofumpt -w . && goimports -w .
-make lint     # or: golangci-lint run ./...
-make vet      # or: go vet ./...
-make test     # or: go test ./...
+# User program (Taskfile.yml):
+go tool task --list
+go tool task format
+go tool task lint
+go tool task vet
+go tool task test
+go tool task build    # when ./cmd/... exists
+
+# Library (Makefile):
+make help && make format && make lint && make vet && make test && make build
 ```
 
 Scope to `./cmd/...` `./internal/...` `./pkg/...` (or the packages the project uses) when that is the local convention. If dependencies changed: `go mod tidy`.
@@ -551,17 +623,18 @@ Do NOT complete while any of these fail. Fix, re-run, then complete.
 
 ### Tooling
 
-- [ ] Makefile help: if a `Makefile` exists, `make` / `make help` lists local-dev verbs only; CI/static/helpers omit `##` (CONSTRAINT 20)
-- [ ] Makefile sequencer: listed pipeline verbs call binaries that write required artifacts; no Make-only finalize/glue; family verbs default to the full set (CONSTRAINT 20a)
-- [ ] Makefile shared verbs: shared jobs use `build` / `test` / `vet` / `tidy` / `lint` / `serve` / `serve-down` (and `init` / `ci` when applicable); no serve-only-as-`dev` (CONSTRAINT 21)
-- [ ] Format: `make format` if present, else `gofumpt`/`gofmt` + `goimports`
-- [ ] Commit hooks: `make hooks-install` once per clone (packs consumer or standalone; see `install-repo-hooks`)
-- [ ] Lint: `make lint` if present, else `golangci-lint run` (gosec/godot via `.golangci.yml` when configured)
-- [ ] Vet: `make vet` if present, else `go vet ./...`
-- [ ] Test: `make test` if present, else `go test` on changed packages
+- [ ] User program: root `Taskfile.yml` + `task` in `go.mod` `tool` (C11); `go tool task --list` shows local-dev tasks only; helpers `internal: true` (C20). Library: root `Makefile` + `make help` (C20)
+- [ ] Operator sequencer: listed verbs call binaries that write required artifacts; no runner-only finalize/glue; family verbs default to the full set (CONSTRAINT 20a)
+- [ ] Shared verbs: `build` / `test` / `vet` / `tidy` / `lint` / `serve` / `serve-down` (and `init` / `ci` when applicable); no serve-only-as-`dev` (CONSTRAINT 21)
+- [ ] Format: `go tool task format` or `make format` (C11; `go tool gofumpt` inside the recipe)
+- [ ] Commit hooks: `go tool task hooks-install` or `make hooks-install` once per clone (see `install-repo-hooks`)
+- [ ] Lint: `go tool task lint` or `make lint` (gosec, godot, gocognit via `.golangci.yml`)
+- [ ] `go.mod` `tool` pins golangci-lint v2, gofumpt, and `task` when Taskfile; root `.golangci.yml` is v2 with errorlint/exhaustive/goconst/gocognit/gosec/godot (CONSTRAINT 11)
+- [ ] Vet: `go tool task vet` or `make vet`
+- [ ] Test: `go tool task test` or `make test`
 - [ ] `go mod tidy` if `go.mod` / imports changed
 
-Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the project documents them. Prefer `gosec` as a golangci linter when enabled.
+Do **not** require a standalone `gosec`, `gocyclo`, or `.gosec.yaml` unless the project documents them. Prefer `gosec` and `gocognit` as golangci linters when enabled.
 
 ### Resources
 
@@ -585,14 +658,14 @@ Do **not** require a standalone `gosec` binary or `.gosec.yaml` unless the proje
 - [ ] Large structs (3+ fields) passed/returned by pointer
 - [ ] Interfaces ≤ 6 methods
 - [ ] Only essential symbols exported
-- [ ] All comments end with a period
+- [ ] All comments end with a period; lint/format use `go tool` pins (CONSTRAINT 11)
 - [ ] Multi-line reports/diagrams use `text/template` (not chained `WriteString`); CLI inspect stdout may use labeled `writeln` per cli-command-surface C9–C10
 - [ ] Injected structured logger; no `fmt.Print*` / ad-hoc logger in services
 - [ ] LLM/inference entrypoints init OTEL; OTLP exporter when endpoint env set; client spans on generate/evaluate (not gateway-only)
 - [ ] Package layout (C19): kit vs product kit vs app-only classified; kit/product-kit API in `pkg/<domain>/`; thin `cmd/`; implementation and quality/smoke runners in `internal/`; no grab-bags or flat `internal/` forest
 - [ ] AI work dumps (RLM TraceDir, runreport, inference-failure JSON) survive process exit; not only under `defer RemoveAll` scratch; path logged or returned
 - [ ] Multi-field construction uses config create (`cfg.Create*` / `CreateModule`); no long parallel arg lists beside a half-empty Config
-- [ ] Makefile verbs (C20–C21): help lists local-dev verbs only; binaries emit sidecars (C20a); shared jobs use shared names (`serve` not only `dev`)
+- [ ] Operator verbs (C20–C21): help lists local-dev verbs only; binaries emit sidecars (C20a); shared jobs use shared names (`serve` not only `dev`)
 - [ ] Outbound resilience (C22): exec/HTTP hops use failsafe-go (retry + breaker); no bare Do/Command; no ad-hoc sleep retry loops
 - [ ] Error boundary (C23): inbound HTTP/CLI map service-package errors; no leaf-kit import only for sentinel checks
 - [ ] SQL migrations (C24): durable schema uses numbered up/down (or equivalent) applied once; no full DDL on every write/publish path
