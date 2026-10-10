@@ -31,7 +31,9 @@ Upstream product: [behaviorengineering/polypus](https://github.com/behaviorengin
 | Chat path | `POST /v1/chat/completions` |
 | Default model | `cf_local/@cf/google/gemma-4-26b-a4b-it` |
 | Health | `GET /health` |
-| Enabled models | `GET /v1/models` |
+| API catalog | `GET /v1/apis` (`api_catalog` lists `openai` and `systemone` flavors) |
+| Enabled models (OpenAI flavor) | `GET /v1/apis/openai/models` |
+| SystemOne models | `GET /v1/apis/systemone/models` |
 
 **CONSTRAINT:** Resolve `BASE` once per consult. MUST discover `POLYPUS_BASE_URL` before assuming loopback. MUST probe `GET ${BASE}/health` before chat (loopback default counts as the localhost check only after discovery steps 1–2 yield no URL).
 
@@ -41,7 +43,7 @@ Discovery order:
 2. When step 1 is empty and the host documents operator config, read expanded `polypus.base_url` (for example `config show` JSON, or a probe script that prints `Polypus base URL:`).
 3. `http://127.0.0.1:1320` only when 1–2 yield no URL.
 
-When the host documents `go tool task polypus-check`, `make polypus-check`, or `./scripts/check-polypus.sh`, SHOULD run it before manual curl; it discovers BASE and fails closed on `/health` (and often `/v1/models`).
+When the host documents `go tool task polypus-check`, `make polypus-check`, or `./scripts/check-polypus.sh`, SHOULD run it before manual curl; it discovers BASE and fails closed on `/health`, `GET /v1/apis`, and flavor model lists.
 
 ```bash
 resolve_base() {
@@ -55,6 +57,8 @@ resolve_base() {
 BASE="$(resolve_base)"
 BASE="${BASE%/}"
 curl -sf --max-time 5 "${BASE}/health"
+curl -sf --max-time 5 "${BASE}/v1/apis" | jq -r '.apis[] | "\(.id) models \(.models)"'
+curl -sf --max-time 5 "${BASE}/v1/apis/openai/models"
 ```
 
 ## Dev env (gateway + Phoenix / OpenInference OTLP)
