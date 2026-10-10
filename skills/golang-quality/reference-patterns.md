@@ -809,6 +809,48 @@ LOAD-WHEN: authoring or editing a user-program `Taskfile.yml`; Stage 5 / golang-
 - Host-only listed sequencers MAY use colon names (`db:migrate`, `check:health`). C21 shared names (`lint`, `build`, …) MUST stay unprefixed.
 - MUST NOT reprint the CLI catalog as Task verbs or in footers.
 
+### Taskfile list branding
+
+LOAD-WHEN: each host product sets its own operator colors; Stage 5 reads `Taskfile.yml` `vars` / `env` and the CLI style package.
+
+Each product picks two xterm-256 indices (defaults below are examples only; another repo MUST override via env):
+
+| Env | List role | go-task `env` |
+|-----|-----------|----------------|
+| `OPERATOR_CLI_THEME_ACCENT` | Task name (green slot) | `TASK_COLOR_GREEN=38;5;<accent>` |
+| `OPERATOR_CLI_THEME_MARK` | `*` bullet, alias cyan | `TASK_COLOR_YELLOW` and `TASK_COLOR_CYAN=38;5;<mark>` |
+
+- MUST: wire `vars` defaults from `OPERATOR_CLI_THEME_*` so operators can `export` before `go tool task`.
+- SHOULD: read the same env vars in the CLI human renderer (`internal/clui`, `pkg/clui`, or equivalent).
+- MUST: when `default` pipes `--list` to add spacing (blank line after `task: Available tasks for this project:`), set `FORCE_COLOR=1`, `TASK_COLOR=true`, and the `TASK_COLOR_*` lines so colors survive the pipe.
+- MUST NOT: copy another host's indices into the pack; pack text stays generic.
+
+CORRECT:
+
+```yaml
+vars:
+  THEME_ACCENT: '{{.OPERATOR_CLI_THEME_ACCENT | default "42"}}'
+  THEME_MARK: '{{.OPERATOR_CLI_THEME_MARK | default "214"}}'
+env:
+  FORCE_COLOR: "1"
+  TASK_COLOR: "true"
+  TASK_COLOR_GREEN: '38;5;{{.THEME_ACCENT}}'
+  TASK_COLOR_YELLOW: '38;5;{{.THEME_MARK}}'
+  TASK_COLOR_CYAN: '38;5;{{.THEME_MARK}}'
+tasks:
+  default:
+    silent: true
+    cmds:
+      - go tool task --list --color | awk 'NR == 1 { print; print ""; next } { print }'
+```
+
+PROHIBITED:
+
+```yaml
+# Stock go-task colors while the CLI uses custom lipgloss indices with no shared env.
+# Piping go tool task --list through awk with no FORCE_COLOR / TASK_COLOR_* (colors go plain).
+```
+
 ---
 
 ## Makefile verb list
