@@ -77,7 +77,7 @@ Commit on main, then sit ahead of origin/main with local-only work
 **CONSTRAINT:** Before `git commit`, MUST verify clone setup (Lefthook installed, ai-copilots wire OK) by loading `.cursor/skills/install-repo-hooks/SKILL.md` or confirming the same checklist already passed in this clone or worktree.
 
 - Enforcement: run checklist once per clone or worktree before the first commit
-- Violation: STOP, run `make hooks-install` and BOOTSTRAP wire, then commit
+- Violation: STOP, run hooks-install (`task hooks-install`, `go tool task hooks-install`, or `make hooks-install` per `install-repo-hooks`) and BOOTSTRAP wire, then commit
 
 **CONSTRAINT:** When HEAD is already a non-default branch, MUST stay on that branch for continuing related work. MUST NOT create a sibling `feat/`/`fix/` branch only because the task title changed. MUST NOT `checkout -b` or switch branches unless the user asked to split work or start fresh after merge.
 

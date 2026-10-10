@@ -19,6 +19,17 @@ Prevention-first Go workflow. This skill is the **procedure**. Project architect
 
 **Deep reference:** [reference.md](reference.md) (full encyclopedia). **Compact patterns:** [reference-patterns.md](reference-patterns.md).
 
+### Operator runner resolution (git root)
+
+Before running or documenting `make <verb>` at the repository root, classify the surface ([reference-patterns.md](reference-patterns.md#workspace-umbrella-operator-surface-gowork)):
+
+1. **Workspace umbrella** (`go.work`, no root `go.mod`, verbs in `Taskfile.yml`): use `task <verb>` / `task --list` (external go-task).
+2. **Go user program** (root `go.mod` + `cmd/`): use `go tool task <verb>` (C11).
+3. **Go library module** (`Makefile` at module root): use `make <verb>`.
+4. Else: `go` toolchain directly.
+
+Nested provider or submodule Makefiles are unchanged; only the **git root** runner selection changes.
+
 **Related:** `.cursor/skills/review-code-staged/SKILL.md` for staged review (**Stage 5** Generation Gates applies these Core constraints at review, not only while writing); `.cursor/skills/review-member-visibility/SKILL.md` for export audits. Report layouts: `.cursor/rules/go-structured-strings.mdc`. Go CLI entrypoints MUST load `.cursor/skills/cli-command-surface/SKILL.md`; Go MUST use Cobra per that skill's CONSTRAINT 6. Batch LLM **admit pacing** (token bucket, AIMD on throttle) is **not** C22 outbound failsafe; load the linked library skill (for example `.cursor/skills/inference-pace/SKILL.md` from strop `ai-copilots`) when reviewing digest-scale or parallel inference jobs. RLM `QueryBatched` OpenAI Batch HTTP (prefer batch, sync fallback, no double-spend after submit) is also **not** C22; load `.cursor/skills/openai-batch/SKILL.md` from strop `ai-copilots` when reviewing `pkg/openaibatch` or PreferBatch wiring.
 
 ### External readability baseline

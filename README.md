@@ -72,7 +72,7 @@ git submodule add https://github.com/xynova/cursor-packs.git .cursor/packs/share
 git submodule update --init --recursive
 .cursor/packs/shared/scripts/link-into-project.sh --project .
 .cursor/packs/shared/scripts/ensure-lefthook-consumer.sh --project .
-make hooks-install   # or: lefthook install — add hooks-install to the host Makefile if missing
+task hooks-install | go tool task hooks-install | make hooks-install   # per host; or lefthook install
 ```
 
 Commit `.gitmodules`, the submodule pointer, symlinks, and `lefthook.yml` when created.
@@ -85,7 +85,7 @@ Agents: load `install-repo-hooks` before the first commit (Lefthook + host `ai-c
 git submodule update --init --recursive
 .cursor/packs/shared/scripts/link-into-project.sh --project .
 .cursor/packs/shared/scripts/ensure-lefthook-consumer.sh --project .
-make hooks-install
+task hooks-install   # workspace umbrella; else go tool task or make per install-repo-hooks
 ```
 
 (Re-run the link script when upgrading the pack and new skill names appear.)

@@ -124,7 +124,18 @@ If a plan file still lists old IDs, map with this table, then continue.
 
 ## Stage 1: Automated Tools — Detect
 
-User program (`Taskfile.yml`):
+Classify git root first ([workspace umbrella vs user program vs library](../golang-quality/reference-patterns.md#workspace-umbrella-operator-surface-gowork)).
+
+Workspace umbrella (`go.work`, no root `go.mod`, verbs in `Taskfile.yml`):
+
+```bash
+task check-layout   # when defined
+task test           # when defined; matches CI workspace test recipe
+```
+
+Do not require root `make vet` / `make lint` when there is no root Go module.
+
+User program (`go.mod` + `cmd/`, `Taskfile.yml`):
 
 ```bash
 go tool task vet
@@ -132,7 +143,7 @@ go tool task lint
 go tool task format   # or go tool gofumpt -l if format writes
 ```
 
-Library (`Makefile`):
+Library (`Makefile` at module root):
 
 ```bash
 make vet

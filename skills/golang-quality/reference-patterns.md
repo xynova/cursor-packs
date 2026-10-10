@@ -694,6 +694,46 @@ import (
 
 ---
 
+## Workspace umbrella operator surface (go.work)
+
+LOAD-WHEN: git root has `go.work` and no root `go.mod`; authoring or reviewing root `Taskfile.yml` / layout `Makefile`; Stage 1 on non-Go umbrella diffs; docs that mention platform `sync`, `test`, or `hooks-install`.
+
+### Detection (run at git root)
+
+| Surface | Signals | Operator runner |
+|---------|---------|-----------------|
+| Workspace umbrella | `go.work` present, no root `go.mod`; operator verbs in root `Taskfile.yml` | PATH [go-task](https://taskfile.dev): `task`, `task --list` |
+| Go user program | Root `go.mod` and `./cmd/...` | `go tool task` (C11; task pinned in `go.mod` `tool`) |
+| Go library module | Root `go.mod`, no operator `cmd/` | `make` when `Makefile` defines the verb |
+
+Root `Makefile` MAY be a layout stub (only `help` redirecting to Taskfile). Nested submodule Makefiles (`make -C providers/foo`, provider-only targets) stay on `make`.
+
+### Rules
+
+- MUST resolve the runner before documenting or invoking `make <verb>` at **git root** (read `Taskfile.yml` and whether `go.mod` exists).
+- MUST use `task <verb>` for umbrella verbs defined only in `Taskfile.yml`; MUST NOT assume deprecated root `make` recipes still exist.
+- MUST give listed umbrella tasks `desc:` (what `task --list` prints).
+- Stage 1 on umbrella-only targets: run `task check-layout` / `task test` when those tasks exist; MUST NOT fail Stage 1 solely because root `make vet` or `make lint` is missing.
+
+CORRECT:
+
+```bash
+cd "$(git rev-parse --show-toplevel)"
+test -f Taskfile.yml && [ ! -f go.mod ] && task --list
+task sync
+task hooks-install
+```
+
+PROHIBITED:
+
+```bash
+# Umbrella root after verbs moved to Taskfile.yml:
+make test
+make hooks-install
+```
+
+---
+
 ## Go module tools (lint and format)
 
 LOAD-WHEN: scaffolding or editing `go.mod`, `.golangci.yml`, `Taskfile.yml`, `make lint` / `go tool task lint`; golang-quality **CONSTRAINT 11**; staged review Stage 1.

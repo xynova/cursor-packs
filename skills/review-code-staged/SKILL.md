@@ -46,14 +46,17 @@ Resume: if the user says "continue" / "resume" / "next stage" without context, l
 
 Do **not** stop because a standalone `gosec` or `gocyclo` binary is missing. Do **not** require `.gosec.yaml`.
 
-On Go 1.24+ modules under golang-quality **C11**: IF root `Taskfile.yml` (user program with `cmd/`) → Stage 1 MUST use `go tool task vet` and `go tool task lint`. IF missing `Taskfile.yml` on a user program → **C11** finding (High). IF library (no operator `cmd/`) with `Makefile` → `make vet` / `make lint`. IF neither runner → C11 High; MAY run `go tool` diagnostics.
+Classify git root per golang-quality **operator runner resolution** (workspace umbrella vs user program vs library).
 
-| Slot | User program (`Taskfile.yml`) | Library (`Makefile`) | Fallback |
-|------|-------------------------------|----------------------|----------|
-| Static analysis | `go tool task vet` | `make vet` | `go vet ./...` |
-| Lint + security | `go tool task lint` | `make lint` | `go tool golangci-lint run --timeout 5m` |
-| Format check | `go tool task format` or `go tool gofumpt -l` | `make format` or `go tool gofumpt -l` | `gofmt -l` |
-| Complexity | gocognit via `task lint` | gocognit via `make lint` | `go tool gocognit` if pinned |
+On Go 1.24+ modules under golang-quality **C11**: IF root `Taskfile.yml` (user program with `cmd/`) → Stage 1 MUST use `go tool task vet` and `go tool task lint`. IF missing `Taskfile.yml` on a user program → **C11** finding (High). IF workspace umbrella (`go.work`, no root `go.mod`) → Stage 1 uses `task check-layout` / `task test` when in scope; MUST NOT require root `make vet` / `make lint`. IF library (no operator `cmd/`) with `Makefile` → `make vet` / `make lint`. IF neither runner → C11 High; MAY run `go tool` diagnostics.
+
+| Slot | Workspace umbrella (`task`) | User program (`go tool task`) | Library (`Makefile`) | Fallback |
+|------|-----------------------------|-------------------------------|----------------------|----------|
+| Layout / workspace test | `task check-layout`, `task test` | — | — | — |
+| Static analysis | — | `go tool task vet` | `make vet` | `go vet ./...` |
+| Lint + security | — | `go tool task lint` | `make lint` | `go tool golangci-lint run --timeout 5m` |
+| Format check | — | `go tool task format` or `go tool gofumpt -l` | `make format` or `go tool gofumpt -l` | `gofmt -l` |
+| Complexity | — | gocognit via `go tool task lint` | gocognit via `make lint` | `go tool gocognit` if pinned |
 
 **CONSTRAINT:** Stage 1 MUST run vet and lint through the correct runner. MUST NOT treat a missing PATH `golangci-lint` as a Stage 1 stop when `go.mod` lists the tool. MUST record gocognit, gosec, goconst, exhaustive, and errorlint from golangci when C11 enables them. MUST NOT require `gocyclo`.
 - Enforcement: Pre-flight records runner and exit codes; missing `Taskfile.yml` on `cmd/` CLI is C11.
