@@ -20,7 +20,7 @@ extends:
   - .cursor/packs/shared/lefthook/lefthook.yml
 ```
 
-2. Install Lefthook once per clone or worktree: `make hooks-install` (or `lefthook install`).
+2. Install Lefthook once per clone or worktree: `task hooks-install`, `go tool task hooks-install`, or `make hooks-install` per host operator surface (see `install-repo-hooks`); or `lefthook install` after packs init.
 
 3. Keep the packs submodule gitlink on a `v*` release tag. Pre-push fails if the checkout is not the newest `v*` on origin.
 

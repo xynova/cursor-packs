@@ -24,7 +24,7 @@ description: >-
 | Submodule | `git submodule update --init --recursive` for `.cursor/packs/shared` |
 | Symlinks | `.cursor/packs/shared/scripts/link-into-project.sh --project .` |
 | Lefthook thin file | `.cursor/packs/shared/scripts/ensure-lefthook-consumer.sh --project .` |
-| Install hooks | `make hooks-install` or `lefthook install`; verify via `install-repo-hooks` |
+| Install hooks | `task hooks-install`, `go tool task hooks-install`, or `make hooks-install` per host surface; verify via `install-repo-hooks` |
 | Host harness | Host `AGENTS.md` + `ai-copilots/BOOTSTRAP.md` (not duplicated in the pack) |
 
 Details: [lefthook/README.md](../../lefthook/README.md), [README.md](../../README.md).

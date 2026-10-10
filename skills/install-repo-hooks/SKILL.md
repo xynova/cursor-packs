@@ -64,7 +64,11 @@ Standalone mode MUST NOT require a packs submodule; skip this step when `lefthoo
 **CONSTRAINT:** MUST install Lefthook and register hooks once per clone or worktree.
 
 - MUST: `command -v lefthook` OR install (macOS: `brew install lefthook`; else: `go install github.com/evilmartians/lefthook@latest` with `$(go env GOPATH)/bin` on PATH)
-- MUST: `make hooks-install` or `lefthook install` from repo root
+- MUST: register hooks from repo root using the **hooks-install** operator verb for this surface (see [reference-patterns.md](../golang-quality/reference-patterns.md#workspace-umbrella-operator-surface-gowork)):
+  - Workspace umbrella (`Taskfile.yml`, no root `go.mod`): `task hooks-install`
+  - Go user program (`go.mod` + `cmd/`): `go tool task hooks-install` when that task exists
+  - Go library / packs consumer with Makefile target: `make hooks-install`
+  - Fallback: `lefthook install` after packs submodule init
 - Enforcement: pre-commit hook present under `.git/hooks` or Lefthook-managed equivalent
 - Violation: STOP, install binary, run install, verify
 
@@ -77,7 +81,7 @@ Standalone mode MUST NOT require a packs submodule; skip this step when `lefthoo
 **CONSTRAINT:** After wire, MUST NOT confuse **pack pins** with **local skill links**. Pack content is pinned only via `.cursor/packs/shared` gitlink. Go-module wired skills under `.cursor/skills/` (from `go list -m` + `ln -snf`) MUST be gitignored when BOOTSTRAP says they are not committed; `??` on those paths is expected until gitignore is present.
 
 - Enforcement: `author-ai-copilots` reference "Host workspace: three Cursor skill sources"
-- Violation: STOP; run `make wire-cursor-skills` (or BOOTSTRAP), add gitignore names from BOOTSTRAP, do not commit module-cache symlinks
+- Violation: STOP; run `task wire-cursor`, `go tool task wire-cursor`, or `make wire-cursor-skills` (or BOOTSTRAP) per operator runner resolution; add gitignore names from BOOTSTRAP, do not commit module-cache symlinks
 
 **CONSTRAINT:** Before `git worktree add`, MUST load `sync-submodules-after-merge` in the **parent** clone so gitlinks match HEAD.
 
@@ -91,7 +95,7 @@ Standalone mode MUST NOT require a packs submodule; skip this step when `lefthoo
 
 - Sibling path: `../<repo>--<slug>` (not `.worktrees/` inside the repo by default)
 - Parent: sync submodules first
-- New tree: submodules, `make hooks-install`, BOOTSTRAP wire
+- New tree: submodules, hooks-install via `task`, `go tool task`, or `make` per surface, then BOOTSTRAP wire
 
 ---
 
