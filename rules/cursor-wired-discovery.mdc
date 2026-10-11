@@ -1,0 +1,35 @@
+---
+description: >-
+  Host Cursor discovery wires (BOOTSTRAP, Makefile wire-cursor-skills): keep
+  .cursor/wired-gitignore.manifest and .gitignore in sync when adding library
+  or Go-module symlinks under .cursor/skills or .cursor/rules.
+globs:
+  - "**/ai-copilots/BOOTSTRAP.md"
+  - "**/Makefile"
+  - "**/Taskfile.yml"
+  - .cursor/wired-gitignore.manifest
+  - .gitignore
+alwaysApply: false
+---
+
+# Wired Cursor discovery (gitignore)
+
+**Skill:** `.cursor/skills/author-ai-copilots/SKILL.md` (three Cursor skill sources).
+
+## MUST
+
+- Treat **pack** symlinks from `link-into-project.sh` as **committed** (pin is `.cursor/packs/shared` gitlink only).
+- Treat **Go-module** and other **fire-and-forget** wires under `.cursor/skills/` or `.cursor/rules/` as **gitignored** (symlink may point at module cache).
+- When adding or renaming a BOOTSTRAP `ln` or `make wire-cursor-skills` target for such a path, append the repo-relative path to `.cursor/wired-gitignore.manifest`.
+- Run `.cursor/packs/shared/scripts/sync-wired-cursor-gitignore.sh --project .` in the same change (or before commit).
+- Load `install-repo-hooks` on new clones; wire + sync keeps `git status` clean.
+
+## MUST NOT
+
+- Commit Go-module wired symlinks to satisfy `??` in `git status`.
+- Hand-edit lines between the `BEGIN` / `END cursor-packs wired Cursor discovery` markers in `.gitignore` (run the sync script instead).
+- Add product-only library rules to cursor-packs to avoid host gitignore (use manifest + sync).
+
+## Enforcement
+
+Before claiming a wire change is done: manifest lists the path; sync script exit 0; `git status` does not show the wired path as untracked (unless intentionally not wired yet).
