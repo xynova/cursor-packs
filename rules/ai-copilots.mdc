@@ -24,3 +24,4 @@ When creating or migrating a library's agent harness, editing `AGENTS.md` /
 
 Resolve module Dir with `go list -m -f '{{.Dir}}' <module-path>` before host symlinks.
 Prefer symlink/junction to in-module `ai-copilots/`; do not copy skill bodies without approval.
+When adding fire-and-forget wires under `.cursor/skills/` or `.cursor/rules/`, load `cursor-wired-discovery.mdc` and run `sync-wired-cursor-gitignore.sh`.

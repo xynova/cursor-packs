@@ -282,16 +282,17 @@ after wire is often normal, not pin drift.
 or intentionally unwired module-cache symlinks as missing pack pins. MUST
 distinguish submodule gitlink bumps from local wire.
 
-**CONSTRAINT:** Host BOOTSTRAP or `Makefile` MUST document wire targets and
-list which `.cursor/skills/*` names are gitignored. Re-run wire after
-`go.mod` bumps the dependency module.
+**CONSTRAINT:** Host BOOTSTRAP or `Makefile` MUST document wire targets. Fire-and-forget paths MUST be listed in `.cursor/wired-gitignore.manifest` (see `templates/wired-gitignore.manifest.example` in cursor-packs). MUST run `.cursor/packs/shared/scripts/sync-wired-cursor-gitignore.sh --project .` after manifest edits or new wires. Re-run wire after `go.mod` bumps the dependency module.
 
-CORRECT (host `.gitignore` fragment):
+CORRECT (host manifest + sync):
 
-```gitignore
-# Wired by make wire-cursor-skills; not committed (module cache path)
+```text
+# .cursor/wired-gitignore.manifest
 .cursor/skills/export-env-operator
 .cursor/skills/operatorconfig-lib
+.cursor/rules/openai-compat-gateway.mdc
+
+.cursor/packs/shared/scripts/sync-wired-cursor-gitignore.sh --project .
 ```
 
 PROHIBITED:
@@ -299,4 +300,6 @@ PROHIBITED:
 ```bash
 # Treat ?? .cursor/skills/operatorconfig-lib as "pin drift" and git add it
 git add .cursor/skills/operatorconfig-lib
+
+# Hand-edit only the BEGIN/END block in .gitignore without updating the manifest
 ```

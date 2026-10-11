@@ -72,10 +72,13 @@ git submodule add https://github.com/xynova/cursor-packs.git .cursor/packs/share
 git submodule update --init --recursive
 .cursor/packs/shared/scripts/link-into-project.sh --project .
 .cursor/packs/shared/scripts/ensure-lefthook-consumer.sh --project .
+cp .cursor/packs/shared/templates/wired-gitignore.manifest.example .cursor/wired-gitignore.manifest
+# Edit .cursor/wired-gitignore.manifest for Go-module / BOOTSTRAP wires on this host.
+.cursor/packs/shared/scripts/sync-wired-cursor-gitignore.sh --project .
 task hooks-install | go tool task hooks-install | make hooks-install   # per host; or lefthook install
 ```
 
-Commit `.gitmodules`, the submodule pointer, symlinks, and `lefthook.yml` when created.
+Commit `.gitmodules`, the submodule pointer, symlinks, `.cursor/wired-gitignore.manifest`, synced `.gitignore` block, and `lefthook.yml` when created.
 
 Agents: load `install-repo-hooks` before the first commit (Lefthook + host `ai-copilots` BOOTSTRAP wire).
 
@@ -85,10 +88,11 @@ Agents: load `install-repo-hooks` before the first commit (Lefthook + host `ai-c
 git submodule update --init --recursive
 .cursor/packs/shared/scripts/link-into-project.sh --project .
 .cursor/packs/shared/scripts/ensure-lefthook-consumer.sh --project .
+.cursor/packs/shared/scripts/sync-wired-cursor-gitignore.sh --project .
 task hooks-install   # workspace umbrella; else go tool task or make per install-repo-hooks
 ```
 
-(Re-run the link script when upgrading the pack and new skill names appear.)
+(Re-run the link script when upgrading the pack and new skill names appear. Re-run sync when BOOTSTRAP adds wired paths; rule `cursor-wired-discovery.mdc`.)
 
 ### Operating cursor-packs as the workspace
 

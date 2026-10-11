@@ -96,6 +96,7 @@ RULES=(
   cursor-packs.mdc
   agent-smith.mdc
   ai-copilots.mdc
+  cursor-wired-discovery.mdc
   ai-readiness.mdc
   always-rules-0-ai.mdc
   always-rules-01-human-interaction.mdc

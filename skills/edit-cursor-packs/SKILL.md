@@ -55,6 +55,7 @@ Typology (or any single-library) slice vocabulary rule → cursor-packs/rules/
 4. MUST commit and push on **cursor-packs**, then open/update a PR there when the user wants review.
 5. MUST bump the consumer submodule pointer to the new pack SHA after the pack change lands (or to the PR tip for pilot).
 6. MUST re-run `.cursor/packs/shared/scripts/link-into-project.sh --project .` when new skill, rule, or persona **names** are added to the pack allow-lists.
+7. When consumers add BOOTSTRAP fire-and-forget wires, MUST point them at `.cursor/wired-gitignore.manifest` + `sync-wired-cursor-gitignore.sh` (rule `cursor-wired-discovery.mdc`), not ad hoc `.gitignore` lines.
 7. MUST load this skill whenever the soft-linked rule `cursor-packs.mdc` fires.
 8. MUST run the **Pack membership gate** before any new pack skill, rule, or persona name.
 

@@ -81,7 +81,12 @@ Standalone mode MUST NOT require a packs submodule; skip this step when `lefthoo
 **CONSTRAINT:** After wire, MUST NOT confuse **pack pins** with **local skill links**. Pack content is pinned only via `.cursor/packs/shared` gitlink. Go-module wired skills under `.cursor/skills/` (from `go list -m` + `ln -snf`) MUST be gitignored when BOOTSTRAP says they are not committed; `??` on those paths is expected until gitignore is present.
 
 - Enforcement: `author-ai-copilots` reference "Host workspace: three Cursor skill sources"
-- Violation: STOP; run `task wire-cursor`, `go tool task wire-cursor`, or `make wire-cursor-skills` (or BOOTSTRAP) per operator runner resolution; add gitignore names from BOOTSTRAP, do not commit module-cache symlinks
+- Violation: STOP; run `task wire-cursor`, `go tool task wire-cursor`, or `make wire-cursor-skills` (or BOOTSTRAP) per operator runner resolution; add paths to `.cursor/wired-gitignore.manifest`, run `sync-wired-cursor-gitignore.sh`, do not commit module-cache symlinks
+
+**CONSTRAINT:** After BOOTSTRAP or `make wire-cursor-skills` adds paths under `.cursor/skills/` or `.cursor/rules/`, MUST append repo-relative paths to `.cursor/wired-gitignore.manifest` and run `.cursor/packs/shared/scripts/sync-wired-cursor-gitignore.sh --project .`.
+
+- Enforcement: `cursor-wired-discovery.mdc`; `git status` clean for wired paths after sync
+- Violation: STOP, update manifest, run sync script, re-verify
 
 **CONSTRAINT:** Before `git worktree add`, MUST load `sync-submodules-after-merge` in the **parent** clone so gitlinks match HEAD.
 
@@ -104,5 +109,5 @@ Standalone mode MUST NOT require a packs submodule; skip this step when `lefthoo
 - [ ] Root `lefthook.yml` extends packs shared config or standalone `lefthook-go-standalone.yml`
 - [ ] `lefthook install` succeeded in this tree
 - [ ] BOOTSTRAP skill symlinks resolve
-- [ ] Go-module wired skill names gitignored when BOOTSTRAP marks them wire-only (status clean after wire)
+- [ ] `.cursor/wired-gitignore.manifest` lists fire-and-forget wires; `sync-wired-cursor-gitignore.sh` exit 0; status clean after wire
 - [ ] Packs submodule on a `v*` tag when pre-push pin check applies

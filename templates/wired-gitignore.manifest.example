@@ -1,0 +1,9 @@
+# One repo-relative path per line (symlinks created by BOOTSTRAP or make wire-cursor-skills).
+# Copy to .cursor/wired-gitignore.manifest and edit for this host.
+#
+# Go module wires (module cache path; do not commit):
+.cursor/skills/export-env-operator
+.cursor/skills/operatorconfig-lib
+#
+# Nested library rule wire (example; use only when the link is not committed):
+# .cursor/rules/openai-compat-gateway.mdc
