@@ -15,7 +15,7 @@ When the user asks to **create an implementation plan** (e.g. "plan the X featur
 
 ## What to do
 
-1. **Read the full scaffold** (once) from `.cursor/skills/plan-scaffold/PLAN-SCAFFOLD.md` so you have the standard sections, checklists, and glue analysis template.
+1. **Read the full scaffold** (once) from skills/plan-scaffold/PLAN-SCAFFOLD.md so you have the standard sections, checklists, and glue analysis template.
 
 2. **Create the plan** in `.cursor/plans/<feature-name>-plan.md` (or a name the user prefers) with:
    - **Overview & context**: What we're building, why, reference implementation (pattern source + file:lines).
@@ -36,8 +36,8 @@ When the user asks to **create an implementation plan** (e.g. "plan the X featur
 
 ## Reference
 
-- Full template, phases, and examples: **`.cursor/skills/plan-scaffold/PLAN-SCAFFOLD.md`** (same directory as this skill).
-- Go quality standards: **`.cursor/skills/golang-quality/SKILL.md`**.
-- Repository boundaries: **`.cursor/rules/repository-boundaries.mdc`**.
+- Full template, phases, and examples: **skills/plan-scaffold/PLAN-SCAFFOLD.md** (same directory as this skill).
+- Go quality standards: **skill `golang-quality`**.
+- Repository boundaries: **rule `repository-boundaries`**.
 - Existing plans in `.cursor/plans/` and `archive/` for style and depth.
 - Plan auditor subagent: **`.cursor/agents/plan-auditor.md`**.

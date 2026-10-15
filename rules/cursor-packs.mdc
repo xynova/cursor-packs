@@ -1,10 +1,14 @@
 ---
 description: >-
-  Routes edits of soft-linked Cursor skills, rules, personas, and subagents to the
-  cursor-packs submodule workflow, and gates what may be added to the pack.
-  Apply when changing .cursor/skills, .cursor/rules, .cursor/personas, or
-  .cursor/agents, or when paths resolve into .cursor/packs/shared.
+  Routes edits of cursor-packs skills, rules, personas, and subagents to the
+  pack repository workflow, and gates what may be added to the pack.
+  Apply when changing pack skills/rules/personas/agents, consumer symlinks into
+  packs/shared, or paths under .cursor/packs/shared.
 globs:
+  - skills/**
+  - rules/**
+  - personas/**
+  - agents/**
   - .cursor/skills/**
   - .cursor/rules/**
   - .cursor/personas/**
@@ -13,12 +17,14 @@ globs:
 alwaysApply: false
 ---
 
-# Soft-linked cursor-packs
+# cursor-packs ownership
 
-- Before editing under `.cursor/skills/`, `.cursor/rules/`, `.cursor/personas/`, or `.cursor/agents/`, MUST check whether the path is a symlink into `.cursor/packs/shared/`.
-- If it is pack-linked: MUST follow `.cursor/skills/edit-cursor-packs/SKILL.md` (branch/commit in **cursor-packs**, then bump the consumer submodule). MUST NOT treat the path as a normal consumer-owned file.
-- If it is a real file/directory: it is a consumer overlay; edit and commit in the consumer repo.
-- New shared skill, rule, persona, or subagent names MUST be added to `.cursor/packs/shared/scripts/link-into-project.sh` allow-lists and the link script re-run in consumers.
+Pack bytes live in the **cursor-packs** git repository (Cursor plugin and/or submodule).
+
+- When editing under repo-root `skills/`, `rules/`, `personas/`, or `agents/`: MUST follow skill `edit-cursor-packs` (branch/commit in **cursor-packs**). MUST NOT commit pack file bytes in a consumer repo.
+- When editing under `.cursor/skills/`, `.cursor/rules/`, `.cursor/personas/`, or `.cursor/agents/`: MUST check whether the path is a symlink into `.cursor/packs/shared/`. If pack-linked, same as above. If a real file/directory, it is a consumer overlay; edit in the consumer repo.
+- Cursor plugin consumers MUST NOT dual-run pack-named project symlinks and the installed plugin. Use `scripts/unlink-pack-cursor-components.sh` after installing the plugin.
+- Submodule consumers (legacy or Lefthook/CI only): new shared names MUST be added to `scripts/pack-cursor-allowlists.sh` and `link-into-project.sh` re-run unless using `--skip-cursor-components`.
 
 ## Pack membership gate (ask before creating)
 

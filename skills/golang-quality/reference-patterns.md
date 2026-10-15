@@ -53,7 +53,7 @@ if _, ok := ctx.Deadline(); !ok {
 
 ### Injectable clocks
 
-Durable and test-sensitive timestamps MUST use an injected clock (golang-quality CONSTRAINT 25 / `.cursor/rules/go-injectable-clock.mdc`). Job entry MAY call `time.Now()` once to fill `opts.Now`; leaves MUST NOT.
+Durable and test-sensitive timestamps MUST use an injected clock (golang-quality CONSTRAINT 25 / rule `go-injectable-clock`). Job entry MAY call `time.Now()` once to fill `opts.Now`; leaves MUST NOT.
 
 ```go
 now := opts.Now
@@ -628,7 +628,7 @@ rlmCfg.TraceDir = filepath.Join(analysisDir, "rlm-traces", task)
 
 ### AI module isolation (generators and evaluators)
 
-When changing a dspy-go generator or evaluator in a pipeline, isolate that step before rejoining JobRunner. Full detail: `.cursor/skills/dspy-pipeline-isolation/SKILL.md` (golang-quality C17).
+When changing a dspy-go generator or evaluator in a pipeline, isolate that step before rejoining JobRunner. Full detail: skill `dspy-pipeline-isolation` (golang-quality C17).
 
 - MUST keep discrete contracts as structured signature fields (not scraped `*_md`).
 - MUST capture Process inputs from module-traces / TraceDir into testdata (or document the dump path).
@@ -650,7 +650,7 @@ Prompt edit verified only by a multi-minute end-to-end reseed.
 
 ## Config create
 
-House name for fill-a-config-then-construct. Full rule: CONSTRAINT 18 in [SKILL.md](SKILL.md). DSPy examples: `.cursor/skills/dspy-module-patterns/SKILL.md` (Config create). External taste: Go Code Review Comments and Uber Go Style Guide (cited in SKILL.md); score C18, not those guides as a second list.
+House name for fill-a-config-then-construct. Full rule: CONSTRAINT 18 in [SKILL.md](SKILL.md). DSPy examples: skill `dspy-module-patterns` (Config create). External taste: Go Code Review Comments and Uber Go Style Guide (cited in SKILL.md); score C18, not those guides as a second list.
 
 ```go
 cfg := stropdspy.RLMDefaults()

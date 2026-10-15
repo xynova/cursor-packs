@@ -11,31 +11,31 @@ alwaysApply: false
 
 When generating, completing, or fixing Go:
 
-1. Load `.cursor/skills/golang-quality/SKILL.md` and follow its constraints and quality gates.
+1. Load skill `golang-quality` and follow its constraints and quality gates.
 2. For deep patterns / anti-patterns, load that skill's `reference.md` (compact examples: `reference-patterns.md`).
 3. **Operator runner at git root:** classify workspace umbrella (`go.work`, no root `go.mod` → PATH `task`), Go user program (`go.mod` + `cmd/` → `go tool task`), or library (`make`) per golang-quality operator runner resolution and [reference-patterns.md](../skills/golang-quality/reference-patterns.md#workspace-umbrella-operator-surface-gowork). On Go 1.24+ **user programs** (`cmd/`), ship `Taskfile.yml` and run quality gates with `go tool task format` / `lint` / `vet` / `test` / `build` (golang-quality **C11**); pin `task` in `go.mod` `tool`; recipes call `go tool` per C11; portable Task recipes (forward slashes, no POSIX-only shell in listed tasks). **Libraries** MAY use `Makefile` with the same verb names via `make`. C20: `--list` is `desc`, `--summary` is `summary`, host listed extras MAY colon-namespace (`domain:verb`), `default` MAY add a four-line footer after `go tool task --list`. `go tool task --list`, `task --list`, or `make help` MUST list **local-dev** verbs only. Binaries MUST emit required artifacts (C20a). Shared jobs use `serve` / `serve-down` (C21). PATH-only `golangci-lint` / `gofumpt` / `task` is not the default when `go.mod` has `tool` pins.
-4. For multi-section markdown, reports, or TOC builders: follow `.cursor/rules/go-structured-strings.mdc` (`text/template` over WriteString spaghetti).
+4. For multi-section markdown, reports, or TOC builders: follow rule `go-structured-strings` (`text/template` over WriteString spaghetti).
 5. For package layout, follow golang-quality C19: reusable API in `pkg/` for libraries, thin `cmd/` entrypoints for applications, domain names over grab-bags like `util` or `common`.
-6. For CLI / daemon argv surface (`serve`, `version`, root help, no bare start): follow `.cursor/skills/cli-command-surface/SKILL.md` (and `.cursor/rules/cli-command-surface.mdc`).
-7. For outbound HTTP / forge CLI / git remote / network `Do`/`Command`: follow `.cursor/rules/go-outbound-resilience.mdc` (golang-quality **C22** / failsafe-go; **C8** nil-context and deadline fail-closed before the hop).
-8. For durable or test-sensitive timestamps (`CreatedAt`, manifests, cache stamps): follow `.cursor/rules/go-injectable-clock.mdc` (golang-quality **C25**; inject job clock, no leaf `time.Now()`).
+6. For CLI / daemon argv surface (`serve`, `version`, root help, no bare start): follow skill `cli-command-surface` (and rule `cli-command-surface`).
+7. For outbound HTTP / forge CLI / git remote / network `Do`/`Command`: follow rule `go-outbound-resilience` (golang-quality **C22** / failsafe-go; **C8** nil-context and deadline fail-closed before the hop).
+8. For durable or test-sensitive timestamps (`CreatedAt`, manifests, cache stamps): follow rule `go-injectable-clock` (golang-quality **C25**; inject job clock, no leaf `time.Now()`).
 9. For durable SQL schema: follow golang-quality C24 (numbered migrations applied once; no full DDL on every write path).
 10. For embedded SQLite (`database/sql` file DB): follow golang-quality **C26** (`modernc.org/sqlite`; no `mattn/go-sqlite3`; no CGO solely for SQLite).
 
 When the user asks to review, audit, rate quality, check code, or production readiness of Go:
 
-1. Load `.cursor/skills/review-code-staged/SKILL.md` (group menu: `mechanical` | `consultant` | `both`; do not dump all checklists first).
-2. Staged review **includes** generation-gate detect as **Stage 5** (same `golang-quality` constraints used while writing, plus `go-structured-strings` for report builders, plus `cli-command-surface` when a CLI entrypoint is in scope, plus `go-outbound-resilience` / C22 when outbound exec or HTTP is in scope, plus `go-injectable-clock` / C25 when timestamp write paths are in scope, plus golang-quality **C26** when `go.mod` or embedded SQLite open paths are in scope, plus **manage-go-releases** / `.cursor/rules/go-releases.mdc` as **CI Quality** when `.github/workflows/*release*`, `.gitlab/ci/*release*`, `**/auto-patch-release.yml`, `.goreleaser.yaml`, or `auto-patch-decide.sh` / path-predicate scripts are in scope). Prefer **`mechanical`** (includes stage 5) when the user wants detect-only full quality.
+1. Load skill `review-code-staged` (group menu: `mechanical` | `consultant` | `both`; do not dump all checklists first).
+2. Staged review **includes** generation-gate detect as **Stage 5** (same `golang-quality` constraints used while writing, plus `go-structured-strings` for report builders, plus `cli-command-surface` when a CLI entrypoint is in scope, plus `go-outbound-resilience` / C22 when outbound exec or HTTP is in scope, plus `go-injectable-clock` / C25 when timestamp write paths are in scope, plus golang-quality **C26** when `go.mod` or embedded SQLite open paths are in scope, plus **manage-go-releases** / rule `go-releases` as **CI Quality** when `.github/workflows/*release*`, `.gitlab/ci/*release*`, `**/auto-patch-release.yml`, `.goreleaser.yaml`, or `auto-patch-decide.sh` / path-predicate scripts are in scope). Prefer **`mechanical`** (includes stage 5) when the user wants detect-only full quality.
 
-For export/visibility audits: `.cursor/skills/review-member-visibility/SKILL.md`.
+For export/visibility audits: skill `review-member-visibility`.
 
-When adding GoReleaser, GitHub Releases, or tag-based Go binary publishing: `.cursor/skills/setup-goreleaser/SKILL.md`.
+When adding GoReleaser, GitHub Releases, or tag-based Go binary publishing: skill `setup-goreleaser`.
 
 Project-specific `.cursor/rules/` (architecture, logging, domain) still apply and take precedence for local invariants.
 
 When the user asks for code smells, technical debt, or maintainability review:
 
-1. Load `.cursor/skills/review-code-smells/SKILL.md`.
+1. Load skill `review-code-smells`.
 
 ## Module skeleton (existing repos)
 
@@ -64,4 +64,4 @@ go test ./... fails
 
 ## Git hooks (fleet)
 
-Commit-time Go format and hook install are owned by cursor-packs Lefthook (`lefthook/` in the packs submodule) and `.cursor/skills/install-repo-hooks/SKILL.md`. MUST NOT duplicate hook recipes here.
+Commit-time Go format and hook install are owned by cursor-packs Lefthook (`lefthook/` in the packs submodule) and skill `install-repo-hooks`. MUST NOT duplicate hook recipes here.

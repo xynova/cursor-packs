@@ -7,26 +7,26 @@ alwaysApply: false
 
 When creating or wiring dspy-go modules / interceptors / Create* XML:
 
-- Load `.cursor/skills/dspy-module-patterns/SKILL.md`.
+- Load skill `dspy-module-patterns`.
 
 When writing or revising module prompts, signatures, or field descriptions:
 
-- Load `.cursor/skills/dspy-prompt-engineering/SKILL.md` and its `reference.md` when depth is needed.
+- Load skill `dspy-prompt-engineering` and its `reference.md` when depth is needed.
 - Also load project `pipelines-x-*` prompt overlays if present.
 
 When validation fails, fields look full in logs but parse empty, retries exhaust, or a refinement loop exits early:
 
-- Load `.cursor/skills/dspy-go-debugging/SKILL.md`.
-- Load `.cursor/skills/dspy-xml-structured-output/SKILL.md` for parser details.
+- Load skill `dspy-go-debugging`.
+- Load skill `dspy-xml-structured-output` for parser details.
 
 When adding a Go gate on model output (lists, ids, verdicts, merge rows), or when tempted to scrape a `*_md` field:
 
-- Load `.cursor/skills/dspy-xml-structured-output/SKILL.md` §0 and §0.1 first.
+- Load skill `dspy-xml-structured-output` §0 and §0.1 first.
 - Discrete contracts MUST be signature fields via strop structured output; `*_md` is counsel only.
 
 When adding or changing a pipeline generator or evaluator, capturing fixtures from module-traces, or adding env-gated live opt-in replay:
 
-- Load `.cursor/skills/dspy-pipeline-isolation/SKILL.md`.
+- Load skill `dspy-pipeline-isolation`.
 - Full JobRunner reseed is the integration check, not the inner loop (golang-quality C17).
 
-Pipeline job layout (JobRunner, per-job clients): load `.cursor/skills/strop-pipeline-pattern/SKILL.md` and `.cursor/rules/strop.mdc` when orchestration or review is involved. Project overlays (if any) extend — do not replace — the pack pattern.
+Pipeline job layout (JobRunner, per-job clients): load skill `strop-pipeline-pattern` and rule `strop` when orchestration or review is involved. Project overlays (if any) extend — do not replace — the pack pattern.

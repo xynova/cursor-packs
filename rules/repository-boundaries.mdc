@@ -12,7 +12,7 @@ description: >-
 
 **Moral:** A related library or submodule serves many hosts. Keep one host's layout, brand, workflows, and fixtures out of it. Put that specificity in the host adapter or host docs.
 
-Pack-owned soft-links: also follow `.cursor/rules/cursor-packs.mdc` and `.cursor/skills/edit-cursor-packs/SKILL.md`.
+Pack-owned soft-links: also follow rule `cursor-packs` and skill `edit-cursor-packs`.
 
 ## Detect ownership before writing
 

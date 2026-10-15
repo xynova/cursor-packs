@@ -14,7 +14,7 @@ alwaysApply: false
 
 When adding or changing signed activation, `license.lic`, `make build-protected`, garble, or GoReleaser `-tags release` for a Go CLI or daemon:
 
-1. Load `.cursor/skills/setup-go-binary-license/SKILL.md` and follow its constraints.
+1. Load skill `setup-go-binary-license` and follow its constraints.
 2. File list and Make/GoReleaser snippets: that skill's `reference.md`.
 3. Archive plumbing still belongs to `setup-goreleaser`; this rule is the Gate, not tagging policy.
 

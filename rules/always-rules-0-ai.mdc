@@ -13,7 +13,7 @@ description: >-
 
 **CONSTRAINT:** These rules are universal. MUST apply on every turn that produces written output or uses the filesystem. MUST NOT skip chat replies or file edits.
 
-Human interaction: `.cursor/rules/always-rules-01-human-interaction.mdc`.
+Human interaction: rule `always-rules-01-human-interaction`.
 
 ## Language (code and docs)
 
@@ -74,7 +74,7 @@ Commit on main, then sit ahead of origin/main with local-only work
 - Enforcement: before `git worktree add`, sync submodules per `sync-submodules-after-merge`
 - Violation: STOP, sync parent submodules, add worktree, run hooks-install and BOOTSTRAP wire in the new tree
 
-**CONSTRAINT:** Before `git commit`, MUST verify clone setup (Lefthook installed, ai-copilots wire OK) by loading `.cursor/skills/install-repo-hooks/SKILL.md` or confirming the same checklist already passed in this clone or worktree.
+**CONSTRAINT:** Before `git commit`, MUST verify clone setup (Lefthook installed, ai-copilots wire OK) by loading skill `install-repo-hooks` or confirming the same checklist already passed in this clone or worktree.
 
 - Enforcement: run checklist once per clone or worktree before the first commit
 - Violation: STOP, run hooks-install (`task hooks-install`, `go tool task hooks-install`, or `make hooks-install` per `install-repo-hooks`) and BOOTSTRAP wire, then commit

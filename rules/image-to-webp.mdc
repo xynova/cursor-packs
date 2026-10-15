@@ -10,7 +10,7 @@ alwaysApply: false
 
 # Image to WebP
 
-**Skill:** `.cursor/skills/image-to-webp/SKILL.md` (MUST Read and follow when this rule loads).
+**Skill:** skill `image-to-webp` (MUST Read and follow when this rule loads).
 
 ## Scope
 

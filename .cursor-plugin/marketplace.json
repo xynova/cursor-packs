@@ -1,0 +1,14 @@
+{
+  "name": "cursor-packs",
+  "owner": { "name": "xynova" },
+  "metadata": {
+    "description": "Fleet Cursor packs (skills, rules, agents)"
+  },
+  "plugins": [
+    {
+      "name": "cursor-packs",
+      "source": ".",
+      "description": "Shared skills, rules, and subagents"
+    }
+  ]
+}

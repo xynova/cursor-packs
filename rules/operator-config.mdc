@@ -10,7 +10,7 @@ alwaysApply: false
 
 # Operator config
 
-**Skill:** `.cursor/skills/operator-config/SKILL.md` (MUST Read and follow when this rule loads). Patterns: that skill's `reference.md`.
+**Skill:** skill `operator-config` (MUST Read and follow when this rule loads). Patterns: that skill's `reference.md`.
 
 ## MUST
 

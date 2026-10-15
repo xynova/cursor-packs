@@ -195,7 +195,7 @@ Also load [appendix.md](appendix.md) for this stage.
 - [ ] Logging uses injected `*observability.Logger` (or project equivalent); no ad-hoc `logrus.New()` in services
 - [ ] Log lines include discriminator fields (IDs, job/task names)
 - [ ] Names are specific (not `process` / `handle` / `do` unless the package already uses them)
-- [ ] Only essential symbols exported — if unsure, run `.cursor/skills/review-member-visibility/SKILL.md`
+- [ ] Only essential symbols exported — if unsure, run skill `review-member-visibility`
 - [ ] No TODO/FIXME without explanation
 - [ ] String literals used 3+ times extracted as constants (`goconst`)
 
@@ -205,11 +205,11 @@ Clarity only. Templates, resource defers, CLI→service→client layering, and p
 
 ## Stage 5: Generation Gates — Detect
 
-Same MUSTS as write-time Go generation. MUST Read `.cursor/skills/golang-quality/SKILL.md` **Core constraints** (1–23) and apply them as a checklist against the review target. For multi-section markdown, reports, TOC, or similar human layout builders, also Read and apply `.cursor/rules/go-structured-strings.mdc`. Go Code Review Comments and Uber Go Style Guide are the external taste baseline cited in `golang-quality`; MUST NOT invent Stage 5 findings from those guides unless they map to a Core constraint.
+Same MUSTS as write-time Go generation. MUST Read skill `golang-quality` **Core constraints** (1–23) and apply them as a checklist against the review target. For multi-section markdown, reports, TOC, or similar human layout builders, also Read and apply rule `go-structured-strings`. Go Code Review Comments and Uber Go Style Guide are the external taste baseline cited in `golang-quality`; MUST NOT invent Stage 5 findings from those guides unless they map to a Core constraint.
 
 ### CLI command surface (when a binary / CLI entrypoint is in scope)
 
-When the review target includes a command-line runner (`cmd/`, daemon `main`, CLI package that owns process argv), MUST also Read `.cursor/skills/cli-command-surface/SKILL.md` and apply its binary checks. These checks are language-agnostic behavior gates; they apply to Go entrypoints in this review and to other-language runners when that is the stated target.
+When the review target includes a command-line runner (`cmd/`, daemon `main`, CLI package that owns process argv), MUST also Read skill `cli-command-surface` and apply its binary checks. These checks are language-agnostic behavior gates; they apply to Go entrypoints in this review and to other-language runners when that is the stated target.
 
 - [ ] Bare invoke (no args) does not Listen/Serve; prints agent operating guide (sections: role, agent guide, lifecycle commands, automation rules) and exits 0, or legacy usage until migrated
 - [ ] Agent guide, root help, and inspect reports are multi-line labeled stdout (constraints 9–10); no wall of text or packed `os= arch= runner=<banner>`
@@ -248,18 +248,18 @@ When the review target includes a command-line runner (`cmd/`, daemon `main`, CL
 - [ ] C18: multi-field construction uses config create (`cfg.Create*` / `CreateModule`); no long parallel arg lists beside a half-empty Config
 - [ ] C19: kit vs app classified; kit public API in `pkg/<domain>/` (not trapped in `internal/`); app `main` is wiring only (no mux/handlers/routing in `package main`); new files sit under `internal/<domain>/` rather than a new root sibling or grab-bag (`util`, `common`, `helpers`, `shared`, `misc`, `tools`); `internal/` is not a flat dumping ground; app modules do not grow a mixed host `pkg/` unless they are also a published kit. See appendix pattern 17.
 - [ ] C20 / C20a / C21: if `Taskfile.yml` or `Makefile` is in scope, Read operator text (not lint exit code alone). Task: `desc:` / Make `##` one accurate line; listed `summary:` matches deps, cmds, `{{.CLI_ARGS}}` after `--`, platforms; missing `summary` is SHOULD Low; `default` uses `go tool task --list` first, `silent: true` when footer exists, footer at most four verb lines, not PATH `task --list`; when the host brands list/CLI colors, `OPERATOR_CLI_THEME_ACCENT` / `OPERATOR_CLI_THEME_MARK` map to `TASK_COLOR_*` per golang-quality reference (piped list needs `FORCE_COLOR`); C21 shared names unprefixed; host extras MAY `domain:verb`; CLI-duplicate helpers `internal: true`; stale help Medium (High if wrong command). Make: local-dev verbs only; footer cap; binaries emit sidecars; shared names (`serve` / `serve-down`)
-- [ ] C22: outbound process exec and HTTP client hops use failsafe-go (retry with exponential backoff + jitter, circuit breaker for shared network-backed deps); flag bare `Do` / `Command` / `CommandContext` in client/exec packages; no ad-hoc sleep retry loops; classify retryable vs permanent errors — MUST Read `.cursor/rules/go-outbound-resilience.mdc` when outbound hops are in scope; see appendix pattern 19
+- [ ] C22: outbound process exec and HTTP client hops use failsafe-go (retry with exponential backoff + jitter, circuit breaker for shared network-backed deps); flag bare `Do` / `Command` / `CommandContext` in client/exec packages; no ad-hoc sleep retry loops; classify retryable vs permanent errors — MUST Read rule `go-outbound-resilience` when outbound hops are in scope; see appendix pattern 19
 - [ ] C23: inbound HTTP / CLI entry packages map service-layer errors (`errors.Is` / `As` / `Is*` on the commands/service package); MUST NOT import a kit/leaf package solely to check that leaf’s sentinel when the service hop owns the operation
 - [ ] C24: when durable SQL schema is in scope, numbered migration files + apply-pending-once; flag DDL (`CREATE TABLE IF NOT EXISTS` / full schema strings) on every write/publish path; SQL provider packages should not force db drivers onto DTO-only importers — see appendix pattern 20
-- [ ] C25: durable / test-sensitive timestamps use an injected clock (`Options.Now`, `store.Now`, or equivalent); flag leaf `time.Now()` on `CreatedAt` / manifests / cache `Store*`; no wall-clock fallback when the injected clock is zero/nil — MUST Read `.cursor/rules/go-injectable-clock.mdc` when timestamp write paths are in scope
+- [ ] C25: durable / test-sensitive timestamps use an injected clock (`Options.Now`, `store.Now`, or equivalent); flag leaf `time.Now()` on `CreatedAt` / manifests / cache `Store*`; no wall-clock fallback when the injected clock is zero/nil — MUST Read rule `go-injectable-clock` when timestamp write paths are in scope
 - [ ] C26: embedded SQLite uses `modernc.org/sqlite`; no new `mattn/go-sqlite3` or CGO-for-SQLite hooks — see golang-quality C26
-- [ ] C27: Go operator CLIs use `spf13/cobra`; MUST NOT add or extend hand-rolled `switch args` / custom argv routers — see golang-quality C27 and `cli-command-surface` constraint 6
+- [ ] C27: Go operator CLIs use `spf13/cobra`; MUST NOT add or extend hand-rolled `switch args` / custom argv routers — see golang-quality C27 and skill `cli-command-surface` constraint 6
 
-Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pattern 15 when TraceDir / runreport / failure dumps are in scope, pattern 16 when generator/evaluator/signature diffs are in scope, pattern 17 when package paths, `cmd` mains, or `internal/` layout are in scope, pattern 18 when CLI argv / `serve` / `version` / bare-binary start paths are in scope, pattern 19 when outbound exec/HTTP or forge CLI wrappers are in scope (also Read `.cursor/rules/go-outbound-resilience.mdc`), pattern 20 when durable SQL schema / store publish paths are in scope, pattern 21 when durable timestamp / `CreatedAt` / manifest / cache stamp paths are in scope (also Read `.cursor/rules/go-injectable-clock.mdc`), and pattern 22 when auto-patch / GoReleaser release CI is in scope.
+Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pattern 15 when TraceDir / runreport / failure dumps are in scope, pattern 16 when generator/evaluator/signature diffs are in scope, pattern 17 when package paths, `cmd` mains, or `internal/` layout are in scope, pattern 18 when CLI argv / `serve` / `version` / bare-binary start paths are in scope, pattern 19 when outbound exec/HTTP or forge CLI wrappers are in scope (also Read rule `go-outbound-resilience`), pattern 20 when durable SQL schema / store publish paths are in scope, pattern 21 when durable timestamp / `CreatedAt` / manifest / cache stamp paths are in scope (also Read rule `go-injectable-clock`), and pattern 22 when auto-patch / GoReleaser release CI is in scope.
 
 ### CI Quality (when release CI in scope)
 
-MUST Read `.cursor/skills/manage-go-releases/reference.md` and `.cursor/rules/go-releases.mdc`. Plan findings use category **CI Quality**.
+MUST Read skills/manage-go-releases/reference.md and rule `go-releases`. Plan findings use category **CI Quality**.
 
 - [ ] Subject skip: `docs:` / `chore:` / `ci:` / `[skip release]`
 - [ ] Harness path skip: all files since last `v*` are `.cursor/*` or `lefthook.yml` (decide script or inline sync)
@@ -365,7 +365,7 @@ MUST NOT flag tests, `context.Background()` at process start, or in-process work
 
 - External dep constructed inside the type instead of injected
 - Package-level mutable state
-- `time.Now()` / `uuid.New` not injectable where tests need control (golang-quality **C25** / `.cursor/rules/go-injectable-clock.mdc` for durable stamps)
+- `time.Now()` / `uuid.New` not injectable where tests need control (golang-quality **C25** / rule `go-injectable-clock` for durable stamps)
 - Function 40+ lines with mixed concerns
 - Unit test hitting a real network or database
 
@@ -375,7 +375,7 @@ MUST NOT flag tests, `context.Background()` at process start, or in-process work
 - "[Function] is [N] lines covering [concerns]. Split in scope?"
 - "[path] stamps CreatedAt / manifest time with time.Now(). Inject the job clock (C25), or is this metrics-only?"
 
-**CONSTRAINT:** Durable and test-sensitive timestamps MUST use an injected clock. MUST NOT leave leaf `time.Now()` on cache/manifest/`CreatedAt` writes. MUST Read `.cursor/rules/go-injectable-clock.mdc` when those paths are in scope.
+**CONSTRAINT:** Durable and test-sensitive timestamps MUST use an injected clock. MUST NOT leave leaf `time.Now()` on cache/manifest/`CreatedAt` writes. MUST Read rule `go-injectable-clock` when those paths are in scope.
 - Enforcement: Stage C inspect lists bare `time.Now` on durable stamps; consultant asks the clock question above with Why this matters.
 - Violation: Record a finding (or open question). Do not clear as non-issue solely because a parent Options has an unused `Now` field.
 

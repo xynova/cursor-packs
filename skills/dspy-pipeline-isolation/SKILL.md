@@ -12,7 +12,7 @@ description: >-
 
 **Principle:** Tune each generator and evaluator in isolation from a captured fixture, then plug it back into the chain. A full pipeline reseed is the integration check, not the inner loop.
 
-**Related:** `.cursor/skills/dspy-xml-structured-output/SKILL.md` (structured fields), `.cursor/skills/dspy-go-debugging/SKILL.md` (failures), `.cursor/skills/dspy-module-patterns/SKILL.md` (wiring), `.cursor/skills/strop-pipeline-pattern/SKILL.md` (TraceDir / module-traces / runreport), golang-quality **C15–C17**.
+**Related:** skill `dspy-xml-structured-output` (structured fields), skill `dspy-go-debugging` (failures), skill `dspy-module-patterns` (wiring), skill `strop-pipeline-pattern` (TraceDir / module-traces / runreport), golang-quality **C15–C17**.
 
 ---
 

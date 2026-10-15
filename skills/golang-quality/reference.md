@@ -11,7 +11,7 @@ Project architecture / logging / domain rules (if present) still apply and take 
 
 # Go Coding Rules and Best Practices
 
-**Rules vs skills:** This file states Go **invariants** (resource management, error handling, nil safety, formatting). For generation/completion workflow and Makefile gates, use `.cursor/skills/golang-quality/SKILL.md` (patterns in that skill's `reference.md`). For staged review (stage menu, detect vs consultant), use `.cursor/skills/review-code-staged/SKILL.md` .
+**Rules vs skills:** This file states Go **invariants** (resource management, error handling, nil safety, formatting). For generation/completion workflow and Makefile gates, use skill `golang-quality` (patterns in that skill's `reference.md`). For staged review (stage menu, detect vs consultant), use skill `review-code-staged` .
 
 ## Table of Contents
 
@@ -618,7 +618,7 @@ import (
 
 **When writing code:** Before exporting a symbol, check: used outside this package? part of public API? constructor or interface for DI? If not, keep it unexported.
 
-**Audit or fix existing code:** Use the **review-member-visibility** skill (`.cursor/skills/review-member-visibility/SKILL.md`) for the full decision tree, checklist, and procedure. Invoke via the review-member-visibility command or by asking to "review visibility" and specifying a target path.
+**Audit or fix existing code:** Use the **review-member-visibility** skill (skill `review-member-visibility`) for the full decision tree, checklist, and procedure. Invoke via the review-member-visibility command or by asking to "review visibility" and specifying a target path.
 
 ### **Interface Design Examples:**
 ```go
@@ -931,7 +931,7 @@ func TestService_ProcessData(t *testing.T) {
 - [ ] **Context usage**: All long-running operations use context.Context
 - [ ] **Visibility compliance**: Only essential symbols are exported; use review-member-visibility skill to audit/fix
 - [ ] **No internal details exported**: All internal structs, interfaces, and methods are private
-- [ ] **Code review completed**: Systematic review performed using `.cursor/skills/review-code-staged/SKILL.md` checklist
+- [ ] **Code review completed**: Systematic review performed using skill `review-code-staged` checklist
 
 ## 🔍 **MANDATORY CODE REVIEW PROTOCOL**
 
@@ -940,7 +940,7 @@ func TestService_ProcessData(t *testing.T) {
 Before claiming completion, you MUST:
 
 #### **1. Read Code Review Protocol**
-- [ ] **Read `.cursor/skills/review-code-staged/SKILL.md`** - Review the complete checklist
+- [ ] **Read skill `review-code-staged`** - Review the complete checklist
 - [ ] **Understand all review steps** - Know what to check for
 
 #### **2. Execution Flow Tracing** ⚡

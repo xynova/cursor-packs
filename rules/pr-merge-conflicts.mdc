@@ -10,6 +10,6 @@ alwaysApply: false
 
 When creating a pull request, or when the branch / PR cannot merge cleanly into its base:
 
-1. Load `.cursor/skills/resolve-pr-merge-conflicts/SKILL.md` and follow its constraints.
+1. Load skill `resolve-pr-merge-conflicts` and follow its constraints.
 2. Detect and resolve conflicts against the base before treating the PR as ready.
 3. Prefer merging the base into the feature branch; do not force-push unless the user explicitly asks.

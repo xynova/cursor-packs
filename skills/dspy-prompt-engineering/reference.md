@@ -213,7 +213,7 @@ Then continue with job-specific planning (action-chain bullets, structured label
 
 **Job-specific longer plans:** Some jobs extend rationale after the three objective lines (e.g. sayings post skim: **12 lines** = VOICE/MUST/ANTI_PATTERN + nine scene-allocation labels in `postStructuredRationaleRules`). Do not duplicate the global block in `{job}_modules.go`; use `RationaleDescriptionWithExtra` only for emit-order or length exceptions.
 
-**Do not** paste long rationale instructions into every `{job}_modules.go` — see `.cursor/skills/strop-pipeline-pattern/SKILL.md` §6 and `.cursor/skills/dspy-prompt-engineering/SKILL.md`.
+**Do not** paste long rationale instructions into every `{job}_modules.go` — see skill `strop-pipeline-pattern` §6 and skill `dspy-prompt-engineering`.
 
 ```go
 // Rationale field on generator signatures — use centralized helper

@@ -11,7 +11,7 @@ description: >-
 
 **Principle:** The LLM returns XML; **`github.com/behaviorengineering/strop/pkg/dspy/structured_output`** parses it into `map[string]any` before **`strop/pkg/dspy/validation`** runs. If prompts and parser disagree, fields can look full in logs but parse as **empty** and fail validation.
 
-**Related:** `.cursor/skills/dspy-module-patterns/SKILL.md`, `.cursor/skills/dspy-prompt-engineering/SKILL.md`, `.cursor/skills/dspy-go-debugging/SKILL.md`, `.cursor/skills/strop-pipeline-pattern/SKILL.md`. Product-specific phase hooks (e.g. PostGenerator) may live in a **project overlay** skill if present.
+**Related:** skill `dspy-module-patterns`, skill `dspy-prompt-engineering`, skill `dspy-go-debugging`, skill `strop-pipeline-pattern`. Product-specific phase hooks (e.g. PostGenerator) may live in a **project overlay** skill if present.
 
 **Anti-pattern:** Do not add fallback parsing of nested `response` maps when XML interceptors are enabled.
 

@@ -2,7 +2,7 @@
 
 LOAD-WHEN: staged review stages 3, A, B, or 5 (or when tracing a Go change in this repo).
 
-These are bugs this codebase actually hits. Full architecture anti-patterns: `.cursor/rules/always-rules-2-architecture.mdc`. Generation workflow: `.cursor/skills/golang-quality/SKILL.md` (also checked by staged review **Stage 5** Generation Gates).
+These are bugs this codebase actually hits. Full architecture anti-patterns: rule `always-rules-2-architecture`. Generation workflow: skill `golang-quality` (also checked by staged review **Stage 5** Generation Gates).
 
 ---
 
@@ -69,7 +69,7 @@ RIGHT: check `ok`; default or return error.
 ## 7. God interface / over-export
 
 - Interface with 10+ methods, or one repo interface for Saying + Translation + Evaluation → split (ISP, ≤ 6 methods).
-- Export only public API interfaces, constructors, shared DTOs. Unexport impl structs and helpers. Skill: `.cursor/skills/review-member-visibility/SKILL.md`.
+- Export only public API interfaces, constructors, shared DTOs. Unexport impl structs and helpers. Skill: skill `review-member-visibility`.
 
 ---
 
@@ -155,7 +155,7 @@ RIGHT: Capture Process inputs from `module-traces/` (or TraceDir) into `testdata
 
 Detect: Staged `*_modules.go` / signatures / generator wiring with no `LIVE_*` replay test and no offline fixture; gates that read markdown instead of structured outs; PR that says "verified by reseed" with no module-level path.
 
-Related: golang-quality CONSTRAINT 17; Stage 5 Generation Gates checklist (C17); `.cursor/skills/dspy-pipeline-isolation/SKILL.md`.
+Related: golang-quality CONSTRAINT 17; Stage 5 Generation Gates checklist (C17); skill `dspy-pipeline-isolation`.
 
 ---
 
@@ -197,7 +197,7 @@ Detect (Stage 5 when CLI in scope; Stage A consult):
 - Launchers still invoke the bare binary after start became explicit.
 - Help text marks discovery flags as required when resolvers already default them.
 
-Related: `.cursor/skills/cli-command-surface/SKILL.md`; Stage 5 CLI command surface checklist; Stage A question on implicit start.
+Related: skill `cli-command-surface`; Stage 5 CLI command surface checklist; Stage A question on implicit start.
 
 ---
 
@@ -215,7 +215,7 @@ Detect (Stage 5 / C22):
 - Hand-rolled sleep/retry around outbound I/O.
 - Blind retry of every non-zero exit or every HTTP status.
 
-Related: `.cursor/rules/go-outbound-resilience.mdc`; golang-quality CONSTRAINT 22; Stage 5 Generation Gates checklist (C22); `golang-quality/reference.md` outbound resilience.
+Related: rule `go-outbound-resilience`; golang-quality CONSTRAINT 22; Stage 5 Generation Gates checklist (C22); `golang-quality/reference.md` outbound resilience.
 
 ---
 
@@ -251,7 +251,7 @@ Detect (Stage 5 / Stage C / C25):
 - Injected `Now` field present on Options but never threaded into the writer.
 - Leaf wall-clock fallback when the injected clock is unset.
 
-Related: `.cursor/rules/go-injectable-clock.mdc`; golang-quality CONSTRAINT 25; Stage 5 / Stage C.
+Related: rule `go-injectable-clock`; golang-quality CONSTRAINT 25; Stage 5 / Stage C.
 
 ---
 
@@ -268,4 +268,4 @@ Detect (Stage 5 **CI Quality**):
 - `.gitlab/ci/auto-patch-release.yml` or `.github/workflows/auto-patch-release.yml` changed without harness/packaging path skip.
 - Missing `GIT_DEPTH: "0"` / `fetch-depth: 0` on the auto-patch job.
 
-Related: `.cursor/rules/go-releases.mdc`; `manage-go-releases/reference.md`; appendix pattern 22; setup-goreleaser reference inline fragment.
+Related: rule `go-releases`; `manage-go-releases/reference.md`; appendix pattern 22; setup-goreleaser reference inline fragment.

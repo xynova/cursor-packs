@@ -1,6 +1,6 @@
 # CLI command surface patterns
 
-LOAD-WHEN: implementing or reviewing a language-agnostic CLI runner under `.cursor/skills/cli-command-surface/SKILL.md`.
+LOAD-WHEN: implementing or reviewing a language-agnostic CLI runner under skill `cli-command-surface`.
 
 ---
 

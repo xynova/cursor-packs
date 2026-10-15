@@ -11,7 +11,7 @@ alwaysApply: false
 
 # Ask Polypus
 
-**Skill:** `.cursor/skills/ask-polypus/SKILL.md` (MUST Read and follow when this rule loads).
+**Skill:** skill `ask-polypus` (MUST Read and follow when this rule loads).
 
 ## MUST
 

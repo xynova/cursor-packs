@@ -1,0 +1,7 @@
+{
+  "name": "cursor-packs",
+  "description": "Shared Cursor skills, rules, and subagents for fleet Go hosts",
+  "version": "0.1.0",
+  "repository": "https://github.com/xynova/cursor-packs",
+  "keywords": ["golang", "dspy", "lefthook", "skills"]
+}
