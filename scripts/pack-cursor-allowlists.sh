@@ -1,0 +1,71 @@
+# Shared allow-lists for link-into-project.sh and unlink-pack-cursor-components.sh
+# shellcheck shell=bash
+
+SKILLS=(
+  golang-quality
+  review-code-staged
+  cli-command-surface
+  dspy-go-debugging
+  dspy-module-patterns
+  dspy-pipeline-isolation
+  dspy-prompt-engineering
+  dspy-xml-structured-output
+  plan-scaffold
+  review-member-visibility
+  review-code-smells
+  setup-goreleaser
+  setup-go-binary-license
+  manage-go-releases
+  prepare-go-forge
+  setup-gitlab-runner
+  resolve-pr-merge-conflicts
+  sync-submodules-after-merge
+  install-repo-hooks
+  after-merge
+  edit-cursor-packs
+  agent-smith
+  author-ai-copilots
+  ai-readiness
+  image-to-webp
+  process-compose-docker
+  operator-config
+  explain-implementation
+  ask-polypus
+  intent-first
+  consultant
+  ai-readiness-persona
+)
+RULES=(
+  golang.mdc
+  go-structured-strings.mdc
+  go-outbound-resilience.mdc
+  go-injectable-clock.mdc
+  cli-command-surface.mdc
+  dspy.mdc
+  strop.mdc
+  go-releases.mdc
+  go-binary-license.mdc
+  pr-merge-conflicts.mdc
+  sync-submodules.mdc
+  cursor-packs.mdc
+  agent-smith.mdc
+  ai-copilots.mdc
+  cursor-wired-discovery.mdc
+  ai-readiness.mdc
+  always-rules-0-ai.mdc
+  always-rules-01-human-interaction.mdc
+  image-to-webp.mdc
+  repository-boundaries.mdc
+  process-compose-docker.mdc
+  operator-config.mdc
+  explain-implementation.mdc
+  ask-polypus.mdc
+)
+PERSONAS=(
+  intent-first.persona.md
+  consultant.persona.md
+  ai-readiness.persona.md
+)
+AGENTS=(
+  plan-auditor.md
+)

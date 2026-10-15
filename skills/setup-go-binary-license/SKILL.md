@@ -16,7 +16,7 @@ Load this skill when adding or changing signed `license.lic` activation, `make b
 
 **Reference:** [reference.md](reference.md) (file list, make targets, Gate signatures).
 
-**Related:** `.cursor/skills/setup-goreleaser/SKILL.md` for archive plumbing; `.cursor/skills/manage-go-releases/SKILL.md` for tags; `.cursor/skills/cli-command-surface/SKILL.md` for explicit `serve` / `version` dispatch before Gate. This skill owns the activation Gate, not tagging policy.
+**Related:** skill `setup-goreleaser` for archive plumbing; skill `manage-go-releases` for tags; skill `cli-command-surface` for explicit `serve` / `version` dispatch before Gate. This skill owns the activation Gate, not tagging policy.
 
 ---
 

@@ -1,17 +1,19 @@
 ---
 name: edit-cursor-packs
 description: >-
-  Edit shared Cursor skills, rules, personas, and subagents that live in the
-  xynova/cursor-packs submodule and are soft-linked into consumer .cursor/
-  trees. Use when changing files under .cursor/skills, .cursor/rules,
-  .cursor/personas, or .cursor/agents that symlink to packs/shared, when
-  updating golang-quality or other pack content, or when an agent would
-  otherwise commit pack edits into the wrong repo.
+  Edit shared Cursor skills, rules, personas, and subagents in the
+  xynova/cursor-packs repository (Cursor plugin and/or submodule). Use when
+  changing pack skills/rules/agents, consumer symlinks into packs/shared, or
+  when an agent would otherwise commit pack edits into the wrong repo.
 ---
 
-# Edit linked cursor-packs
+# Edit cursor-packs
 
-Shared pack content is owned by **https://github.com/xynova/cursor-packs**, mounted at `.cursor/packs/shared`, and exposed via relative symlinks (for example `.cursor/skills/golang-quality` → `../packs/shared/skills/golang-quality`).
+Shared pack content is owned by **https://github.com/xynova/cursor-packs**.
+
+**Cursor (primary):** install the `cursor-packs` plugin (local or team marketplace). Skills, rules, and agents refresh via `git pull` / marketplace Auto Refresh and **Developer: Reload Window**; start a new Agent conversation. No consumer gitlink bump for pack skills.
+
+**Legacy / Lefthook / CI:** consumers may still submodule at `.cursor/packs/shared` for `lefthook/`, `scripts/auto-patch-decide.sh`, and symlink-based discovery. Plugin consumers MUST NOT dual-run pack-named `.cursor/` symlinks and the plugin.
 
 ## Detect ownership (do this first)
 
@@ -21,9 +23,11 @@ Before editing any path under `.cursor/skills/`, `.cursor/rules/`, `.cursor/pers
 2. If it is a **symlink** into `packs/shared/`, it is **pack-owned**.
 3. If it is a **real directory or file**, it is a **consumer overlay** (edit in the consumer repo).
 
+When the workspace is the **cursor-packs** git root (or `~/.cursor/plugins/local/cursor-packs`), edit repo-root `skills/`, `rules/`, `personas/`, `agents/` directly.
+
 ## Pack membership gate (ask before creating)
 
-**CONSTRAINT:** Before creating or expanding any skill, rule, persona, or subagent in **cursor-packs**, MUST pass the membership gate in `.cursor/rules/cursor-packs.mdc` (same questions live there).
+**CONSTRAINT:** Before creating or expanding any skill, rule, persona, or subagent in **cursor-packs**, MUST pass the membership gate in rule `cursor-packs` (same questions live there).
 
 Ask yourself:
 
@@ -37,27 +41,17 @@ Ask yourself:
 - Enforcement: Answer the three questions in chat or the PR body before the first new pack path.
 - Violation: STOP, move the content to `ai-copilots` or the host; do not merge pack spill.
 
-CORRECT:
-```text
-Shared Go quality / dspy-go debugging / pack link script → pack
-```
-
-PROHIBITED:
-```text
-Typology (or any single-library) slice vocabulary rule → cursor-packs/rules/
-```
-
 ## Pack-owned edits (MUST)
 
-1. MUST work inside the pack git checkout: `.cursor/packs/shared` (or the resolved real path).
+1. MUST work inside the **cursor-packs** git checkout (repo root, `.cursor/packs/shared` submodule path, or local plugin clone).
 2. MUST NOT commit pack file bytes as ordinary files of the consumer repo.
-3. MUST leave detached HEAD: `git fetch origin && git checkout -B <branch> origin/main` inside the pack checkout.
+3. MUST use a feature branch from `origin/main` when editing the pack.
 4. MUST commit and push on **cursor-packs**, then open/update a PR there when the user wants review.
-5. MUST bump the consumer submodule pointer to the new pack SHA after the pack change lands (or to the PR tip for pilot).
-6. MUST re-run `.cursor/packs/shared/scripts/link-into-project.sh --project .` when new skill, rule, or persona **names** are added to the pack allow-lists.
-7. When consumers add BOOTSTRAP fire-and-forget wires, MUST point them at `.cursor/wired-gitignore.manifest` + `sync-wired-cursor-gitignore.sh` (rule `cursor-wired-discovery.mdc`), not ad hoc `.gitignore` lines.
-7. MUST load this skill whenever the soft-linked rule `cursor-packs.mdc` fires.
-8. MUST run the **Pack membership gate** before any new pack skill, rule, or persona name.
+5. MUST NOT bump consumer submodule gitlinks for **Cursor skill/rule changes** when consumers use the plugin. Bump submodule only when Lefthook or CI script bytes in this repo change and the consumer still submodules.
+6. MUST append new skill, rule, persona, or agent **names** to `scripts/pack-cursor-allowlists.sh` (legacy symlink consumers). Plugin discovery uses folder layout under `skills/`, `rules/`, `agents/`.
+7. When consumers add BOOTSTRAP fire-and-forget wires, MUST point them at `.cursor/wired-gitignore.manifest` + `sync-wired-cursor-gitignore.sh` (rule `cursor-wired-discovery`), not ad hoc `.gitignore` lines.
+8. MUST load this skill whenever rule `cursor-packs` fires.
+9. MUST run the **Pack membership gate** before any new pack skill, rule, or persona name.
 
 ## Consumer overlays (MUST NOT confuse)
 
@@ -66,78 +60,43 @@ Typology (or any single-library) slice vocabulary rule → cursor-packs/rules/
 - MUST NOT replace an overlay with a pack symlink unless the user explicitly asks.
 - Host **ai-copilots** operator symlinks and **Go-module** wired skills are not pack pins. See `author-ai-copilots` reference "Host workspace: three Cursor skill sources" before interpreting `?? .cursor/skills/*` as submodule drift.
 
-## Typical sequence
+## Typical sequence (pack PR)
 
 ```bash
-# 1) Pack branch
-cd .cursor/packs/shared
+cd /path/to/cursor-packs   # or ~/.cursor/plugins/local/cursor-packs
 git fetch origin
 git checkout -B feat/my-change origin/main
-# edit skills/... or rules/... or personas/...
+# edit skills/... rules/... agents/...
 git add -A && git commit && git push -u origin HEAD
+# merge → marketplace refresh or git pull + Reload Window in Cursor
+```
 
-# 2) Consumer pin (after pack commit exists)
-cd /path/to/consumer
+## Legacy consumer submodule bump (Lefthook / CI only)
+
+When the consumer still needs new `lefthook/` or `scripts/` bytes:
+
+```bash
+cd .cursor/packs/shared
+git fetch --tags origin && git checkout vX.Y.Z
+cd ../../..
 git add .cursor/packs/shared
-# if new names were added to scripts/link-into-project.sh:
-.cursor/packs/shared/scripts/link-into-project.sh --project .
-git add .cursor/skills .cursor/rules .cursor/personas   # new symlinks only
-git commit
+git commit -m "Bump cursor-packs submodule for Lefthook/CI scripts"
 ```
 
-## Consumer pin: sync checkout after gitlink bump (MUST)
+Load **`sync-submodules-after-merge`** after recording a new gitlink.
 
-**CONSTRAINT:** After the consumer records a new `.cursor/packs/shared` gitlink (or any submodule pin), MUST sync the nested checkout to that SHA before treating the tree as clean or staging more submodule changes. Load and follow **`sync-submodules-after-merge`** (at least `git submodule update --init --recursive -- .cursor/packs/shared`).
+## Plugin cutover on a consumer
 
-- Enforcement: `git ls-files -s .cursor/packs/shared` SHA equals `git -C .cursor/packs/shared rev-parse HEAD`; `git status` has no `modified: .cursor/packs/shared (new commits)` from pin drift
-- Violation: STOP, sync; do not declare the bump done while status shows submodule dirt
-
-CORRECT:
 ```bash
-# gitlink already committed (or staged) at v0.1.29 / desired SHA
-git submodule update --init --recursive -- .cursor/packs/shared
-git -C .cursor/packs/shared describe --tags --exact-match HEAD   # expected tag
-git status   # no packs (new commits) dirt
+# After installing cursor-packs plugin in Customize:
+.cursor/packs/shared/scripts/unlink-pack-cursor-components.sh --project .
 ```
 
-PROHIBITED:
-```bash
-# Index pins v0.1.29 but checkout still on v0.1.17
-git status   # "modified: .cursor/packs/shared (new commits)"
-git add .cursor/packs/shared && git commit -m "commit all"
-# → silently reverts the pin to the old checkout SHA
-```
-
-**CONSTRAINT:** MUST NOT `git add .cursor/packs/shared` (or commit “all”) to silence `(new commits)` dirt when the working-tree submodule HEAD is **behind** the recorded gitlink. That dirt means “run submodule update,” not “stage a new pin.”
-
-- Enforcement: before `git add` on a submodule path, compare `git ls-files -s <path>` to `git -C <path> rev-parse HEAD`
-- Violation: STOP, unstage; sync checkout to the gitlink
-
-**CONSTRAINT:** If `git submodule update` fails with `Operation not permitted` (or cannot lock `.git/modules/.../config`) in a sandboxed agent environment, MUST stop and ask the human to run the sync in their own terminal. MUST NOT invent alternate checkouts that rewrite the submodule `gitdir` pointer, and MUST NOT stage the drifted checkout as a “fix.”
-
-- Enforcement: agent reports the one-liner and waits
-- Violation: STOP; do not ship a reverse pin or a broken `gitdir`
-
-Human one-liner:
-```bash
-git submodule update --init --recursive -- .cursor/packs/shared
-```
-
-## Link script
-
-Allow-lists live in `scripts/link-into-project.sh` (`SKILLS=(...)`, `RULES=(...)`, `PERSONAS=(...)`, `AGENTS=(...)`). New shared skills, rules, personas, or subagents MUST be appended there or consumers will not get symlinks. MUST NOT append a name that failed the membership gate.
+Host `ai-copilots` and Go-module skill links stay. See [docs/PLUGIN.md](../../docs/PLUGIN.md).
 
 ## Pre-completion checklist
 
-- [ ] **Ownership:** Edits are inside the pack git checkout, not committed as consumer file bytes
-      Method: `git -C .cursor/packs/shared rev-parse --show-toplevel`
-      Pass: toplevel is cursor-packs
-      Fail: STOP, move work into the pack checkout
+- [ ] **Ownership:** Edits are inside the cursor-packs checkout, not committed as consumer file bytes
 - [ ] **Membership gate:** New or expanded pack artifacts passed the three questions
-      Method: Re-read answers in PR/chat; (1) yes, (2)/(3) no
-      Pass: Portable shared practice only
-      Fail: STOP, relocate to library `ai-copilots/` or host overlay
-- [ ] **Allow-list:** New names appear in `scripts/link-into-project.sh` only after the gate passes
-      Method: Diff the script
-      Pass: Names match gated artifacts
-      Fail: STOP, remove allow-list entry or relocate artifact
+- [ ] **Allow-list:** New names appear in `scripts/pack-cursor-allowlists.sh` when legacy symlink consumers still exist
+- [ ] **No dual-run:** Plugin consumers do not keep pack-named `.cursor/` symlinks alongside the plugin

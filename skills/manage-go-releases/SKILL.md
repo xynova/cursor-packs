@@ -11,7 +11,7 @@ description: >-
 
 Shared policy for Go libraries and toolkits consumed by agents (for example strop, cursor-packs consumers). Humans rarely browse Releases; agents need a resolvable `v*` after every releasable merge.
 
-**Scaffold binaries first:** `.cursor/skills/setup-goreleaser/SKILL.md` (CLI builds). **Host settings:** `.cursor/skills/prepare-go-forge/SKILL.md` when publish fails with package/job-token 403 or forge gates are missing. This skill owns **ongoing version policy** and **consumer pins**.
+**Scaffold binaries first:** skill `setup-goreleaser` (CLI builds). **Host settings:** skill `prepare-go-forge` when publish fails with package/job-token 403 or forge gates are missing. This skill owns **ongoing version policy** and **consumer pins**.
 
 ---
 

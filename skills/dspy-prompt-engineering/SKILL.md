@@ -10,7 +10,7 @@ description: >-
 
 # DSPy prompt engineering (strop)
 
-Compact contract. **Deep reference:** [reference.md](reference.md) (bias, CoT, templates). Parser alignment: `.cursor/skills/dspy-xml-structured-output/SKILL.md`. Job layout: `.cursor/skills/strop-pipeline-pattern/SKILL.md`.
+Compact contract. **Deep reference:** [reference.md](reference.md) (bias, CoT, templates). Parser alignment: skill `dspy-xml-structured-output`. Job layout: skill `strop-pipeline-pattern`.
 
 Product-specific prompt invariants (if any) live in the consumer under a project prefix such as `pipelines-x-*` — load those after this skill.
 

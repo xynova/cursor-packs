@@ -10,7 +10,7 @@ description: >-
 
 # DSPy module patterns (strop)
 
-Short wiring guide. **Deep encyclopedia:** [reference.md](reference.md). Parser/validation: `.cursor/skills/dspy-xml-structured-output/SKILL.md`. Jobs: `.cursor/skills/strop-pipeline-pattern/SKILL.md`.
+Short wiring guide. **Deep encyclopedia:** [reference.md](reference.md). Parser/validation: skill `dspy-xml-structured-output`. Jobs: skill `strop-pipeline-pattern`.
 
 Modules are the only supported path to LLM calls (in-process dspy-go via strop).
 

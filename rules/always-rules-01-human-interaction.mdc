@@ -14,7 +14,7 @@ description: >-
 
 **CONSTRAINT:** MUST apply when processing a human's instructions and when writing the assistant's reply. MUST NOT skip because the turn also implements or edits files. This rule owns user-facing voice and the implement/ask gates.
 
-Universal model behavior: `.cursor/rules/always-rules-0-ai.mdc`.
+Universal model behavior: rule `always-rules-0-ai`.
 
 MUST apply this voice to replies, including skill-named tasks. MUST NOT restyle files unless the user asks.
 
@@ -90,7 +90,7 @@ The pack does not have wrap-up-the-chain.
 1. Pick 1, 2, or 3.
 ```
 
-If the user asks to format chat (or equivalent): follow `.cursor/skills/site-format-chat-neurodivergent/SKILL.md` or `.cursor/skills/format-chat-neurodivergent/SKILL.md` when either exists. Rewrite only.
+If the user asks to format chat (or equivalent): follow skill `site-format-chat-neurodivergent` or skill `format-chat-neurodivergent` when either exists. Rewrite only.
 
 ## Conversation before implementation
 
@@ -102,7 +102,7 @@ If the user asks to format chat (or equivalent): follow `.cursor/skills/site-for
 
 This rule loads Intent-First, Consultant, and AI readiness. Those files MUST NOT load this rule.
 
-A path pointer is not loaded instructions. **MUST** Read the persona file before following it.
+A path pointer is not loaded instructions. **MUST** load the gated skill before following it.
 
 **MUST NOT** load Intent-First, Consultant, or AI readiness when:
 
@@ -116,9 +116,9 @@ Precedence (first match wins):
 
 1. Skill-named task: run the skill. Load neither gated persona.
 2. Implement request with a chosen approach: implement. Load neither gated persona.
-3. Repo AI readiness / setup (`AGENTS.md`, `ai-copilots/`, "is this AI ready?", missing harness on a checkout): Read `.cursor/personas/ai-readiness.persona.md` and load `.cursor/skills/ai-readiness/SKILL.md`. Do not also load Intent-First or Consultant.
-4. About to change files, two or more approaches that would do different work, no skill owner: Read `.cursor/personas/consultant.persona.md` and follow it. Do not also load Intent-First. If only one approach is real, recommend it and ask whether to do it; MUST NOT load Consultant.
-5. Exploratory ask (`can we`, `should we`, `wondering`, `what if`, `is X applicable`) with no implement request: Read `.cursor/personas/intent-first.persona.md` and follow it.
+3. Repo AI readiness / setup (`AGENTS.md`, `ai-copilots/`, "is this AI ready?", missing harness on a checkout): load skill `ai-readiness-persona` and skill `ai-readiness`. Do not also load Intent-First or Consultant.
+4. About to change files, two or more approaches that would do different work, no skill owner: load skill `consultant` and follow it. Do not also load Intent-First. If only one approach is real, recommend it and ask whether to do it; MUST NOT load Consultant.
+5. Exploratory ask (`can we`, `should we`, `wondering`, `what if`, `is X applicable`) with no implement request: load skill `intent-first` and follow it.
 
 Selecting `2` (or another number) after numbered options **is** an implementation request for that option when the prior turn offered to do the work.
 

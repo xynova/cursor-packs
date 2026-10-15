@@ -20,7 +20,7 @@ that repo's skills.
 
 **Persona:** When the human asks if a repo is AI-ready or how to set it up and
 a real scaffold fork exists, also Read
-`.cursor/personas/ai-readiness.persona.md`.
+skill `ai-readiness-persona`.
 
 ---
 

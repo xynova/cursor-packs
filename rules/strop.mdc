@@ -9,27 +9,27 @@ strop operator skills ship in the **strop** module (`ai-copilots/skills/`). Host
 
 When bootstrapping strop, choosing composition/refinement APIs, or debugging loop exits:
 
-- Load `.cursor/skills/strop-orchestration/SKILL.md`.
+- Load skill `strop-orchestration`.
 
 When adding a pipeline job, clients, modules, evaluators, or aligning to JobRunner:
 
-- Load `.cursor/skills/strop-pipeline-pattern/SKILL.md`.
+- Load skill `strop-pipeline-pattern`.
 - If the project has a local overlay (e.g. `pipelines-x-pipeline-pattern`), load it **after** the library skill for product-specific paths.
-- For fixture + env-gated live replay of one generator/evaluator, also load `.cursor/skills/dspy-pipeline-isolation/SKILL.md`.
+- For fixture + env-gated live replay of one generator/evaluator, also load skill `dspy-pipeline-isolation`.
 
 When implementing human review, Gate, reject-and-regenerate, or reviewflow ports:
 
-- Load `.cursor/skills/strop-human-review/SKILL.md`.
+- Load skill `strop-human-review`.
 - If the project has a local overlay (e.g. `pipelines-x-human-review`), load it for product CLI/classroom details.
 
 When working on XML structured output or parser alignment:
 
-- Load `.cursor/skills/dspy-xml-structured-output/SKILL.md`.
+- Load skill `dspy-xml-structured-output`.
 - Discrete machine contracts (ids, lists, verdicts) MUST be signature fields, not markdown scrapes; see that skill §0.1.
 - If the project has phased-composition hooks, load its `pipelines-x-*` XML overlay if present.
 
-Module wiring and prompts: see `.cursor/rules/dspy.mdc`.
+Module wiring and prompts: see rule `dspy`.
 
-If `.cursor/skills/strop-*` is missing, resolve the module and wire:
+If a host `strop-*` skill is missing, resolve the module and wire:
 
 `go list -m -f '{{.Dir}}' github.com/behaviorengineering/strop` then run that tree's `ai-copilots/BOOTSTRAP.md`.

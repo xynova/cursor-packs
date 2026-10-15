@@ -16,7 +16,7 @@ how the pieces connect without reading an essay. Prefer a tight visual layout
 over paragraphs. Numbered steps MUST read like readable **pseudocode**
 (behavior, decisions, skips), not like a narrative.
 
-**Voice:** Still follow `.cursor/rules/always-rules-01-human-interaction.mdc`
+**Voice:** Still follow rule `always-rules-01-human-interaction`
 for the rest of the turn (no icon-prefixed reply headings). For this explain
 pass only, MUST prefer scannable structure over fluent multi-sentence prose.
 

@@ -11,7 +11,7 @@ alwaysApply: false
 
 # Process-compose + Docker
 
-**Skill:** `.cursor/skills/process-compose-docker/SKILL.md` (MUST Read and follow when this rule loads).
+**Skill:** skill `process-compose-docker` (MUST Read and follow when this rule loads).
 
 ## MUST
 

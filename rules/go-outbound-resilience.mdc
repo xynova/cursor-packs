@@ -13,7 +13,7 @@ alwaysApply: false
 
 When generating, completing, or fixing Go that talks to the network (HTTP client `Do`, forge CLIs such as `gh`/`glab`, `git` push/fetch over remotes, LLM/gateway HTTP):
 
-1. Load `.cursor/skills/golang-quality/SKILL.md` **CONSTRAINT 22** (Outbound resilience / failsafe-go) and follow it.
+1. Load skill `golang-quality` **CONSTRAINT 22** (Outbound resilience / failsafe-go) and follow it.
 2. For copy-paste policy wiring: that skill's `reference.md` section **Outbound resilience (failsafe-go)**.
 3. Prefer one shared package (for example `pkg/forge/outbound` or `internal/clients`) that wraps failsafe-go so call sites stay thin.
 

@@ -16,11 +16,11 @@ alwaysApply: false
 When creating or migrating a library's agent harness, editing `AGENTS.md` /
 `ai-copilots/**`, or wiring a Go dependency's skills into a host IDE:
 
-- If `AGENTS.md` or `ai-copilots/` is missing, load `.cursor/skills/ai-readiness/SKILL.md`
-  first (and `.cursor/personas/ai-readiness.persona.md` when a setup fork exists).
-- Load `.cursor/skills/author-ai-copilots/SKILL.md` (templates in `reference.md`).
-- Load `.cursor/skills/agent-smith/SKILL.md` when authoring or reviewing skill bodies.
-- If editing pack-owned files under `.cursor/packs/shared/`, follow `.cursor/skills/edit-cursor-packs/SKILL.md`.
+- If `AGENTS.md` or `ai-copilots/` is missing, load skill `ai-readiness`
+  first (and load skill `ai-readiness-persona` when a setup fork exists).
+- Load skill `author-ai-copilots` (templates in `reference.md`).
+- Load skill `agent-smith` when authoring or reviewing skill bodies.
+- If editing pack-owned files under `.cursor/packs/shared/`, follow skill `edit-cursor-packs`.
 
 Resolve module Dir with `go list -m -f '{{.Dir}}' <module-path>` before host symlinks.
 Prefer symlink/junction to in-module `ai-copilots/`; do not copy skill bodies without approval.

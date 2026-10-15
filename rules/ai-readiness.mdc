@@ -14,12 +14,12 @@ alwaysApply: false
 When setting up a repository, joining a checkout that lacks `AGENTS.md` or
 `ai-copilots/`, or answering whether a repo is AI-ready / agent-operable:
 
-- Load `.cursor/skills/ai-readiness/SKILL.md` (checklist in `reference.md`).
+- Load skill `ai-readiness` (checklist in `reference.md`).
 - When a real scaffold fork exists and the human has not asked to implement yet,
-  Read `.cursor/personas/ai-readiness.persona.md` and follow it.
+  load skill `ai-readiness-persona` and follow it.
 - After the baseline exists, author or migrate skills with
-  `.cursor/skills/author-ai-copilots/SKILL.md` and
-  `.cursor/skills/agent-smith/SKILL.md`.
+  skill `author-ai-copilots` and
+  skill `agent-smith`.
 
 Every git repository agents operate MUST have root `AGENTS.md` plus
 `ai-copilots/` (README, BOOTSTRAP, at least one skill). Fail closed until the

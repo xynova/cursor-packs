@@ -18,7 +18,7 @@ The parent MUST give the plan file path and its contents (or paste the full mark
 
 ## Membership of this check
 
-Score against `.cursor/skills/plan-scaffold/PLAN-SCAFFOLD.md` **Executor stage contract** and **Plan Review Checklist**. If that file is missing, apply the contract in this prompt only.
+Score against skills/plan-scaffold/PLAN-SCAFFOLD.md **Executor stage contract** and **Plan Review Checklist**. If that file is missing, apply the contract in this prompt only.
 
 ## What you MUST do
 

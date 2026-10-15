@@ -11,7 +11,7 @@ disable-model-invocation: true
 
 Explicit-invocation review protocol (former slash command). Ask for the **target** (path, package, or current changes) before starting.
 
-**Related:** `.cursor/skills/review-code-staged/SKILL.md` (staged quality), `.cursor/skills/golang-quality/SKILL.md`, `.cursor/skills/review-member-visibility/SKILL.md`. Project architecture review (if present): `pipelines-x-review-architecture` or equivalent overlay.
+**Related:** skill `review-code-staged` (staged quality), skill `golang-quality`, skill `review-member-visibility`. Project architecture review (if present): `pipelines-x-review-architecture` or equivalent overlay.
 
 ---
 

@@ -16,7 +16,7 @@ Standing contract for every shipped command-line runner (Go, Python, TypeScript,
 
 **Patterns:** [reference.md](reference.md)
 
-**Related:** `.cursor/skills/setup-goreleaser/SKILL.md` (Go version stamp); `.cursor/skills/setup-go-binary-license/SKILL.md` (Gate skips `version` / `license`); `.cursor/skills/operator-config/SKILL.md` (`init` / config discovery).
+**Related:** skill `setup-goreleaser` (Go version stamp); skill `setup-go-binary-license` (Gate skips `version` / `license`); skill `operator-config` (`init` / config discovery).
 
 ---
 

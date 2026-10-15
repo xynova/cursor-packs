@@ -10,6 +10,6 @@ alwaysApply: false
 
 When a PR that touches submodule gitlinks merges, after checkout of that tip, when pin bumps leave `(new commits)` dirt, or **before `git worktree add`** in the parent clone:
 
-1. Load `.cursor/skills/sync-submodules-after-merge/SKILL.md` and follow its constraints.
+1. Load skill `sync-submodules-after-merge` and follow its constraints.
 2. Run recursive `git submodule update --init` at the parent and inside nests that have their own `.gitmodules`.
 3. Do not commit drifted gitlinks just to clear the dirt; do not delete untracked nest content unless the user asks.

@@ -9,9 +9,9 @@ description: >-
 
 # DSPy-Go debugging (strop)
 
-Decision tree for runtime failures. Parser details: `.cursor/skills/dspy-xml-structured-output/SKILL.md`. Job/orchestration: `.cursor/skills/strop-orchestration/SKILL.md`, `.cursor/skills/strop-pipeline-pattern/SKILL.md`. Isolating one module before a full reseed: `.cursor/skills/dspy-pipeline-isolation/SKILL.md`.
+Decision tree for runtime failures. Parser details: skill `dspy-xml-structured-output`. Job/orchestration: skill `strop-orchestration`, skill `strop-pipeline-pattern`. Isolating one module before a full reseed: skill `dspy-pipeline-isolation`.
 
-**Related:** `.cursor/skills/dspy-module-patterns/SKILL.md`.
+**Related:** skill `dspy-module-patterns`.
 
 ---
 
@@ -42,7 +42,7 @@ Durable TraceDir / runreport missing after the run?
 
 **Symptom:** `empty fields: [field_name]` but the raw trace looks full.
 
-Do **not** restate parser tables here. Load `.cursor/skills/dspy-xml-structured-output/SKILL.md` (§2–§5) and:
+Do **not** restate parser tables here. Load skill `dspy-xml-structured-output` (§2–§5) and:
 
 1. List `available fields` from the error — missing key vs present-but-empty.
 2. Missing key: signature name ≠ XML tag, or phase filter dropped the field (app hook).

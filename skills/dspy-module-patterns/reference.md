@@ -11,7 +11,7 @@ Project overlays (if any) use a consumer prefix such as `pipelines-x-*`.
 
 # DSPy-Go Development Rules
 
-**Rules vs skills:** This file states DSPy **invariants and patterns** for this codebase. Task-specific checklists live in **project skills** (see **Rules vs project skills** in `always-rules-2-architecture.mdc`). Pack: XML structured output — `.cursor/skills/dspy-xml-structured-output/SKILL.md`; pipeline layout — `.cursor/skills/strop-pipeline-pattern/SKILL.md`; orchestration — `.cursor/skills/strop-orchestration/SKILL.md`; debugging — `.cursor/skills/dspy-go-debugging/SKILL.md`; module wiring — `.cursor/skills/dspy-module-patterns/SKILL.md`; prompts — `.cursor/skills/dspy-prompt-engineering/SKILL.md`. Overlays: content-pipelines job conventions — ``.cursor/skills/strop-pipeline-pattern/SKILL.md` (plus project `pipelines-x-*` overlay if present)`; phased PostGenerator — `project `pipelines-x-*` XML overlay if present`.
+**Rules vs skills:** This file states DSPy **invariants and patterns** for this codebase. Task-specific checklists live in **project skills** (see **Rules vs project skills** in `always-rules-2-architecture.mdc`). Pack: XML structured output — skill `dspy-xml-structured-output`; pipeline layout — skill `strop-pipeline-pattern`; orchestration — skill `strop-orchestration`; debugging — skill `dspy-go-debugging`; module wiring — skill `dspy-module-patterns`; prompts — skill `dspy-prompt-engineering`. Overlays: content-pipelines job conventions — skill `strop-pipeline-pattern` (plus project `pipelines-x-*` overlay if present); phased PostGenerator — project `pipelines-x-*` XML overlay if present.
 
 ## Table of Contents
 

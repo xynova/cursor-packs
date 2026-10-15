@@ -3,14 +3,21 @@
 # project's .cursor/ using relative symlinks next to project-local overlays.
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=pack-cursor-allowlists.sh
+source "$SCRIPT_DIR/pack-cursor-allowlists.sh"
+
 usage() {
   cat <<'EOF'
-Usage: link-into-project.sh [--project PATH]
+Usage: link-into-project.sh [--project PATH] [--skip-cursor-components]
 
-  --project PATH   Consumer repo root (default: current directory).
-                   Expects PATH/.cursor/packs/shared (git submodule).
+  --project PATH              Consumer repo root (default: current directory).
+                              Expects PATH/.cursor/packs/shared (git submodule).
+  --skip-cursor-components    Skip skills/rules/personas/agents symlinks (Cursor
+                              plugin supplies discovery). Submodule still required
+                              if this script is invoked for legacy docs.
 
-Creates relative symlinks:
+Creates relative symlinks (unless --skip-cursor-components):
   .cursor/skills/<name>     -> ../packs/shared/skills/<name>
   .cursor/rules/<file>      -> ../packs/shared/rules/<file>
   .cursor/personas/<file>   -> ../packs/shared/personas/<file>
@@ -21,11 +28,16 @@ EOF
 }
 
 PROJECT="$(pwd)"
+SKIP_CURSOR_COMPONENTS=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --project)
       PROJECT="$2"
       shift 2
+      ;;
+    --skip-cursor-components)
+      SKIP_CURSOR_COMPONENTS=1
+      shift
       ;;
     -h|--help)
       usage
@@ -49,72 +61,6 @@ if [[ ! -d "$PACK" ]]; then
   echo "  git submodule add https://github.com/xynova/cursor-packs.git .cursor/packs/shared" >&2
   exit 1
 fi
-
-SKILLS=(
-  golang-quality
-  review-code-staged
-  cli-command-surface
-  dspy-go-debugging
-  dspy-module-patterns
-  dspy-pipeline-isolation
-  dspy-prompt-engineering
-  dspy-xml-structured-output
-  plan-scaffold
-  review-member-visibility
-  review-code-smells
-  setup-goreleaser
-  setup-go-binary-license
-  manage-go-releases
-  prepare-go-forge
-  setup-gitlab-runner
-  resolve-pr-merge-conflicts
-  sync-submodules-after-merge
-  install-repo-hooks
-  after-merge
-  edit-cursor-packs
-  agent-smith
-  author-ai-copilots
-  ai-readiness
-  image-to-webp
-  process-compose-docker
-  operator-config
-  explain-implementation
-  ask-polypus
-)
-RULES=(
-  golang.mdc
-  go-structured-strings.mdc
-  go-outbound-resilience.mdc
-  go-injectable-clock.mdc
-  cli-command-surface.mdc
-  dspy.mdc
-  strop.mdc
-  go-releases.mdc
-  go-binary-license.mdc
-  pr-merge-conflicts.mdc
-  sync-submodules.mdc
-  cursor-packs.mdc
-  agent-smith.mdc
-  ai-copilots.mdc
-  cursor-wired-discovery.mdc
-  ai-readiness.mdc
-  always-rules-0-ai.mdc
-  always-rules-01-human-interaction.mdc
-  image-to-webp.mdc
-  repository-boundaries.mdc
-  process-compose-docker.mdc
-  operator-config.mdc
-  explain-implementation.mdc
-  ask-polypus.mdc
-)
-PERSONAS=(
-  intent-first.persona.md
-  consultant.persona.md
-  ai-readiness.persona.md
-)
-AGENTS=(
-  plan-auditor.md
-)
 
 link_one() {
   local link_path="$1"
@@ -145,6 +91,12 @@ link_one() {
 
 echo "Project: $PROJECT"
 echo "Pack:    $PACK"
+if [[ "$SKIP_CURSOR_COMPONENTS" -eq 1 ]]; then
+  echo "Mode:    skip Cursor components (plugin discovery)"
+  echo
+  echo "Done."
+  exit 0
+fi
 echo
 
 mkdir -p "$CURSOR/skills" "$CURSOR/rules" "$CURSOR/personas" "$CURSOR/agents"
