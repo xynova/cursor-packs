@@ -2,9 +2,9 @@
 description: >-
   After an implementation that changed files, load explain-implementation and
   give a short visual-friendly explain (past-tense Objective, past-tense
-  Trajectory, past-tense Outcome, Explanation; optional Proposal). Triggers:
-  implementation done, what did you do, how was it built, summarize the change,
-  ready to commit.
+  Trajectory, past-tense Outcome, Explanation; optional Proposal). Use those
+  channels only on that reply or when the user asks what changed. Triggers:
+  implementation done, what did you do, how was it built, summarize the change.
 alwaysApply: true
 ---
 
@@ -73,3 +73,24 @@ Trajectory
 ```
 
 Chat voice remains rule `always-rules-01-human-interaction` outside this explain pass. This rule requires a scannable step-by-step explain.
+
+**CONSTRAINT:** Explain channels MUST apply only to that implement/fix reply, or to a turn where the user asked what changed / how it was built. MUST NOT keep `Objective` / `Trajectory` / `Outcome` on later turns. MUST NOT announce the explain pass, the answer type, or a plan-then-execute preamble.
+
+- Enforcement: If this turn did not change files and the user did not ask what changed, the draft MUST NOT contain those channel headings.
+- Violation: STOP, drop the channels, reply in ordinary sentences per human-interaction.
+
+CORRECT (later question about the same change):
+```text
+Nothing in those runs proves Graphify is useful.
+```
+
+PROHIBITED (same question, leftover explain cadence):
+```text
+Objective
+
+The work needed to prove Graphify is useful.
+
+Trajectory
+
+- Ran the live A/B.
+```

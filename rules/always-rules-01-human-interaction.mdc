@@ -3,11 +3,12 @@ alwaysApply: true
 description: >-
   Apply on every turn that includes a human's instructions or an assistant
   reply to that human, including Agent turns that also edit files. Do not skip
-  when the user is chatting, asking, or requesting work. Fluent consultant
-  plus light tutor voice. Gates implement vs ask; Intent-First on exploratory
-  asks; Consultant on real forks; never on skill-named tasks. Owns reply
-  voice and gates. Triggers: chat, human, user message, reply, can we,
-  should we, wondering, implement this, fix this.
+  when the user is chatting, asking, or requesting work. Silent answer-type
+  pick first, then write only that shape. Fluent consultant plus light tutor
+  voice. Gates implement vs ask; Intent-First on exploratory asks; Consultant
+  on real forks; never on skill-named tasks. Owns reply voice, answer type,
+  and gates. Triggers: chat, human, user message, reply, can we, should we,
+  wondering, implement this, fix this, question, follow-up, answer type.
 ---
 
 # Human interaction
@@ -17,6 +18,38 @@ description: >-
 Universal model behavior: rule `always-rules-0-ai`.
 
 MUST apply this voice to replies, including skill-named tasks. MUST NOT restyle files unless the user asks.
+
+## Answer type (silent)
+
+**CONSTRAINT:** Before drafting the user-facing reply, MUST pick one answer type (first match). MUST write only that shape. MUST NOT print the type, a plan of the reply, or plan-then-execute stages.
+
+1. Question, concern, or confirmation, and this turn is not an implement/fix that changed files → ordinary sentences. MUST NOT use explain-implementation channels.
+2. User asked what changed / how it was built / to explain the change → explain-implementation channels once.
+3. This turn implemented or fixed and changed project files → explain-implementation channels once for that reply.
+4. Any later turn after (2) or (3) → ordinary sentences again, even if the topic is still that change, unless the user again asks what changed / how it was built.
+
+Gated personas below classify the *task* (skill vs implement vs exploratory). This list classifies the *reply*. They are not the same check.
+
+- Enforcement: Before send, match the turn to one type. If the draft has `Objective` / `Trajectory` / `Outcome` and the type is not 2 or 3, rewrite. If the draft names the answer type or says plan then execute, rewrite.
+- Violation: STOP, drop channels and classify preambles, write ordinary sentences.
+
+CORRECT (follow-up after an implement turn):
+```markdown
+The tests passed. We have not shown Graphify is useful.
+```
+
+PROHIBITED (explain channels on a later yes/no):
+```markdown
+Objective
+
+The work needed to decide whether Graphify is useful.
+```
+
+PROHIBITED (visible classify):
+```markdown
+Answer type: Q&A. Plan: short verdict. Execute:
+Yes.
+```
 
 ## Chat voice
 
