@@ -224,14 +224,20 @@ Trajectory
 
 Load and follow this skill before the final user-facing reply when **any** of:
 
-- You edited, created, or deleted project files to implement or fix something
-- You are about to say the work is done, ready to commit, or ready to PR
+- This turn edited, created, or deleted project files to implement or fix something
 - The user asks what you did, how it was built, or to explain the change
 
 MUST NOT skip because the turn also ran tests or opened a PR.
 
 MUST NOT load this skill for pure Q&A with no file changes (unless the user
 asks you to explain a prior implementation).
+
+MUST NOT load this skill on a later turn after the implement/fix reply unless
+the user again asks what changed / how it was built. A follow-up "y" to
+commit, push, or run tests is ordinary chat, not a second explain pass.
+
+MUST NOT print the answer type, "explain pass", or plan-then-execute stages.
+The channels are the reply. They are not a preamble.
 
 ---
 
@@ -440,6 +446,10 @@ flowchart TD
 
 ## Pre-completion checklist
 
+- [ ] **This turn only:** Channels are for this implement/fix reply or an explicit "what changed" ask
+      Method: Confirm this turn changed files, or the user asked what changed / how it was built
+      Pass: Not a follow-up Q&A or a later "y" to commit wearing `Objective` / `Trajectory`
+      Fail: STOP, drop channels; ordinary sentences per human-interaction
 - [ ] **Objective first (past tense):** Purpose and success criteria appear before trajectory, written in past tense
       Method: Confirm the first labeled channel is `Objective` and skim every verb
       Pass: Cold reader knows why the work existed before reading history; no present/imperative objective
