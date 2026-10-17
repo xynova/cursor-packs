@@ -626,6 +626,41 @@ rlmCfg.TraceDir = filepath.Join(analysisDir, "rlm-traces", task)
 // Successful local run leaves no traces for the next debugging session.
 ```
 
+### Inference result checkpoints
+
+LOAD-WHEN: prefetch or batch-then-loop, resume-before-complete artifacts, reused embeddings for attach or similar.
+
+When a later hop or a later invocation will read structured inference output, persist it as a keyed checkpoint. C16 dumps are for operators; they are not the skip-on-rerun index.
+
+- MUST key by item identity plus model id(s) plus prompt or contract version.
+- MUST Put after each successful parse, before the next unpaid chunk, on the store owner goroutine when the DB is single-writer.
+- MUST Get on start; skip inference on fingerprint hit; return Put errors (C6).
+- MUST NOT keep the only copy in a process map.
+- MUST NOT use TraceDir or tmp JSON as the reuse store.
+
+CORRECT:
+```go
+for _, chunk := range chunks {
+    unpaid := skipCheckpointHits(ctx, store, chunk, fp)
+    lines := inferParallel(ctx, unpaid)
+    for id, parsed := range parseLines(lines) {
+        if err := store.PutInferenceCheckpoint(ctx, id, fp, parsed); err != nil {
+            return err
+        }
+    }
+}
+```
+
+PROHIBITED:
+```go
+cache := map[string]Parsed{}
+for _, chunk := range chunks {
+    for id, raw := range inferParallel(ctx, chunk) {
+        cache[id] = parse(raw)
+    }
+}
+```
+
 ### AI module isolation (generators and evaluators)
 
 When changing a dspy-go generator or evaluator in a pipeline, isolate that step before rejoining JobRunner. Full detail: skill `dspy-pipeline-isolation` (golang-quality C17).

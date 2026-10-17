@@ -40,6 +40,7 @@ RULES=(
   go-structured-strings.mdc
   go-outbound-resilience.mdc
   go-injectable-clock.mdc
+  go-inference-checkpoints.mdc
   cli-command-surface.mdc
   dspy.mdc
   strop.mdc

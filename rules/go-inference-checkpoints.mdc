@@ -1,0 +1,59 @@
+---
+description: >-
+  Durable inference checkpoints for reused LLM hops — no process-map-only
+  prefetch caches. Apply when changing Go that fills a map from Chat, Generate,
+  or Embed and a later loop or rerun reads it. Triggers: inference checkpoint,
+  prefetch cache, skip on rerun, expensive LLM, resume without re-chat,
+  fingerprint, durable inference result.
+globs: "**/*.go"
+alwaysApply: false
+---
+
+# Go inference checkpoints (cursor-packs)
+
+**Moral:** Paid inference hops that a later step will read MUST survive process and timer death. A process map alone is not a checkpoint.
+
+When generating, completing, or fixing Go that fills a map from Chat, Generate, or Embed and a later loop or a later invocation reads it:
+
+1. Load skill `golang-quality` **CONSTRAINT 28** (Inference result checkpoints) and follow it.
+2. Persist after each successful parse, before the next unpaid batch chunk, on the store owner goroutine when the DB is single-writer.
+3. Staged review **Stage 5** MUST apply C28 when those paths are in scope (see `review-code-staged`).
+
+## Hard constraints
+
+**CONSTRAINT:** Reused inference output MUST be persisted as a keyed checkpoint (item identity plus model id(s) plus prompt or contract version). MUST load on start and skip the hop on fingerprint match. An in-memory map MAY be a read-through of the store, not the only copy.
+
+- Enforcement: Grep prefetch or batch-then-loop paths for map assignment from inference with no store Put before the next chunk; confirm Get with fingerprint on the consume path.
+- Violation: STOP, add Put after each successful parse and Get before infer, re-check.
+
+**CONSTRAINT:** MUST write the checkpoint after each successful parse and before starting the next unpaid chunk. MUST return checkpoint write errors (golang-quality C6). MUST NOT flush only at job end.
+
+- Enforcement: Trace the loop; Put must appear inside the per-chunk result handling, not only after the outer loop.
+- Violation: STOP, move Put into per-chunk handling, re-check.
+
+**CONSTRAINT:** MUST NOT treat C16 dump files (TraceDir, runreport, failure JSON) as the reuse store. MUST NOT reuse a row when the fingerprint does not match.
+
+CORRECT:
+```go
+for _, chunk := range chunks {
+    unpaid := skipCheckpointHits(ctx, store, chunk, fp)
+    lines := inferParallel(ctx, unpaid)
+    for id, parsed := range parseLines(lines) {
+        if err := store.PutInferenceCheckpoint(ctx, id, fp, parsed); err != nil {
+            return err
+        }
+    }
+}
+```
+
+PROHIBITED:
+```go
+cache := map[string]Parsed{}
+for _, chunk := range chunks {
+    for id, raw := range inferParallel(ctx, chunk) {
+        cache[id] = parse(raw)
+    }
+}
+```
+
+MUST NOT dump the full skill body into chat replies.
