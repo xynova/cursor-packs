@@ -600,13 +600,51 @@ func Run(args []string) int {
 }
 ```
 
+**CONSTRAINT 28 — Inference result checkpoints.** When an inference hop's structured output is reused later in the same job or a later invocation (prefetch or batch maps consumed by a later loop, resume-before-complete artifacts, embeddings reused for attach or similar), that output MUST be persisted as a keyed checkpoint before the next unpaid chunk or the next hop that depends on it. Load on start; skip the hop on fingerprint match. An in-memory map MAY be a read-through of the store, not the only copy.
+
+- MUST: key the row by item identity plus model id(s) plus prompt or contract version (fingerprint).
+- MUST: persist after each successful parse, before the next unpaid batch chunk.
+- MUST: return checkpoint write errors (C6).
+- MUST NOT: keep the only copy in a process map that dies with ctx or process exit.
+- MUST NOT: treat C16 dump files (TraceDir, runreport, failure JSON) as the reuse store.
+- MUST NOT: reuse a checkpoint when the fingerprint does not match.
+- Out of scope: one-shot hops with no later reader; test fakes; CPU-only work after a paid hop already checkpointed.
+
+See [reference-patterns.md](reference-patterns.md#inference-result-checkpoints) and review appendix pattern 23. Standing Cursor rule: `go-inference-checkpoints`.
+
+Enforcement: Stage 5 greps new or changed LLM prefetch or batch-then-loop paths for a map filled from Chat, Generate, or Embed with no store Put before the next chunk or before return; confirm Get plus fingerprint on the consume path; confirm dumps (C16) are not the only persistence.
+Violation: STOP, add a keyed store write after each successful parse, load on start, skip on fingerprint hit, re-check.
+
+CORRECT:
+```go
+for _, chunk := range chunks {
+    unpaid := skipCheckpointHits(ctx, store, chunk, fp)
+    lines := inferParallel(ctx, unpaid)
+    for id, parsed := range parseLines(lines) {
+        if err := store.PutInferenceCheckpoint(ctx, id, fp, parsed); err != nil {
+            return err
+        }
+    }
+}
+```
+
+PROHIBITED:
+```go
+cache := map[string]Parsed{}
+for _, chunk := range chunks {
+    for id, raw := range inferParallel(ctx, chunk) {
+        cache[id] = parse(raw)
+    }
+}
+```
+
 ---
 
 ## Steps
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
-2. **Implement** — Apply all 27 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated and outbound deadlines fail closed (C8)? logger injected? clock injected for durable stamps (C25)? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If `go.mod` / Makefile / `.golangci.yml` are in scope: lint and format use `go tool` pins and v2 golangci config with gocognit/gosec/godot (C11)? If a Makefile exists or was edited: `make` lists local-dev verbs only (C20), binaries emit required artifacts with no Make glue verb (C20a), and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? Embedded SQLite uses modernc, not mattn/CGO (C26)? CLI changes use Cobra, not custom argv dispatch (C27)? PASS or fix.
+2. **Implement** — Apply all 28 constraints during generation. First param on I/O functions: `ctx context.Context`.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated and outbound deadlines fail closed (C8)? logger injected? clock injected for durable stamps (C25)? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If `go.mod` / Makefile / `.golangci.yml` are in scope: lint and format use `go tool` pins and v2 golangci config with gocognit/gosec/godot (C11)? If a Makefile exists or was edited: `make` lists local-dev verbs only (C20), binaries emit required artifacts with no Make glue verb (C20a), and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? Embedded SQLite uses modernc, not mattn/CGO (C26)? CLI changes use Cobra, not custom argv dispatch (C27)? Reused inference checkpoints persisted keyed with fingerprint skip (C28)? PASS or fix.
 4. **Run quality gates** on changed packages through the operator runner (C11):
 
 ```bash

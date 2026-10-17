@@ -269,3 +269,23 @@ Detect (Stage 5 **CI Quality**):
 - Missing `GIT_DEPTH: "0"` / `fetch-depth: 0` on the auto-patch job.
 
 Related: rule `go-releases`; `manage-go-releases/reference.md`; appendix pattern 22; setup-goreleaser reference inline fragment.
+
+---
+
+## 23. Memory-only inference cache (reused hops unpaid twice)
+
+Inference that a later hop or later run will consume MUST land in a keyed store as soon as it parses. A process map dies with the job timer and the next invocation pays again.
+
+WRONG: fill `map[id]parsed` from parallel Chat, Generate, or Embed; persist nothing until a later Complete step; cancel or timeout leaves zero durable rows.
+
+RIGHT: after each successful parse (after each parallel chunk wait), Put keyed by item plus model ids plus prompt version; Get at start; skip inference on hit; Put errors return (C6).
+
+Detect (Stage 5 / C28):
+
+- New or changed prefetch or RunChatLines / Generate / Embed loops that write only to a struct field map.
+- Consume path reads the map with no Get from a store.
+- Checkpoint write only after the entire item list finishes.
+- Comment or log that cache is in memory for this run.
+- Using TraceDir or tmp JSON dumps as the skip index.
+
+Related: rule `go-inference-checkpoints`; golang-quality CONSTRAINT 28; Stage 5 Generation Gates checklist (C28).
