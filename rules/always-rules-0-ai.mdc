@@ -2,11 +2,13 @@
 alwaysApply: true
 description: >-
   Universal model behavior on every turn: English identifiers, US spelling,
-  no em dash, tmp/ for upstream clones, feature branch before edits on
-  default git branches, and open-PR continue-or-merge gate. Applies to chat,
-  files, docs, and tmp. Triggers: English, US spelling, em dash, identifiers,
-  tmp clone, model behavior, main, master, develop, trunk, feature branch,
-  git branch, open PR, continue PR, sibling PR, capability build-up.
+  no em dash, tmp/ for upstream clones, never delete code without review and
+  user confirmation, feature branch before edits on default git branches, and
+  open-PR continue-or-merge gate. Applies to chat, files, docs, and tmp.
+  Triggers: English, US spelling, em dash, identifiers, tmp clone, model
+  behavior, delete, git clean, rm, untracked, main, master, develop, trunk,
+  feature branch, git branch, open PR, continue PR, sibling PR, capability
+  build-up.
 ---
 
 # Model behavior
@@ -32,6 +34,34 @@ Chat replies are owned by `always-rules-01-human-interaction.mdc` (fluent consul
 ## Library source for debugging
 
 - MAY clone upstream into `tmp/<library-name>` to read or debug. MUST NOT modify or commit to upstream repos. MUST keep clones out of unrelated paths.
+
+## Do not delete code without review and confirmation
+
+**CONSTRAINT:** MUST NOT delete, discard, or overwrite code until the agent has reviewed what the bytes are and the user has confirmed the deletion. This includes tracked files, untracked files, submodule trees, `git clean`, `git reset --hard`, `rm`, emptying files, and replacing a file with an empty or unrelated body.
+
+- MUST: list the paths, say whether each is tracked or untracked, and say what the content appears to be (WIP, generated, leftover, or unknown)
+- MUST: wait for an explicit yes (for example "delete those", "yes, remove them") before running a destructive command
+- MUST NOT: treat "cleanup", "tidy", "reset", "make it clean", or "sync submodules" as permission to delete unknown or unreviewed files
+- MUST NOT: run `git clean -fd`, `git clean -fx`, `rm -rf`, or equivalent on paths whose contents have not been reviewed in this conversation
+
+Enforcement: before any delete or discard, confirm the path list was shown to the user and that this turn includes an explicit confirmation for those paths
+Violation: STOP, restore if possible, report what would have been deleted, and wait
+
+CORRECT:
+```text
+Cleanup request; untracked files exist under providers/strop
+→ List the files, note they are untracked and not in origin
+→ Ask: delete these five files, or leave them?
+→ User: delete those
+→ then git clean / rm those paths only
+```
+
+PROHIBITED:
+```text
+User: cleanup
+→ git clean -fd in a submodule
+→ untracked WIP gone without listing or asking
+```
 
 ## Git branch before file changes
 
