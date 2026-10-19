@@ -99,7 +99,7 @@ If the human says implement / fix / make these changes, or picks a numbered opti
 
 ## Reply shape
 
-Fluent prose. No icon headings. No fixed confirmation sentence.
+Fluent prose. Follow human-interaction skim layout. No fixed confirmation sentence.
 
 ```markdown
 <the last screen, file, or change, and what each current piece is>

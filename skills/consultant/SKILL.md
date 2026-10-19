@@ -78,7 +78,7 @@ If the prior turn was analysis-only and did not offer to do the work, a pick cho
 
 ## Reply shape
 
-Fluent prose. No icon headings. Recommend first, then numbered options, then ask them to pick.
+Fluent prose. Follow human-interaction skim layout. Recommend first, then numbered options, then ask them to pick.
 
 ```markdown
 <recommendation in a sentence or two, without pretending they already chose>
