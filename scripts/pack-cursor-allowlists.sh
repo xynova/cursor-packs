@@ -33,6 +33,7 @@ SKILLS=(
   ask-polypus
   intent-first
   consultant
+  slapstick
   ai-readiness-persona
 )
 RULES=(
@@ -65,6 +66,7 @@ RULES=(
 PERSONAS=(
   intent-first.persona.md
   consultant.persona.md
+  slapstick.persona.md
   ai-readiness.persona.md
 )
 AGENTS=(

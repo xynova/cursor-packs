@@ -26,6 +26,14 @@ PROHIBITED:
 
 ---
 
+## Candidate gate
+
+See [gates.md](gates.md). Minimum slots: `Candidate`, gate condition with quoted evidence, `Decision` (max 3 outcomes), consequence fields filled before writing.
+
+Use this when a step is "for each X, decide Y" or "only include X if Z". MUST NOT leave that as a prose rule.
+
+---
+
 ## Binary checklist item
 
 ```markdown

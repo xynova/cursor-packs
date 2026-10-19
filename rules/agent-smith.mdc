@@ -6,11 +6,14 @@ description: >-
 globs:
   - skills/**/SKILL.md
   - skills/**/reference.md
+  - skills/**/gates.md
   - rules/**/*.mdc
   - .cursor/skills/**/SKILL.md
   - .cursor/skills/**/reference.md
+  - .cursor/skills/**/gates.md
   - .cursor/rules/**/*.mdc
   - "**/.cursor/packs/shared/skills/**/SKILL.md"
+  - "**/.cursor/packs/shared/skills/**/gates.md"
   - "**/.cursor/packs/shared/rules/**/*.mdc"
 alwaysApply: false
 ---
@@ -18,5 +21,7 @@ alwaysApply: false
 # Agent Smith (Cursor)
 
 - When creating or reviewing Cursor skills/rules, MUST load skill `agent-smith` and run its pre-completion verification.
+- MUST pass that skill's Intent gate before writing a new skill or rule file.
+- When a draft step is "for each X, decide Y" or "only include X if Z", MUST apply `skills/agent-smith/gates.md`.
 - MUST NOT paste Copilot League `.agent.md` files into cursor-packs unchanged.
 - If the target is pack-owned (repo-root `skills/` / `rules/` or symlink into `packs/shared`), MUST also follow skill `edit-cursor-packs`.

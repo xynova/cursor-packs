@@ -17,8 +17,10 @@ over paragraphs. Numbered steps MUST read like readable **pseudocode**
 (behavior, decisions, skips), not like a narrative.
 
 **Voice:** Still follow rule `always-rules-01-human-interaction`
-for the rest of the turn (no icon-prefixed reply headings). For this explain
-pass only, MUST prefer scannable structure over fluent multi-sentence prose.
+for the rest of the turn. Channel headings (`Objective`, `Trajectory`,
+`Outcome`, `Explanation`, `Proposal`) keep their names with no icons. For this
+explain pass only, MUST prefer scannable structure over fluent multi-sentence
+prose. If the reply asks a question, MUST put it last under `### Question`.
 
 ---
 
@@ -265,8 +267,8 @@ The channels are the reply. They are not a preamble.
   `Explanation` or `Proposal`.
 - MUST: write `Outcome` in past tense as what landed, not as present-tense
   “what is different now.”
-- MUST: default `Explanation` to numbered pseudocode steps; use a diagram when
-  it makes the path clearer.
+- MUST: default `Explanation` to numbered pseudocode steps; MUST include a
+  diagram when the human asked about a flow or the path is muddy.
 - MUST: keep the explain scannable in a few seconds.
 - MUST: keep each step concrete enough that a cold reader knows what happens without decoding jargon (split packed phrases into two steps when needed).
 - MUST: use **`ON <moment>:`** for always-on wiring or when a call runs (construction, each request, each turn). That names *when*, not a branch.
