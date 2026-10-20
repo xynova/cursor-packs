@@ -27,6 +27,46 @@ if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 - MUST call `defer resp.Body.Close()` on the line immediately after the error check.
 - NEVER read `resp.Body` without a preceding defer close.
 
+### Owned resource dispose
+
+LOAD-WHEN: process-owned listeners, servers, pools, or workers; `cmd/` `ListenAndServe`; Stage 5 / golang-quality CONSTRAINT 29.
+
+A resource this code opens, starts, or binds MUST be disposed on the owner’s exit path. Kernel process reap is not dispose. Request-scoped bodies, cancel funcs, and transactions remain C1–C3.
+
+CORRECT:
+```go
+srv := &http.Server{Addr: addr, Handler: handler}
+go func() {
+    if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+        log.Fatal(err)
+    }
+}()
+sigCh := make(chan os.Signal, 1)
+signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+<-sigCh
+ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+defer cancel()
+if err := srv.Shutdown(ctx); err != nil {
+    log.Printf("api: shutdown: %v", err)
+}
+_ = db.Close()
+workerCancel()
+```
+
+PROHIBITED:
+```go
+if err := http.ListenAndServe(addr, handler); err != nil {
+    log.Fatal(err)
+}
+```
+
+- MUST: pair acquire with Close / Shutdown / GracefulStop / Stop / cancel on the owner path.
+- MUST: dispose process-owned HTTP/gRPC servers, listeners, DB pools, and workers on SIGINT/SIGTERM.
+- MUST: treat `http.ErrServerClosed` as success after Shutdown.
+- MUST NOT: package-level `ListenAndServe` / `ListenAndServeTLS` as the process serve path.
+- MUST NOT: leave ports, fds, or workers live until the kernel reaps the PID.
+- Out of scope: `httptest.Server`; one-shot ListenAndServe in tests; caller-owned handles.
+
 ### Context with timeout
 
 ```go

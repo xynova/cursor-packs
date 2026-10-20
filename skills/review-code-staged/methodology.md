@@ -66,7 +66,7 @@ Which stages? (numbers, ranges, or 'all')
 | 2 | Type Safety | `any` / `interface{}`, type assertions, nil before dereference |
 | 3 | Error Handling | typed wrap-chain, `_ =`, log-without-return, persistence, DB fallback |
 | 4 | Code Clarity | naming, godot periods, structured logs, over-export |
-| 5 | Generation Gates | `golang-quality` constraints 1–28 (templates, OTEL, durable AI dumps, inference checkpoints, resources, layering, config create, package layout, format/lint `go.mod` tool + `.golangci.yml` C11, local-dev Task `desc`/`summary`/footer or Makefile help + shared verbs, outbound failsafe-go resilience, HTTP/CLI service-layer error mapping, numbered SQL migrations, injectable clocks, embedded SQLite, Go Cobra CLIs); `go-structured-strings` for report builders; **CI Quality** add-on (`manage-go-releases` when release/auto-patch CI in scope). External Uber / Code Review Comments are citations only. |
+| 5 | Generation Gates | `golang-quality` constraints 1–29 (templates, OTEL, durable AI dumps, inference checkpoints, owned-resource dispose / HTTP SIGTERM shutdown, resources, layering, config create, package layout, format/lint `go.mod` tool + `.golangci.yml` C11, local-dev Task `desc`/`summary`/footer or Makefile help + shared verbs, outbound failsafe-go resilience, HTTP/CLI service-layer error mapping, numbered SQL migrations, injectable clocks, embedded SQLite, Go Cobra CLIs); `go-structured-strings` for report builders; **CI Quality** add-on (`manage-go-releases` when release/auto-patch CI in scope). External Uber / Code Review Comments are citations only. |
 
 AI finds issues, reports them with code pairs in the plan file. No user input required mid-stage or between mechanical stages.
 
@@ -205,7 +205,7 @@ Clarity only. Templates, resource defers, CLI→service→client layering, and p
 
 ## Stage 5: Generation Gates — Detect
 
-Same MUSTS as write-time Go generation. MUST Read skill `golang-quality` **Core constraints** (1–28) and apply them as a checklist against the review target. For multi-section markdown, reports, TOC, or similar human layout builders, also Read and apply rule `go-structured-strings`. Go Code Review Comments and Uber Go Style Guide are the external taste baseline cited in `golang-quality`; MUST NOT invent Stage 5 findings from those guides unless they map to a Core constraint.
+Same MUSTS as write-time Go generation. MUST Read skill `golang-quality` **Core constraints** (1–29) and apply them as a checklist against the review target. For multi-section markdown, reports, TOC, or similar human layout builders, also Read and apply rule `go-structured-strings`. Go Code Review Comments and Uber Go Style Guide are the external taste baseline cited in `golang-quality`; MUST NOT invent Stage 5 findings from those guides unless they map to a Core constraint.
 
 ### CLI command surface (when a binary / CLI entrypoint is in scope)
 
@@ -224,7 +224,7 @@ When the review target includes a command-line runner (`cmd/`, daemon `main`, CL
 ### Ownership vs Stage 3
 
 - **Stage 3** keeps error-handling depth (typed wrap-chain, `_ =`, log-without-return, persistence, named returns, DB fallback).
-- **Stage 5** owns generation-specific gates Stage 3 does not cover: C1–3 (HTTP/cancel/txn defers), C7–28 (nil, ctx, unused/N+1, layering, format/godot overlap, interfaces, templates, structured logging, OTEL, durable AI dumps, inference checkpoints, AI module isolation, config create, package layout, Makefile verbs, outbound failsafe-go resilience, HTTP/CLI service-layer error mapping, numbered SQL migrations, injectable clocks, embedded SQLite, Cobra CLIs).
+- **Stage 5** owns generation-specific gates Stage 3 does not cover: C1–3 (HTTP/cancel/txn defers), C7–29 (nil, ctx, unused/N+1, layering, format/godot overlap, interfaces, templates, structured logging, OTEL, durable AI dumps, inference checkpoints, AI module isolation, config create, package layout, Makefile verbs, outbound failsafe-go resilience, HTTP/CLI service-layer error mapping, numbered SQL migrations, injectable clocks, embedded SQLite, Cobra CLIs, owned-resource dispose).
 - Apply **C4** and **C6** in Stage 5 **only when Stage 3 was not selected** for this review. If Stage 3 already ran, do not duplicate those findings under Stage 5.
 
 ### Checklist (map to golang-quality)
@@ -255,8 +255,9 @@ When the review target includes a command-line runner (`cmd/`, daemon `main`, CL
 - [ ] C26: embedded SQLite uses `modernc.org/sqlite`; no new `mattn/go-sqlite3` or CGO-for-SQLite hooks — see golang-quality C26
 - [ ] C27: Go operator CLIs use `spf13/cobra`; MUST NOT add or extend hand-rolled `switch args` / custom argv routers — see golang-quality C27 and skill `cli-command-surface` constraint 6
 - [ ] C28: reused inference (prefetch/batch maps, resume artifacts, reused embeddings) persisted keyed plus fingerprint skip; not process-map-only; C16 dumps are not the skip store; MUST Read rule `go-inference-checkpoints` when those paths are in scope; see appendix pattern 23
+- [ ] C29: owned resources have matching Close/Shutdown/Stop/cancel; process-owned HTTP uses `http.Server` + SIGINT/SIGTERM + `Shutdown`; flag package-level `http.ListenAndServe(` / `ListenAndServeTLS(` in `cmd/` without nearby Shutdown; flag `sql.Open` / `grpc.NewServer` / `net.Listen` / process workers in `cmd/` without dispose on the signal or defer path; MUST Read rule `go-http-shutdown` when those paths are in scope; see appendix pattern 24
 
-Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pattern 15 when TraceDir / runreport / failure dumps are in scope, pattern 16 when generator/evaluator/signature diffs are in scope, pattern 17 when package paths, `cmd` mains, or `internal/` layout are in scope, pattern 18 when CLI argv / `serve` / `version` / bare-binary start paths are in scope, pattern 19 when outbound exec/HTTP or forge CLI wrappers are in scope (also Read rule `go-outbound-resilience`), pattern 20 when durable SQL schema / store publish paths are in scope, pattern 21 when durable timestamp / `CreatedAt` / manifest / cache stamp paths are in scope (also Read rule `go-injectable-clock`), pattern 22 when auto-patch / GoReleaser release CI is in scope, and pattern 23 when prefetch/resume/inference caches are in scope (also Read rule `go-inference-checkpoints`).
+Also load [appendix.md](appendix.md) pattern 14 when LLM paths are in scope, pattern 15 when TraceDir / runreport / failure dumps are in scope, pattern 16 when generator/evaluator/signature diffs are in scope, pattern 17 when package paths, `cmd` mains, or `internal/` layout are in scope, pattern 18 when CLI argv / `serve` / `version` / bare-binary start paths are in scope, pattern 19 when outbound exec/HTTP or forge CLI wrappers are in scope (also Read rule `go-outbound-resilience`), pattern 20 when durable SQL schema / store publish paths are in scope, pattern 21 when durable timestamp / `CreatedAt` / manifest / cache stamp paths are in scope (also Read rule `go-injectable-clock`), pattern 22 when auto-patch / GoReleaser release CI is in scope, pattern 23 when prefetch/resume/inference caches are in scope (also Read rule `go-inference-checkpoints`), and pattern 24 when `cmd/` HTTP `ListenAndServe` or other process-owned start/open paths are in scope (also Read rule `go-http-shutdown`).
 
 ### CI Quality (when release CI in scope)
 

@@ -8,7 +8,8 @@ description: >-
   Taskfile.yml for user-facing CLIs (go tool task), Makefile for libraries,
   portable cross-platform task recipes, go.mod tool pins (golangci-lint v2,
   gofumpt, task), shared operator verb names (build, test, serve, lint),
-  and HTTP/CLI service-layer error boundaries. Use when generating, completing,
+  HTTP/CLI service-layer error boundaries, and owned-resource dispose
+  (Close, Shutdown, SIGTERM, ListenAndServe). Use when generating, completing,
   or fixing Go code, authoring Taskfile.yml / Makefile / .golangci.yml, pinning
   go.mod tools, or before claiming a Go change is done.
 ---
@@ -61,6 +62,7 @@ Stage 5: 40 findings copied from Uber Go Style Guide sections with no map to C1�
 - Finishing a Go implementation, fix, or refactor
 - User asks to lint, format, vet, or verify Go quality
 - Staged review **Stage 5 (Generation Gates)** is running (load this skill and apply Core constraints as a detect checklist)
+- Editing process-owned resources, daemon `serve`, or `ListenAndServe` paths (C29)
 
 ---
 
@@ -638,13 +640,56 @@ for _, chunk := range chunks {
 }
 ```
 
+**CONSTRAINT 29 — Owned resources are disposed.** A resource this code opens, starts, or binds MUST be closed, shut down, stopped, or cancelled on every exit path the owner controls. Kernel process reap is NOT dispose. Request-scoped HTTP bodies, cancel funcs, and transactions remain C1–C3.
+
+- MUST: pair every successful acquire with the matching dispose (`Close`, `Shutdown`, `GracefulStop`, `Stop`, `Rollback`, or `cancel`) on the owner’s return, defer, or signal path.
+- MUST: dispose process-owned resources (HTTP/gRPC servers, `net.Listener`, DB pools, background workers, process-lifetime files or sessions) on SIGINT and SIGTERM before the process returns.
+- MUST: run process HTTP listen as `http.Server.ListenAndServe` (or `Serve` / `ListenAndServeTLS`) in a goroutine; `signal.Notify` for SIGINT and SIGTERM; `Shutdown` with `context.WithTimeout` as a fresh shutdown budget (not a request context). Treat `http.ErrServerClosed` as success after Shutdown.
+- MUST NOT: use package-level `http.ListenAndServe` or `http.ListenAndServeTLS` as the process serve path.
+- MUST NOT: leave a process-owned resource live until the kernel reaps the PID (ports, fds, workers).
+- MUST NOT: Close a caller-owned handle the callee did not acquire.
+- Out of scope: `httptest.Server`; one-shot ListenAndServe in tests.
+
+See [reference-patterns.md](reference-patterns.md#owned-resource-dispose) and review appendix pattern 24. Standing Cursor rule: `go-http-shutdown`.
+
+Enforcement: Stage 5 greps `http.ListenAndServe(` and `http.ListenAndServeTLS(` under `cmd/` (and other process mains); a hit without nearby `signal.Notify` plus `Shutdown` fails C29. When `cmd/` also starts `sql.Open`, `grpc.NewServer`, `net.Listen`, or a process worker, confirm matching `Close` / `GracefulStop` / `Stop` / cancel on the same signal or defer path. When changed functions call `os.Open` / `os.Create` / `os.OpenFile` or `Query`/`QueryContext` rows, confirm `defer Close()` after the error check (C1 still owns `resp.Body`).
+Violation: STOP, add the matching dispose on the owner’s exit path, re-check.
+
+CORRECT:
+```go
+srv := &http.Server{Addr: addr, Handler: handler}
+go func() {
+    if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+        log.Fatal(err)
+    }
+}()
+sigCh := make(chan os.Signal, 1)
+signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+<-sigCh
+ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+defer cancel()
+if err := srv.Shutdown(ctx); err != nil {
+    log.Printf("api: shutdown: %v", err)
+}
+_ = db.Close()
+workerCancel()
+```
+
+PROHIBITED:
+```go
+if err := http.ListenAndServe(addr, handler); err != nil {
+    log.Fatal(err)
+}
+// sql.Open / grpc.Serve / net.Listen with no Close, GracefulStop, or cancel on SIGTERM.
+```
+
 ---
 
 ## Steps
 
 1. **Load patterns** — Read [reference.md](reference.md) for templates.
-2. **Implement** — Apply all 28 constraints during generation. First param on I/O functions: `ctx context.Context`.
-3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated and outbound deadlines fail closed (C8)? logger injected? clock injected for durable stamps (C25)? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If `go.mod` / Makefile / `.golangci.yml` are in scope: lint and format use `go tool` pins and v2 golangci config with gocognit/gosec/godot (C11)? If a Makefile exists or was edited: `make` lists local-dev verbs only (C20), binaries emit required artifacts with no Make glue verb (C20a), and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? Embedded SQLite uses modernc, not mattn/CGO (C26)? CLI changes use Cobra, not custom argv dispatch (C27)? Reused inference checkpoints persisted keyed with fingerprint skip (C28)? PASS or fix.
+2. **Implement** — Apply all 29 constraints during generation. First param on I/O functions: `ctx context.Context`.
+3. **Self-check changed functions** — For each: resource deferred? errors wrapped and returned? context propagated and outbound deadlines fail closed (C8)? logger injected? clock injected for durable stamps (C25)? LLM path spanned? AI dumps durable? Generator/evaluator isolatable (C17)? Multi-field construction uses config create (C18)? Package layout: kit vs product kit vs app-only classified and the new file sits in `pkg/<domain>/` or `internal/<domain>/` (C19)? If `go.mod` / Makefile / `.golangci.yml` are in scope: lint and format use `go tool` pins and v2 golangci config with gocognit/gosec/godot (C11)? If a Makefile exists or was edited: `make` lists local-dev verbs only (C20), binaries emit required artifacts with no Make glue verb (C20a), and shared jobs use shared names (C21)? Outbound exec/HTTP under failsafe-go with classified retries (C22)? HTTP/CLI map service-layer errors, not leaf kit sentinels (C23)? Durable SQL uses numbered migrations applied once, not DDL on every write (C24)? Embedded SQLite uses modernc, not mattn/CGO (C26)? CLI changes use Cobra, not custom argv dispatch (C27)? Reused inference checkpoints persisted keyed with fingerprint skip (C28)? Owned resources disposed on the owner’s exit path, including SIGTERM Shutdown for process HTTP listen (C29)? PASS or fix.
 4. **Run quality gates** on changed packages through the operator runner (C11):
 
 ```bash
@@ -691,6 +736,7 @@ Do **not** require a standalone `gosec`, `gocyclo`, or `.gosec.yaml` unless the 
 - [ ] Every cancellable context has `defer cancel()`
 - [ ] Every `Begin` has `defer tx.Rollback`
 - [ ] Files and connections have matching `defer Close()`
+- [ ] Process-owned servers, listeners, pools, and workers dispose on SIGINT/SIGTERM (C29); kernel reap is not dispose
 
 ### Errors and safety
 
@@ -720,3 +766,6 @@ Do **not** require a standalone `gosec`, `gocyclo`, or `.gosec.yaml` unless the 
 - [ ] SQL migrations (C24): durable schema uses numbered up/down (or equivalent) applied once; no full DDL on every write/publish path
 - [ ] Injectable clocks (C25): durable stamps use injected `Now` / Clock; no leaf `time.Now()` on CreatedAt / manifests / cache Store*
 - [ ] Embedded SQLite (C26): `modernc.org/sqlite` + `sql.Open("sqlite", …)`; no new `mattn/go-sqlite3`; no CGO solely for SQLite; modernc pragma DSN
+- [ ] Cobra CLIs (C27): `spf13/cobra`; no new custom argv dispatch
+- [ ] Inference checkpoints (C28): reused hops persisted keyed with fingerprint skip
+- [ ] Owned resources disposed (C29): acquire has matching Close/Shutdown/Stop/cancel; process-owned resources dispose on SIGINT/SIGTERM; no package-level `ListenAndServe` in `cmd/`
