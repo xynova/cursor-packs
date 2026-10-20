@@ -289,3 +289,22 @@ Detect (Stage 5 / C28):
 - Using TraceDir or tmp JSON dumps as the skip index.
 
 Related: rule `go-inference-checkpoints`; golang-quality CONSTRAINT 28; Stage 5 Generation Gates checklist (C28).
+
+---
+
+## 24. Owned resource left until kernel reap
+
+A resource this process opened, started, or bound that has no Close, Shutdown, Stop, or cancel on the owner’s exit path stays live until the kernel reaps the PID. Package-level `http.ListenAndServe` is the usual form: SIGTERM is ignored and the next `serve` fails with bind address already in use. The same leak is a `sql.DB`, gRPC server, listener, or worker that never stops.
+
+WRONG: `if err := http.ListenAndServe(addr, handler); err != nil { log.Fatal(err) }` as the `cmd/` serve path; `sql.Open` / `grpc.Serve` / `net.Listen` with no matching dispose on SIGTERM.
+
+RIGHT: acquire paired with dispose on return, defer, or SIGINT/SIGTERM; HTTP uses `http.Server` + `Shutdown`; treat `http.ErrServerClosed` as success.
+
+Detect (Stage 5 / C29):
+
+- `http.ListenAndServe(` or `http.ListenAndServeTLS(` under `cmd/` or other process mains.
+- No nearby `signal.Notify` plus `Shutdown`.
+- `sql.Open`, `grpc.NewServer`, `net.Listen`, or a process worker in `cmd/` with no Close / GracefulStop / Stop / cancel on the signal or defer path.
+- Orchestrator `down` returns while the old PID still LISTEN on the service port.
+
+Related: rule `go-http-shutdown`; golang-quality CONSTRAINT 29; Stage 5 Generation Gates checklist (C29).

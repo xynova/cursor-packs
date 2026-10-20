@@ -42,6 +42,7 @@ RULES=(
   go-outbound-resilience.mdc
   go-injectable-clock.mdc
   go-inference-checkpoints.mdc
+  go-http-shutdown.mdc
   cli-command-surface.mdc
   dspy.mdc
   strop.mdc

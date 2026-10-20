@@ -1,0 +1,58 @@
+---
+description: >-
+  Owned resources must be disposed on the owner’s exit path. Process HTTP
+  listeners must Shutdown on SIGINT/SIGTERM so the listen port is released.
+  Apply when changing Go cmd/ daemons, ListenAndServe, sql.Open, gRPC Serve,
+  net.Listen, or process workers. Triggers: ListenAndServe, ListenAndServeTLS,
+  http.Server Shutdown, SIGTERM, SIGINT, bind address already in use, port not
+  released, Close, GracefulStop, resource leak, dispose.
+globs: "**/*.go"
+alwaysApply: false
+---
+
+# Go owned-resource dispose (cursor-packs)
+
+**Moral:** Kernel process reap is not dispose. If this code acquired the resource, this code releases it. Package-level `http.ListenAndServe` ignores SIGTERM and leaves the port bound.
+
+When generating, completing, or fixing Go that opens, starts, or binds a resource:
+
+1. Load skill `golang-quality` **CONSTRAINT 29** (Owned resources are disposed) and follow it.
+2. Pair every successful acquire with Close, Shutdown, GracefulStop, Stop, or cancel on the owner’s return, defer, or signal path.
+3. Process-owned HTTP MUST use `http.Server`, `signal.Notify` for SIGINT and SIGTERM, and bounded `Shutdown`.
+4. Staged review **Stage 5** MUST apply C29 when `cmd/` ListenAndServe or other process-owned start/open paths are in scope (see `review-code-staged`).
+
+## Hard constraints
+
+**CONSTRAINT:** A resource this code opens, starts, or binds MUST be disposed on every exit path the owner controls. Process-owned servers, listeners, DB pools, and workers MUST dispose on SIGINT and SIGTERM. Request-scoped HTTP bodies, cancel funcs, and transactions remain golang-quality C1–C3.
+
+- Enforcement: Grep `http.ListenAndServe(` and `http.ListenAndServeTLS(` under `cmd/`; confirm nearby `signal.Notify` plus `Shutdown`. When `sql.Open`, `grpc.NewServer`, `net.Listen`, or a process worker is in `cmd/`, confirm matching Close / GracefulStop / Stop / cancel.
+- Violation: STOP, add the matching dispose on the owner’s exit path, re-check.
+
+**CONSTRAINT:** MUST NOT use package-level `http.ListenAndServe` or `http.ListenAndServeTLS` as the process serve path. MUST NOT treat kernel reap as dispose. `httptest.Server` and one-shot ListenAndServe in tests are out of scope.
+
+CORRECT:
+```go
+srv := &http.Server{Addr: addr, Handler: handler}
+go func() {
+    if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+        log.Fatal(err)
+    }
+}()
+sigCh := make(chan os.Signal, 1)
+signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+<-sigCh
+ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+defer cancel()
+_ = srv.Shutdown(ctx)
+_ = db.Close()
+workerCancel()
+```
+
+PROHIBITED:
+```go
+if err := http.ListenAndServe(addr, handler); err != nil {
+    log.Fatal(err)
+}
+```
+
+MUST NOT dump the full skill body into chat replies.
