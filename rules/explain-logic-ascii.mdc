@@ -1,0 +1,48 @@
+---
+description: >-
+  When explaining how existing logic runs (order, parallel vs sequential, shared
+  timer, prefetch vs persist), load explain-logic-ascii and include a
+  self-describing ASCII TIME diagram. Triggers: explain logic, sequential,
+  parallel, deadline, pipeline, control flow, ASCII diagram, how does this run.
+alwaysApply: true
+---
+
+# Explain logic ASCII (cursor-packs)
+
+**CONSTRAINT:** When this turn explains how existing logic runs (step order,
+what runs in parallel, what waits, what a shared timer or deadline does, or
+prefetch vs durable write), MUST Read and follow skill `explain-logic-ascii`
+before the final user-facing reply.
+
+- MUST: Name the pieces in prose, then include a fenced `text` ASCII TIME
+  diagram per the skill.
+- MUST NOT: Dump the full skill body into the reply.
+- MUST NOT: Use Mermaid as the only figure when order, fan-out, or a shared
+  deadline is the point.
+- MUST NOT: Replace skill `explain-implementation` channel headings on an
+  implement/fix turn; MAY add an ASCII TIME block inside `Explanation` when
+  control flow matters.
+- MUST NOT: Fire on a yes/no with no mechanism, or when the user only asked for
+  a symbol lookup with no control-flow story.
+
+Enforcement: If the reply describes pipelines, phases, or sequential vs
+parallel behavior, confirm the skill was read and a TIME diagram is present.
+Violation: STOP, Read the skill, add the diagram, then send.
+
+CORRECT:
+
+```text
+Prefetch chats many items in parallel; classify writes one row at a time.
+Both share one job timer.
+
+[ASCII TIME diagram with Goal lines and timer-death branch]
+```
+
+PROHIBITED:
+
+```text
+Yes, essence is parallel. [Mermaid-only flowchart, no TIME axis or Goal lines]
+```
+
+Chat voice remains rule `always-rules-01-human-interaction`. This rule adds the
+ASCII TIME figure when explaining control flow.

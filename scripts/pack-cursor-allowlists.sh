@@ -30,6 +30,7 @@ SKILLS=(
   process-compose-docker
   operator-config
   explain-implementation
+  explain-logic-ascii
   ask-polypus
   intent-first
   consultant
@@ -62,6 +63,7 @@ RULES=(
   process-compose-docker.mdc
   operator-config.mdc
   explain-implementation.mdc
+  explain-logic-ascii.mdc
   ask-polypus.mdc
 )
 PERSONAS=(
