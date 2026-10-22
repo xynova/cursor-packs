@@ -1,0 +1,65 @@
+---
+description: >-
+  Context cancel releases the timer; Err after your own cancel is not the work
+  outcome. Apply when using WithTimeout, WithCancel, or WithDeadline and when
+  stamping timeout, incomplete, or failure from context state.
+globs: "**/*.go"
+alwaysApply: false
+---
+
+# Go context cancel vs outcome (cursor-packs)
+
+**Moral:** `cancel()` disposes the timer. It is not proof the job failed. Outcome comes from the work error or from `ctx.Err()` before you cancel.
+
+When generating, completing, or fixing Go that creates a cancellable context and records timeout, incomplete, or failure:
+
+1. Load skill `golang-quality` **CONSTRAINT 2** (Context cancel) and follow it.
+2. Staged review **Stage 5** MUST apply C2 when `WithTimeout` / `WithCancel` / `WithDeadline` is in scope (see `review-code-staged`).
+
+## Hard constraints
+
+**CONSTRAINT:** Every `WithTimeout` / `WithCancel` / `WithDeadline` MUST register `defer cancel()` on the next line so the timer is released when the function returns.
+
+- Enforcement: Grep changed functions for `WithTimeout` without `defer cancel()` on the following line; for loops, confirm an inner function owns `defer cancel()` per iteration.
+- Violation: STOP, add `defer cancel()` or move the budget into an inner function, re-check.
+
+**CONSTRAINT:** MUST decide timeout, incomplete, or failure from the work `error`, or from `ctx.Err()` **before** this function calls `cancel()`. MUST NOT assign `ctx.Err()` to a job outcome field after calling `cancel()` on that same context.
+
+- Enforcement: Grep for `cancel()` followed by `ctx.Err()` or `Err()` copied into incomplete/timeout/failure fields on the same context.
+- Violation: STOP, snapshot `ctx.Err()` before return (while defer still pending), or use the work `error` with `errors.Is(err, context.DeadlineExceeded)`, re-check.
+
+**CONSTRAINT:** A `for` loop over jobs MUST NOT stack `defer cancel()` on the outer function. Use an inner function (or helper) per iteration with `defer cancel()`.
+
+**CONSTRAINT:** This rule is not CONSTRAINT 8 (nil context, outbound deadline fail-closed). Do not weaken C8 when fixing C2.
+
+CORRECT:
+```go
+func runSlice(parent context.Context) (Result, error) {
+    return func() (Result, error) {
+        ctx, cancel := context.WithTimeout(parent, budget)
+        defer cancel()
+        out, err := work(ctx)
+        if err != nil {
+            return Result{}, err
+        }
+        out.IncompleteNote = contextIncomplete(ctx) // snapshot before defer cancel
+        return out, nil
+    }()
+}
+
+func contextIncomplete(ctx context.Context) string {
+    if ctx == nil || ctx.Err() == nil {
+        return ""
+    }
+    return ctx.Err().Error()
+}
+```
+
+PROHIBITED:
+```go
+out, err := work(ctx)
+cancel()
+if ctx.Err() != nil {
+    out.IncompleteNote = ctx.Err().Error() // cleanup cancel, not work failure
+}
+```
