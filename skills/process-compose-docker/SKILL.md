@@ -23,6 +23,14 @@ Load when authoring or changing process-compose launchers that start Docker cont
 - `make serve` / `make serve-down` for a multi-namespace process-compose project
 - Serve hangs with no output after the up script starts (classic stuck `docker info`)
 - Down scripts, compose stop targets, or volume cleanup discussions
+- `Taskfile.yml` `serve` / `serve-down`, `scripts/serve-up.sh`, or serve hangs while process-compose shows Running with HEALTH `-` and no listener
+
+## Applicability gate
+
+**CONSTRAINT:** Prebuild and HTTP readiness constraints below apply only when the repository has `process-compose.yaml` or `scripts/pc-up.sh` AND exposes `serve` / `serve-down` (Taskfile or Makefile). MUST NOT apply them to library Makefiles that define `serve` unused, or Taskfiles without a process-compose stack.
+
+- Enforcement: Confirm both compose (or pc-up) and serve verbs exist before editing serve scripts
+- Violation: STOP, skip prebuild rules for that repo
 
 ## Core constraints
 
@@ -139,6 +147,73 @@ services:
     image: arizephoenix/phoenix:latest
 ```
 
+**CONSTRAINT:** When the applicability gate passes, each Go process-compose service MUST be compiled to a named binary before `process-compose up` (in the up script or the first `serve` task command). The process-compose command MUST `exec` that binary to listen. MUST NOT use `go run` or `wgo run` as the first listen process.
+
+- MUST: run `go build -o` (or equivalent) into a stable path (for example `tmp/my-daemon`) before the TUI starts
+- MUST: watchers (`wgo`, `air`, and similar) MAY rebuild the same `-o` path then re-exec; first start MUST skip rebuild when the binary is newer than watched sources
+- MUST NOT: block readiness on `go tool link` inside the supervised process tree
+- Enforcement: `rg 'go run|wgo run' process-compose.yaml scripts/serve*.sh`; listen path is `exec` of a prebuilt binary
+- Violation: STOP, add serve-build script + exec wrapper, re-verify
+
+CORRECT:
+```bash
+# serve-up.sh (before process-compose up)
+./scripts/serve-build-api.sh   # go build -o tmp/api ./cmd
+
+# process-compose.yaml
+command: ./scripts/serve-process.sh ./scripts/serve-api.sh
+# serve-api.sh ends with: exec "${root}/tmp/api" serve
+```
+
+PROHIBITED:
+```yaml
+command: go tool wgo run ./cmd/my-daemon
+# TUI shows Running while go tool link runs; HEALTH stays -
+```
+
+**CONSTRAINT:** When a watcher rebuilds a process-compose service, it MUST start from the narrowest directory containing the watched source, then add only the other source roots required by that service. MUST NOT start the watcher from a repository root that contains unrelated content, generated output, vendored trees, or workspace artifacts. MUST verify whether watcher flags restrict the root or add another root before relying on them.
+
+- MUST: use the watcher's working-directory option or `cd` into the primary source directory before starting it
+- MUST: use explicit additional roots for source directories outside that working directory
+- MUST: watch only relevant source suffixes (`.go`, `.templ`, or the equivalent)
+- MUST NOT: treat `-dir` or `-root` as an exclusion mechanism without checking the watcher's documented semantics and startup output
+- Enforcement: inspect the watcher command and startup output; confirm it does not enumerate unrelated repository trees before the first service exec
+- Violation: STOP, narrow the working directory and explicit roots, re-verify startup
+
+CORRECT:
+```bash
+cd cmd/my-daemon
+exec wgo -file .go -root internal/my-daemon ./scripts/serve-inner.sh
+```
+
+PROHIBITED:
+```bash
+cd .
+exec wgo -file .go ./scripts/serve-inner.sh
+# Watches content/, tmp/, and unrelated workspace trees before listening
+```
+
+**CONSTRAINT:** When the applicability gate passes, every HTTP listen process in process-compose MUST expose a cheap readiness URL (no auth, no template render, no DB when avoidable) and MUST set `readiness_probe` to `curl -sf` that URL. Non-Go HTTP binaries (for example a static site server) skip compile and still get a probe.
+
+- MUST: mirror probe timing (`initial_delay_seconds`, `period_seconds`, `timeout_seconds`) across services in the same stack
+- MUST NOT: rely on TUI Running alone; `-` HEALTH is not proof the port is listening
+- Enforcement: count `readiness_probe` blocks vs HTTP processes in `process-compose.yaml`
+- Violation: STOP, add `/readyz` or `/health` handler and probe, re-verify
+
+CORRECT:
+```yaml
+readiness_probe:
+  exec:
+    command: curl -sf http://127.0.0.1:8080/readyz
+  initial_delay_seconds: 2
+  period_seconds: 2
+```
+
+PROHIBITED:
+```yaml
+# HTTP API process with no readiness_probe — HEALTH never becomes Ready
+```
+
 ## Steps
 
 1. **Classify namespaces** — list which process-compose namespaces need Docker vs host-only binaries.
@@ -169,3 +244,15 @@ services:
       Method: Read compose `volumes:` for each data mount
       Pass: Named volumes present for durable paths
       Fail: STOP, add volumes or get explicit ephemeral approval
+- [ ] **Go prebuild:** Go services build before `process-compose up` and exec the binary
+      Method: `rg -n 'go run|wgo run' process-compose.yaml scripts/serve*.sh` when gate applies
+      Pass: No listen-process `go run` / `wgo run`; `serve-build` + `exec` present
+      Fail: STOP, add prebuild script and exec wrapper
+- [ ] **Watcher root:** File watchers start from narrow source roots
+      Method: Read the watcher command and its startup watch list
+      Pass: No unrelated content, generated, vendor, or workspace trees are enumerated before the first service exec
+      Fail: STOP, narrow the watcher working directory and explicit additional roots
+- [ ] **HTTP readiness_probe:** Every HTTP process has `readiness_probe`
+      Method: Count HTTP processes vs `readiness_probe` in `process-compose.yaml`
+      Pass: Each HTTP row has a probe URL that matches listen address
+      Fail: STOP, add handler and probe
