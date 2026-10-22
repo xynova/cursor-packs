@@ -1,0 +1,3 @@
+# Fleet hooks from cursor-packs (see lefthook/README.md)
+extends:
+  - ./lefthook/lefthook-packs-root.yml
