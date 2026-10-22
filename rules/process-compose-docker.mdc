@@ -5,7 +5,7 @@ description: >-
   verbs are serve/serve-down (golang-quality C21). Load skill
   process-compose-docker. Triggers: process-compose, pc-up, pc-down,
   docker compose, serve-down, Phoenix, HyperDX, named volumes.
-globs: "**/process-compose*.{yaml,yml},**/pc-up.sh,**/pc-down.sh,**/docker-compose*.{yml,yaml},**/Makefile"
+globs: "**/process-compose*.{yaml,yml},**/pc-up.sh,**/pc-down.sh,**/docker-compose*.{yml,yaml},**/Makefile,**/Taskfile.yml,**/scripts/serve*.sh,**/scripts/pc-up.sh"
 alwaysApply: false
 ---
 
@@ -20,9 +20,11 @@ alwaysApply: false
 - Ask before continuing without those containers when the probe fails on a TTY
 - Stop stacks without `-v` / `--volumes` / `docker volume rm` on the default down path
 - Keep durable sidecar state on named volumes
+- When the repo has `process-compose.yaml` or `scripts/pc-up.sh` plus `serve` / `serve-down`: prebuild Go services to a named binary before `process-compose up`, exec that binary to listen, set `readiness_probe` on HTTP processes (see skill `process-compose-docker`)
 
 ## MUST NOT
 
 - Bare unbounded `docker info` in up scripts
 - Silent skip of Docker namespaces on an interactive TTY
 - Wipe volumes as part of normal `serve-down` / `process-compose down` / `docker compose down`
+- Use `go run` or `wgo run` as the first listen process for Go services in process-compose (readiness must not wait on `go tool link`)

@@ -1075,7 +1075,7 @@ LOAD-WHEN: choosing Taskfile task names or Makefile target names; Stage 5 / gola
 | `format` | `go tool gofumpt` |
 | `ci` | tidy + gofmt + vet + race tests + build |
 | `init` | Create `~/.config/<app>/...` config if missing |
-| `serve` | Long-running process-compose local stack |
+| `serve` | Long-running process-compose local stack (prebuild Go binaries then exec; see process-compose-docker) |
 | `serve-down` | Stop this project's process-compose stack |
 
 ### Host extras (stay in the host)
@@ -1088,7 +1088,7 @@ LOAD-WHEN: choosing Taskfile task names or Makefile target names; Stage 5 / gola
 
 CORRECT:
 ```makefile
-serve: ## process-compose TUI (:1325); rebuilds on file changes
+serve: ## process-compose TUI; prebuilds Go binaries then up
 	./scripts/pc-up.sh
 
 serve-down: ## Stop this process-compose project
