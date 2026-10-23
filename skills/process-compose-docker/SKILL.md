@@ -150,6 +150,12 @@ services:
 **CONSTRAINT:** When the applicability gate passes, each Go process-compose service MUST be compiled to a named binary before `process-compose up` (in the up script or the first `serve` task command). The process-compose command MUST `exec` that binary to listen. MUST NOT use `go run` or `wgo run` as the first listen process.
 
 - MUST: run `go build -o` (or equivalent) into a stable path (for example `tmp/my-daemon`) before the TUI starts
+- MUST skip `go build` and optional codegen on the prebuild script when the named binary exists, is executable, and is newer than watched sources (source suffixes plus `go.mod` / `go.sum`)
+- MUST still `go build -o` when missing or stale. The Go compile cache applies only on that rebuild
+- MUST NOT treat "always invoke `go build`" as required on every `serve`
+- MUST NOT use `go run` / `wgo run` as listen
+- MAY honor a force-rebuild env (example name `SERVE_FORCE_BUILD=1`; hosts MAY pick another name)
+- Codegen (example: template generate) MUST run only when generated files are missing or older than their inputs; MUST NOT run codegen on every up
 - MUST: watchers (`wgo`, `air`, and similar) MAY rebuild the same `-o` path then re-exec; first start MUST skip rebuild when the binary is newer than watched sources
 - MUST NOT: block readiness on `go tool link` inside the supervised process tree
 - Enforcement: `rg 'go run|wgo run' process-compose.yaml scripts/serve*.sh`; listen path is `exec` of a prebuilt binary
@@ -157,12 +163,27 @@ services:
 
 CORRECT:
 ```bash
+# serve-build-api.sh
+if bin executable and no watched source -newer bin; then
+  echo "serve: using existing tmp/api" >&2
+  exit 0
+fi
+go build -o tmp/api ./cmd
+
 # serve-up.sh (before process-compose up)
-./scripts/serve-build-api.sh   # go build -o tmp/api ./cmd
+./scripts/serve-build-api.sh
 
 # process-compose.yaml
 command: ./scripts/serve-process.sh ./scripts/serve-api.sh
 # serve-api.sh ends with: exec "${root}/tmp/api" serve
+```
+
+PROHIBITED:
+```bash
+# serve-up always:
+go build -o tmp/api ./cmd
+# and always: templ generate
+# GOCACHE is not a skip
 ```
 
 PROHIBITED:
@@ -248,6 +269,10 @@ PROHIBITED:
       Method: `rg -n 'go run|wgo run' process-compose.yaml scripts/serve*.sh` when gate applies
       Pass: No listen-process `go run` / `wgo run`; `serve-build` + `exec` present
       Fail: STOP, add prebuild script and exec wrapper
+- [ ] **Skip if fresh:** Prebuild scripts skip compile when the binary is newer than watched sources
+      Method: compare `stat` mtime of `tmp/<name>` before and after a second `serve-build`
+      Pass: mtime equal and reuse stderr
+      Fail: STOP, add timestamp check
 - [ ] **Watcher root:** File watchers start from narrow source roots
       Method: Read the watcher command and its startup watch list
       Pass: No unrelated content, generated, vendor, or workspace trees are enumerated before the first service exec
