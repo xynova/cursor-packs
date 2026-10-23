@@ -21,6 +21,7 @@ alwaysApply: false
 - Stop stacks without `-v` / `--volumes` / `docker volume rm` on the default down path
 - Keep durable sidecar state on named volumes
 - When the repo has `process-compose.yaml` or `scripts/pc-up.sh` plus `serve` / `serve-down`: prebuild Go services to a named binary before `process-compose up`, exec that binary to listen, set `readiness_probe` on HTTP processes (see skill `process-compose-docker`)
+- MUST skip compile when the named binary is newer than sources (skip-if-fresh prebuild; see skill `process-compose-docker`)
 
 ## MUST NOT
 
@@ -28,3 +29,4 @@ alwaysApply: false
 - Silent skip of Docker namespaces on an interactive TTY
 - Wipe volumes as part of normal `serve-down` / `process-compose down` / `docker compose down`
 - Use `go run` or `wgo run` as the first listen process for Go services in process-compose (readiness must not wait on `go tool link`)
+- Always `go build` on every `serve` when the named binary is still fresh (GOCACHE is not a skip; prebuild scripts must compare mtimes)

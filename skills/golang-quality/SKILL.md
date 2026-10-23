@@ -445,7 +445,7 @@ lanes: ## usage: make lanes LANE=core
 | `serve-down` | Stop this project's process-compose stack (preserve Docker named volumes; see process-compose-docker) |
 
 - MUST: name the long-running local stack `serve` / `serve-down` when process-compose (or equivalent) is the up path
-- MUST: when `process-compose.yaml` or `scripts/pc-up.sh` exists, prebuild Go listen binaries before `process-compose up` and exec them (full rules: skill `process-compose-docker`)
+- MUST: when `process-compose.yaml` or `scripts/pc-up.sh` exists, prebuild Go listen binaries before `process-compose up` and exec them (full rules: skill `process-compose-docker`); prebuild scripts skip `go build` when the binary is fresh (full rules in that skill)
 - MUST: keep host-only verbs (`smoke-*`, `docker-build`, `sync`, license helpers, and similar) as host Task or Make targets; MUST NOT invent pack constraints that require every host to ship them. IF a host extra only reprints a Cobra verb with no sequencer value (no `deps`, build, or `--` args) THEN it MUST be `internal: true` (Task) or omit `##` (Make). IF it is an operator-front-door sequencer (listed `init`, listed `db:migrate`, listed `check:health`) THEN it MAY be listed and MAY use a colon namespace (`domain:verb`). Shared C21 names (`lint`, `build`, …) MUST stay unprefixed. MUST NOT list the full CLI catalog as Task verbs (C20)
 - MUST NOT: use `dev` / `dev-down` as the only names for the long-running stack on a new or rewritten Taskfile or Makefile
 - MAY: keep `dev` / `dev-down` as thin aliases that invoke `serve` / `serve-down` during migration
