@@ -1,0 +1,62 @@
+---
+alwaysApply: true
+description: >-
+  Never suggest changing a library this workspace does not own. Apply on every
+  turn that names a third-party module, upstream fix, fork, pin, or tmp clone.
+  Triggers: unowned library, third-party, upstream PR, fork, pin, llm-go,
+  module cache, tmp clone, suggest changing, patch upstream.
+---
+
+# Unowned libraries
+
+Owned related libraries (submodules this fleet maintains): rule `repository-boundaries`.
+
+**CONSTRAINT:** MUST NOT suggest editing, forking, opening an upstream PR on, or pinning a patched fork of a library this workspace does not own. MUST recommend a workaround in owned code instead.
+
+Before a reply or plan names a library change as the next step, complete this gate in working memory:
+
+```text
+Candidate: [module or repo name]
+Owned origin: YES: [quote a workspace git remote or go.mod replace path] / NO
+User asked to change that library: YES: [quote] / NO
+Decision: MAY edit in that owning repo | MUST NOT suggest changing | refuse and give owned workaround
+```
+
+If Owned origin is NO and the user did not ask to change that library: Decision is MUST NOT suggest changing.
+If Owned origin is NO and the user asked to change that library: Decision is refuse and give owned workaround.
+If Owned origin is YES: Decision is MAY edit in that owning repo (then follow repository-boundaries).
+
+- MUST: treat a library as owned only when a workspace checkout has that origin remote, or `go.mod` replace points at such a checkout
+- MUST: when the library is unowned, recommend an owned-side change (adapter, config, provider, or skip the path)
+- MUST NOT: recommend an upstream PR, a fork, a patched-version pin, edits under the module cache, or edits under `tmp/<library-name>`
+- MAY: clone unowned source into `tmp/<library-name>` to read. MUST NOT modify or commit that clone
+- MAY: name the unowned library as the mechanism of a bug
+
+Enforcement: before send, if the draft names a library change, confirm the gate ran and that Owned origin YES quotes a remote or replace path
+Violation: STOP, drop the unowned-library change, rewrite the next step as owned code or config
+
+CORRECT:
+```text
+llm-go rejects trailing SSE
+→ Owned origin NO (require github.com/XiaoConstantine/llm-go; no workspace remote)
+→ Recommend a strop adapter or a provider switch in operator config
+```
+
+PROHIBITED:
+```text
+llm-go rejects trailing SSE
+→ Pin llm-go v0.3.7 or open an upstream PR
+```
+
+CORRECT:
+```text
+User: patch the strop heartbeat
+→ Owned origin YES: origin git@github.com:behaviorengineering/strop.git
+→ Edit in the strop checkout
+```
+
+PROHIBITED:
+```text
+User: patch XiaoConstantine/llm-go
+→ Edit tmp/llm-go or open an upstream PR
+```

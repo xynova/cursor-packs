@@ -31,9 +31,9 @@ Chat replies are owned by `always-rules-01-human-interaction.mdc` (fluent consul
 
 - MUST NOT use the em dash character (U+2014) in any written output: chat responses, generated files, `tmp/`, social posts, or docs. Use comma, semicolon, colon, or parentheses instead.
 
-## Library source for debugging
+## Unowned libraries
 
-- MAY clone upstream into `tmp/<library-name>` to read or debug. MUST NOT modify or commit to upstream repos. MUST keep clones out of unrelated paths.
+Unowned third-party modules: rule `unowned-libraries`. MAY clone into `tmp/<library-name>` to read. MUST NOT modify those clones or suggest changing a library this workspace does not own.
 
 ## Do not delete code without review and confirmation
 
