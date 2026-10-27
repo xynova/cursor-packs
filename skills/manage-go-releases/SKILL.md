@@ -38,7 +38,7 @@ Shared policy for Go libraries and toolkits consumed by agents (for example stro
 - Enforcement: shared `scripts/auto-patch-decide.sh` path filter or equivalent in auto-patch CI
 - Violation: STOP; use harness-only skip before tagging
 
-**CONSTRAINT:** MUST NOT create a Go tag when every file changed since the last `v*` tag is packaging-only (Dockerfiles, docker CI scripts, `docker-release.yml`, `packaging-rebuild.yml`). Publish an immutable GHCR image revision `X.Y.Z-rN` (`N >= 1`) that reuses the existing `vX.Y.Z` release binaries instead.
+**CONSTRAINT:** MUST NOT create a Go tag when every file changed since the last `v*` tag is packaging-only (Dockerfiles, `docker-bake.hcl`, docker CI scripts, `docker-release.yml`, `packaging-rebuild.yml`). Publish an immutable GHCR image revision `X.Y.Z-rN` (`N >= 1`) that reuses the existing `vX.Y.Z` release binaries instead.
 - Enforcement: `scripts/auto-patch-decide.sh` packaging-only path filter; `packaging-rebuild` or manual **Docker release** `workflow_call` with `image_revision`
 - Violation: STOP; cut `-rN` image, not `vX.Y.(Z+1)`, for Dockerfile/base-only work
 

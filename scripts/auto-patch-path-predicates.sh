@@ -11,7 +11,7 @@ is_harness_only_path() {
 is_packaging_only_path() {
   local path="$1"
   case "${path}" in
-    Dockerfile|Dockerfile.*) return 0 ;;
+    Dockerfile|Dockerfile.*|docker-bake.hcl) return 0 ;;
     scripts/docker-*) return 0 ;;
     scripts/ci/docker-*) return 0 ;;
     scripts/ci/switchyard-smoke-routes.toml) return 0 ;;
