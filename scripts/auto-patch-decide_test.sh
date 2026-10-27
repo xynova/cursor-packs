@@ -48,6 +48,7 @@ assert_not_harness ".gitlab/ci/auto-patch-release.yml"
 
 assert_packaging "Dockerfile"
 assert_packaging "Dockerfile.prod"
+assert_packaging "docker-bake.hcl"
 assert_packaging "scripts/docker-build.sh"
 assert_packaging ".github/workflows/docker-release.yml"
 assert_not_packaging "pkg/foo/foo.go"
