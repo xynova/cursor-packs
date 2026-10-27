@@ -31,6 +31,7 @@ SKILLS=(
   operator-config
   explain-implementation
   ask-polypus
+  hypermedia-update-contract
   intent-first
   consultant
   slapstick
@@ -63,6 +64,7 @@ RULES=(
   operator-config.mdc
   explain-implementation.mdc
   ask-polypus.mdc
+  hypermedia-update-contract.mdc
 )
 PERSONAS=(
   intent-first.persona.md

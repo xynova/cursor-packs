@@ -1,0 +1,20 @@
+---
+description: >-
+  Server-driven HTML patch contract for Datastar, datastar-go, data-on:click,
+  patch-elements, morph, htmx out-of-band swaps, and templ SSE. Load when a
+  command succeeds but a panel stays stale until a full refresh.
+alwaysApply: false
+---
+
+# Hypermedia update contract (cursor-packs)
+
+When adding or changing Datastar `patch-elements`, htmx swaps, templ SSE morphs, or `data-on:click` actions that must refresh server-owned UI:
+
+- Load skill `hypermedia-update-contract`.
+
+Two patch contracts:
+
+- **Command / board:** the same view function as the initial GET, fat-morphed onto one workspace root.
+- **Progress / activity:** plan and activity only. MUST NOT reuse the command fragment when it includes proposal or editor chrome.
+
+`data-ignore-morph` and client signals do not update approval, pending review, or whether run controls are enabled. Those come from the post-commit read model inside the command patch.
