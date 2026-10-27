@@ -60,6 +60,7 @@ RULES=(
   always-rules-01-human-interaction.mdc
   image-to-webp.mdc
   repository-boundaries.mdc
+  unowned-libraries.mdc
   process-compose-docker.mdc
   operator-config.mdc
   explain-implementation.mdc
