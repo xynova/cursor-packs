@@ -437,7 +437,7 @@ flowchart TD
 2. **Objective**: Past-tense purpose and success criteria only (blank line after the heading).
 3. **Trajectory**: Past-tense action log of what we did (blank line after the heading; blank line before this channel).
 4. **Outcome**: One past-tense line stating what landed (same spacing).
-5. **Explanation**: How it fits now; `ON` for when, `IF`/`ELSE` for branches, `IS` for facts, `DO` for non-branch actions; add or swap in a small diagram when the flow is clearer that way; cut anything that does not help scanning.
+5. **Explanation**: How it fits now; `ON` for when, `IF`/`ELSE` for branches, `IS` for facts, `DO` for non-branch actions; add or swap in a small diagram when the flow is clearer that way; cut anything that does not help scanning. Code jumps follow rule `always-rules-01-human-interaction` (one-line Cursor citation, diagram in chat, no function dump).
 6. **If diagram has loops**: Subgraphs + in-loop retry; once-only steps outside.
 7. **Proposal**: Optional unfinished follow-up (same spacing).
 8. **One authorship bullet**: Only if confusable.

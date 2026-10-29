@@ -10,7 +10,10 @@ description: >-
   and gates. Triggers: chat, human, user message, reply, can we, should we,
   wondering, implement this, fix this, question, follow-up, answer type,
   how does, what is the prompt, cite, source, file and function, skim,
-  claim heading, slapstick, Mistake voice, ascii, flow, reply shape.
+  claim heading, slapstick, Mistake voice, ascii, flow, reply shape,
+  code citation, function dump, link to the code, diagram in chat,
+  what was this, failed run, chronology, stalled, gutter,
+  what-happened title, cold read.
 ---
 
 # Human interaction
@@ -57,14 +60,15 @@ Yes.
 
 **CONSTRAINT:** After picking answer type, when the type is ordinary sentences (1 or 4), MUST pick one reply shape (first match). MUST NOT print the shape name. MUST NOT answer an explanation or flow ask with prose only.
 
-1. The ask is a flow, layout, structure, or a rule with cases → MUST sketch each case as ASCII in a fenced code block, built from the thread's own pieces, with a key for its symbols. IF explaining a change → MUST show before and after. MUST NOT publish a page or canvas for it. IF the ask is also about code → MUST also apply the source-pointer constraint below.
-2. The ask is how code works, what a function, prompt, or path does, or where a behavior lives → MUST apply the source-pointer constraint below. MUST NOT write a wall of text with no pointer.
-3. Else → ordinary skim layout. IF a code-behavior claim appears → MUST still apply the source-pointer constraint.
+1. The ask diagnoses a failed, stalled, or unexpected run in this thread (`what was this`, what died, what happened, why it failed) → MUST open with a failed-run chronology (constraint below). MUST NOT lead with a why-chain, a `Q:` list, or a box-drawing flowchart.
+2. The ask is a flow, layout, structure, or a rule with cases → MUST sketch each case as ASCII in a fenced code block, built from the thread's own pieces, with a key for its symbols. IF explaining a change → MUST show before and after. MUST NOT publish a page or canvas for it. IF the ask is also about code → MUST also apply the source-pointer constraint below (citation jump first, ASCII as the chat picture).
+3. The ask is how code works, what a function, prompt, or path does, or where a behavior lives → MUST apply the source-pointer constraint below. MUST NOT write a wall of text with no citation jump. MUST NOT paste a function body in chat.
+4. Else → ordinary skim layout. IF a code-behavior claim appears → MUST still apply the source-pointer constraint.
 
-When answer type is 2 or 3, skill `explain-implementation` owns the shape (numbered steps; a diagram when the ask is a flow or the flow is muddy).
+When answer type is 2 or 3, skill `explain-implementation` owns the shape (numbered steps; a diagram when the ask is a flow or the flow is muddy). Code jumps in that pass still follow the source-pointer constraint below.
 
-- Enforcement: Before send on ordinary Q&A, name the shape privately. If the human asked about a flow and the draft has no ASCII fence, rewrite. If they asked how code works and there is no file and function, rewrite.
-- Violation: STOP, add the sketch and/or pointer, cut the prose wall, then send.
+- Enforcement: Before send on ordinary Q&A, name the shape privately. If the ask diagnoses a run and the draft has no time-order chronology with numbered `!!1` what-happened titles, rewrite. If the human asked about a flow and the draft has no ASCII fence, rewrite. If they asked how code works and there is no Cursor citation jump, or the draft reprints a function body, rewrite.
+- Violation: STOP, add the chronology, jump, and/or sketch, cut the function dump, then send.
 
 CORRECT (flow):
 ```text
@@ -84,6 +88,127 @@ Key: boxes are seats in seats.go. Arrows are Operate order.
 PROHIBITED (prose wall):
 ```markdown
 Essence is a chat string that gets parsed and then the judge scores it and then the author drafts a leaf and then clusters form...
+```
+
+## Failed-run chronology
+
+**CONSTRAINT:** A diagnostic reply about a failed, stalled, or unexpected run MUST open with one ASCII chronology of that run in a fenced `text` block. Time MUST run down the page. Event lines MUST stay short. Groups MUST join with `|` and `v` arrows. Extra detail on unmarked join or complete nodes (score, outcome) MUST sit under those nodes. A Key MUST name time direction, how many walks, `!!1` `!!2` …, and the what-happened title.
+
+MUST keep every timestamp from the run. MUST NOT drop routine steps. MUST NOT use `+---+` / `#===#` boxes. MUST NOT prefix beats with `Q:`. MUST NOT replace the sketch with prose. MUST NOT add issue paragraphs after the sketch; the `!!` blocks in the sketch ARE the explanation.
+
+Before drawing each event row, complete this gate in working memory:
+
+```text
+Candidate: [event]
+Issue in the thread (failure, unexpected restart, error, or discard): YES: [quote] / NO
+Decision: !!N block | unmarked
+```
+
+IF NO → unmarked row, padded so timestamps line up. MUST NOT mark a routine pass as `!!`.
+
+IF YES → N is the count of issue rows so far, starting at 1. The block MUST be exactly:
+
+```text
+ !!N <what-happened title>
+     <timestamp>  <when line>
+            <cost line>
+            <optional second cost line>
+```
+
+The what-happened title MUST be a cold-read sentence: a reader who has only the sketch MUST know what went wrong. The when line MUST be the time plus a plain-English event. The cost lines MUST say why it hurts and what was lost. Title, when, and cost MUST stay on this `!!` only.
+
+MUST NOT use pipeline jargon in the title or cost (`ATTEND`, `PASS`, `REGENERATE`, scorer, sandbox, fail-closed). MUST NOT name another `!!N` block in this block. MUST NOT use a `;` code comment as the gloss. Follow-up questions MUST cite the numbers (`open 1`, `open 2`). IF the human picks a number → MUST explain that `!!N` only.
+
+Before sending each `!!` block, complete this gate in working memory:
+
+```text
+Candidate: [!! block]
+Title is a cold-read what-happened sentence: YES: [quote the title] / NO
+Other !! issues named in this block: YES: [quote] / NO
+Decision: keep | rewrite title | MIX
+```
+
+IF the title needs the rest of the chat to make sense → rewrite title. IF MIX → split so this block names only this issue.
+
+- Enforcement: Before send on a diagnostic ask, confirm an ASCII fence exists, time runs down the page, arrows are present, routine timestamps remain, every issue is `!!1` `!!2` … in time order with a what-happened title plus when plus cost, the Key names the numbers, and no issue paragraphs follow the fence. If the draft is a `Q:` list, a box flowchart, a timestamp log with no arrows, jargon comments, or mixed prose under the sketch, rewrite.
+- Violation: STOP, redraw as this chronology, then send.
+
+CORRECT:
+```text
+     12:01  first attempt starts
+        |
+        v
+     12:03  opening 7.6
+     12:05  middle 8.3
+        |
+        v
+     12:07  joins the pieces
+            score 7.8, good enough, extra model not called
+            this attempt finished
+        |
+        v
+ !!1 It started a second full run
+     12:07  starts the whole job again from the opening
+            The first attempt had already finished.
+            Starting over here was not requested.
+        |
+        v
+     12:08  opening 7.8
+     12:14  joins the pieces
+        |
+        v
+ !!2 The second draft failed its quality check
+     12:15  a second model is called
+            This draft reused a slogan the checks forbid.
+            That check is the only reason the extra model ran.
+        |
+        v
+ !!3 The draft was thrown away
+     12:18  the extra model hits the clock still failing to write code
+            It never gave a yes or a rewrite.
+            So nothing was kept.
+
+Key: down the page is time. Two full attempts.
+     !!1 !!2 !!3 are issues, in time order.
+     The line after !!N is the what-happened title.
+     The next lines are when, then the cost.
+```
+
+PROHIBITED (timestamp log, no arrows):
+```text
+12:01  job starts
+12:07  NEW walk
+!!3 12:18 timeout
+```
+
+PROHIBITED (box flowchart):
+```text
++------------------+
+| 12:01 job starts |
++--------+---------+
+         v
+#==================#
+# 12:18 timeout    #
+#==================#
+```
+
+PROHIBITED (`Q:` metronome, or issue paragraphs after the sketch):
+```markdown
+Q: Why did nothing save?
+The gate errored.
+```
+
+PROHIBITED (jargon comment, no what-happened title):
+```text
+ !!2 12:15  scorer ATTEND, sandbox starts
+            ; PASS/REGENERATE never came, fail-closed
+```
+
+PROHIBITED (one cost line names two issues):
+```text
+ !!3 The draft was thrown away
+     12:18  timeout
+            Also it had already started a second run after the first finished.
 ```
 
 ## Chat voice
@@ -108,27 +233,53 @@ PROHIBITED (verdict first, outside analogy):
 A batch is a school term and a subject is math. You would not rename the term.
 ```
 
-**CONSTRAINT:** When the human asks how code works, what a function, prompt, or path does, or where a behavior lives, MUST point at the owning file and function (or const). MUST include at most one short cited region when the claim is easy to miss: only the lines that prove the sentence. MUST NOT explain that behavior with no source pointer. MUST NOT paste several full functions or many citation fences for one claim. MUST NOT dump the rest of a file the human already has open; name the function in that file instead.
+**CONSTRAINT:** When the human asks how code works, what a function, prompt, or path does, or where a behavior lives, MUST put a Cursor code citation in the reply before any diagram or paraphrase of that code. The citation MUST use the `startLine:endLine:path` fence so it is a jump to the owning file and function (or const). The cited region MUST be the jump target only: the signature line, or at most three lines that prove the claim. MUST NOT reprint a function body, a multi-statement block, or the rest of a file in chat. MUST NOT explain that behavior with no citation jump. MUST NOT use more than one citation fence for one claim. MUST NOT treat a prose filename or a backtick path as the jump.
 
-- Enforcement: Before send on a code-behavior Q&A, confirm the draft names a path and symbol. Count cited regions; if more than one per claim, drop extras. If the human's focused file already owns the behavior, keep the pointer and delete a rest-of-file paste.
-- Violation: STOP, add one file and function pointer, keep at most one short cite, then send.
+IF the chat needs a picture of the behavior → MUST sketch it as ASCII in a fenced `text` block, with a key for its symbols. MUST NOT use a pasted code body as that picture.
 
-CORRECT:
-```markdown
-Essence is one chat string. `createEssenceIntegrityShellPolypus` in `internal/mailreport/essence_integrity.go` is the Chat call you have open.
+- Enforcement: Before send on a code-behavior Q&A, confirm one `startLine:endLine:path` fence exists, that it has at most three source lines, and that it does not include a function body after `{`. If the draft paraphrases a body or needs a flow picture, confirm an ASCII fence exists. Count citation fences; if more than one per claim, drop extras.
+- Violation: STOP, replace the dump with a one-line citation jump plus ASCII, then send.
 
-The host then splits that string in `parseEssenceResponseWithCatalog` in `internal/mailreport/essence_prompt.go`.
+CORRECT (link then diagram):
+````markdown
+`PlanAssembly` is the gate.
+
+```57:57:pkg/compose/plan.go
+func PlanAssembly(ctx context.Context, evidence *Evidence) (*Plan, error) {
 ```
 
-PROHIBITED (no source pointer):
+```text
+evidence
+       |
+       v
+ PlanAssembly --> Complete
+       |
+       +-- PASS --> ship
+       x-- error --> fail closed
+
+Key: PlanAssembly is the gate. Complete is the nested model call.
+```
+````
+
+PROHIBITED (prose path, no citation jump):
 ```markdown
-Essence is a single chat completion string, not DSPy XML fields. The host then splits WHY1 through KIND itself.
+`PlanAssembly` in `pkg/compose/plan.go` asks for a text plan.
 ```
 
-PROHIBITED (many dumps for one claim):
-```markdown
-Six full-function citation blocks that repeat `Essence`, `parseEssenceResponseWithCatalog`, `CreatePipeline`, and `operateLLM.Generate`.
+PROHIBITED (function dump as the explanation):
+````markdown
+Here is `PlanAssembly`:
+
+```57:68:pkg/compose/plan.go
+func PlanAssembly(ctx context.Context, evidence *Evidence) (*Plan, error) {
+	text, _, err = Complete(ctx, module, evidence, query)
+	if err != nil {
+		return nil, err
+	}
+	return parseRepairPlan(text), nil
+}
 ```
+````
 
 **CONSTRAINT:** When the human asks to explain a layout, flow, structure, or rule with cases, MUST sketch each case as ASCII in a fenced code block. MUST build the sketch from the thread's own pieces. MUST include a key for its symbols. IF the ask explains a change → MUST show before and after. MUST NOT publish a page or canvas for that sketch. MUST NOT substitute a prose walkthrough for the sketch.
 
