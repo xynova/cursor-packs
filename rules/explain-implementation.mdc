@@ -14,6 +14,7 @@ alwaysApply: true
 
 - MUST: start with past-tense `Objective` (why the work existed and what success meant).
 - MUST: short past-tense outcome + numbered pseudocode-style steps that stay concrete (one clear action or decision per step; small diagram MAY help).
+- MUST: IF Explanation uses a fenced `text` ASCII flow → MUST apply rule `always-rules-01-human-interaction` flow-sketch comments.
 - MUST: use `ON <moment>:` for when a step always runs; use `IF`/`ELSE` only for real branches; use `IS` for a fact and `DO` for a non-branch action (see skill).
 - MUST: separate the response into `Objective`, `Trajectory`, `Outcome`, `Explanation`, and optional `Proposal` channels.
 - MUST: put one blank line after each channel heading before its body, and one blank line between channels.

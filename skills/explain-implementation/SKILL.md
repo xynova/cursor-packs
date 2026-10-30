@@ -269,6 +269,11 @@ The channels are the reply. They are not a preamble.
   “what is different now.”
 - MUST: default `Explanation` to numbered pseudocode steps; MUST include a
   diagram when the human asked about a flow or the path is muddy.
+- MUST: IF that diagram is a fenced `text` ASCII flow → MUST apply rule
+  `always-rules-01-human-interaction` flow-sketch comments (comments under
+  unmarked nodes; `!!N` what-happened title, when, and cost on every fail,
+  reject, or skip branch). MUST NOT use a `;` gloss. MUST NOT leave an `x--`
+  fail with no `!!` block.
 - MUST: keep the explain scannable in a few seconds.
 - MUST: keep each step concrete enough that a cold reader knows what happens without decoding jargon (split packed phrases into two steps when needed).
 - MUST: use **`ON <moment>:`** for always-on wiring or when a call runs (construction, each request, each turn). That names *when*, not a branch.
@@ -464,6 +469,10 @@ flowchart TD
       Method: Count long paragraphs in the explain
       Pass: At most one short objective and one short outcome; body is steps and/or one small diagram
       Fail: STOP, convert to numbered steps (and/or tiny diagram)
+- [ ] **ASCII flow comments:** If Explanation includes a fenced `text` flow, fail branches use `!!N`
+      Method: Scan the fence for `x--` / fail / skip; confirm `!!1` blocks and comments under unmarked nodes
+      Pass: No `;` gloss; every fail branch has title, when, and cost; Key names the numbers
+      Fail: STOP, apply always-rules-01 flow-sketch comments, then send
 - [ ] **Enough:** Cold reader gets why it mattered, what changed, and how it fits
       Method: Skim-only test (~5 seconds)
       Pass: All three clear
