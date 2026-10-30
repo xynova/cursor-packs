@@ -13,7 +13,7 @@ description: >-
   claim heading, slapstick, Mistake voice, ascii, flow, reply shape,
   code citation, function dump, link to the code, diagram in chat,
   what was this, failed run, chronology, stalled, gutter,
-  what-happened title, cold read.
+  what-happened title, cold read, flow sketch comments, issue comments.
 ---
 
 # Human interaction
@@ -61,13 +61,13 @@ Yes.
 **CONSTRAINT:** After picking answer type, when the type is ordinary sentences (1 or 4), MUST pick one reply shape (first match). MUST NOT print the shape name. MUST NOT answer an explanation or flow ask with prose only.
 
 1. The ask diagnoses a failed, stalled, or unexpected run in this thread (`what was this`, what died, what happened, why it failed) → MUST open with a failed-run chronology (constraint below). MUST NOT lead with a why-chain, a `Q:` list, or a box-drawing flowchart.
-2. The ask is a flow, layout, structure, or a rule with cases → MUST sketch each case as ASCII in a fenced code block, built from the thread's own pieces, with a key for its symbols. IF explaining a change → MUST show before and after. MUST NOT publish a page or canvas for it. IF the ask is also about code → MUST also apply the source-pointer constraint below (citation jump first, ASCII as the chat picture).
+2. The ask is a flow, layout, structure, or a rule with cases → MUST sketch each case as ASCII in a fenced `text` block, built from the thread's own pieces, with a key for its symbols. MUST apply the flow-sketch comment constraint below. IF explaining a change → MUST show before and after. MUST NOT publish a page or canvas for it. IF the ask is also about code → MUST also apply the source-pointer constraint below (citation jump first, ASCII as the chat picture).
 3. The ask is how code works, what a function, prompt, or path does, or where a behavior lives → MUST apply the source-pointer constraint below. MUST NOT write a wall of text with no citation jump. MUST NOT paste a function body in chat.
 4. Else → ordinary skim layout. IF a code-behavior claim appears → MUST still apply the source-pointer constraint.
 
 When answer type is 2 or 3, skill `explain-implementation` owns the shape (numbered steps; a diagram when the ask is a flow or the flow is muddy). Code jumps in that pass still follow the source-pointer constraint below.
 
-- Enforcement: Before send on ordinary Q&A, name the shape privately. If the ask diagnoses a run and the draft has no time-order chronology with numbered `!!1` what-happened titles, rewrite. If the human asked about a flow and the draft has no ASCII fence, rewrite. If they asked how code works and there is no Cursor citation jump, or the draft reprints a function body, rewrite.
+- Enforcement: Before send on ordinary Q&A, name the shape privately. If the ask diagnoses a run and the draft has no time-order chronology with numbered `!!1` what-happened titles, rewrite. If the human asked about a flow and the draft has no ASCII fence, or the fence has fail branches with no `!!N` comments, rewrite. If they asked how code works and there is no Cursor citation jump, or the draft reprints a function body, rewrite.
 - Violation: STOP, add the chronology, jump, and/or sketch, cut the function dump, then send.
 
 CORRECT (flow):
@@ -88,6 +88,88 @@ Key: boxes are seats in seats.go. Arrows are Operate order.
 PROHIBITED (prose wall):
 ```markdown
 Essence is a chat string that gets parsed and then the judge scores it and then the author drafts a leaf and then clusters form...
+```
+
+## Flow sketch comments
+
+**CONSTRAINT:** An ASCII flow, layout, or rule-with-cases sketch MUST use the same comment grammar as the failed-run chronology. Extra detail on unmarked nodes MUST sit under those nodes. Fail, reject, or skip branches MUST use `!!N` blocks. MUST NOT use a `;` code comment as the gloss. MUST NOT leave a fail `x--` with no `!!` block. MUST NOT invent timestamps on a design walk that is not a timed run.
+
+Before drawing each node or branch, complete this gate in working memory:
+
+```text
+Candidate: [node or branch]
+Fail, reject, or skip in this sketch: YES: [quote] / NO
+Decision: !!N block | unmarked comment under node
+```
+
+IF NO → unmarked node. Comment lines sit under it. MUST NOT mark a happy-path pass as `!!`.
+
+IF YES → N is the count of fail branches so far, starting at 1. The block MUST be exactly:
+
+```text
+ !!N <what-happened title>
+     <when line>
+            <cost line>
+            <optional second cost line>
+```
+
+The what-happened title MUST be a cold-read sentence: a reader who has only the sketch MUST know what went wrong. The when line MUST name this pass or this branch (not a fake clock). The cost lines MUST say why it hurts and what was lost. Title, when, and cost MUST stay on this `!!` only.
+
+MUST NOT name another `!!N` block in this block. A Key MUST name unmarked comments, `!!1` `!!2` … when any fail branch is present, and that the line after `!!N` is the what-happened title.
+
+- Enforcement: Before send on a flow sketch, confirm comment lines sit under unmarked nodes, every fail/reject/skip branch is `!!1` `!!2` … with title plus when plus cost, no `;` gloss, and the Key names the numbers. If the draft has only node labels, or an `x--` with no `!!`, rewrite.
+- Violation: STOP, add the comments, then send.
+
+CORRECT:
+```text
+input
+ the work the walk starts with
+       |
+       v
+ first pass
+ do only the opening job
+       |
+       x-- later job spent here --> fail
+        !!1 The opening spent a later job
+        this pass already used the close
+        later passes had no new job left
+       |
+       v
+ middle pass
+ each step is a different job
+       |
+       x-- same claim, new venue --> fail
+        !!2 Two steps did the same job
+        this pass restacked the opening claim
+        the temperature never changed
+       |
+       v
+ last pass
+ the ending, using the middle's cost
+       |
+       x-- fourth copy of the opening --> fail
+        !!3 The ending proved the start again
+        this pass restated the first claim
+        the ending never arrived
+
+Key: down the page is one walk.
+     unmarked lines under a node are comments.
+     x is a fail.
+     !!1 !!2 !!3 are those fails, in walk order.
+     The line after !!N is the what-happened title.
+     The next lines are when, then the cost.
+```
+
+PROHIBITED (`;` gloss, no `!!` on the fail):
+```text
+ first pass  ; open only
+       |
+       x-- spent the close
+```
+
+PROHIBITED (fail branch with no what-happened title):
+```text
+       x-- same claim, new venue --> fail
 ```
 
 ## Failed-run chronology
