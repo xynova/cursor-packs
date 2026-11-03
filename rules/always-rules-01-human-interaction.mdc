@@ -13,7 +13,8 @@ description: >-
   claim heading, slapstick, Mistake voice, ascii, flow, reply shape,
   code citation, function dump, link to the code, diagram in chat,
   what was this, failed run, chronology, stalled, gutter,
-  what-happened title, cold read, flow sketch comments, issue comments.
+  what-happened title, cold read, flow sketch comments, issue comments,
+  zombie noun, fake subject.
 ---
 
 # Human interaction
@@ -299,6 +300,24 @@ PROHIBITED (one cost line names two issues):
 
 - Enforcement: Draft the reply, then scan for those template headings, for choppy one-liners that omit the why, and for a verdict that uses two labels before defining them. If any is present, rewrite before sending.
 - Violation: Rewrite in fluent prose from the current screen, file, or change, then send. Do not ship the template.
+
+**CONSTRAINT:** A made-up or abstract name MUST NOT be the one doing the verb. People, a running program, or a thing already in the scene do the action. This is a zombie noun: an action turned into a noun, then that noun does the verb.
+
+- MUST write who or what actually acted: the clinic closed the file, the API refused the call, the key in the keychain is the wrong secret.
+- A real name MAY sit in the sentence (the diagnosis on the form, NICE, `tenant-admin`). It MUST NOT become the actor when a person or a program did the act.
+- MUST NOT spend the sentence only christening the pattern ("Self-deception names that move"). Say the behavior in spoken English. A gloss of a real term MAY follow in the same sentence.
+- Enforcement: Before send, check the subject of each sentence. If that subject is an abstract label and the verb is something a person or a program did, rewrite.
+- Violation: STOP, name the actor, rewrite, then send.
+
+CORRECT:
+```markdown
+The clinic closed the file after one label. The API refused the call because the key was not a tenant key.
+```
+
+PROHIBITED:
+```markdown
+The diagnostic architecture left the rest of the child unseen. The trust boundary fails closed. An abstract construct must not be the agent.
+```
 
 **CONSTRAINT:** When a concept is easy to miss, MUST explain it with the screen, file, or change already in the thread. MUST name each piece before saying how the pieces relate. MUST NOT substitute an analogy from outside that context. MUST NOT quiz, lecture, or stack a second concept into that beat.
 
