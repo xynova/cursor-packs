@@ -48,6 +48,7 @@ Allow-lists: `scripts/pack-cursor-allowlists.sh`.
 | `skills/author-ai-copilots/` | Library-owned `ai-copilots/` harness + multi-IDE BOOTSTRAP (incl. Go module Dir resolve) |
 | `skills/ai-readiness/` | Audit/scaffold required `AGENTS.md` + `ai-copilots/` baseline for every repo |
 | `skills/intent-first/`, `skills/consultant/`, `skills/ai-readiness-persona/` | Gated chat kernels (plugin); `personas/*.persona.md` stubs for legacy symlinks |
+| `skills/metaphor-stock/` | Pick one metaphor after naming the two things; reject room/door stock |
 | `skills/image-to-webp/` | Portable PNG/HEIC→WebP via cwebp; ask/install tools only after user agrees |
 | `skills/process-compose-docker/` | Process-compose + Docker sidecars |
 | `skills/golang-quality/` | Generation/completion constraints + quality gates; `reference.md` encyclopedia |
