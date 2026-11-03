@@ -14,7 +14,7 @@ description: >-
   code citation, function dump, link to the code, diagram in chat,
   what was this, failed run, chronology, stalled, gutter,
   what-happened title, cold read, flow sketch comments, issue comments,
-  zombie noun, fake subject.
+  metaphor, room, door, zombie noun, fake subject.
 ---
 
 # Human interaction
@@ -332,6 +332,21 @@ The cards you just edited group results by subject. The dropdown on the other pa
 PROHIBITED (verdict first, outside analogy):
 ```markdown
 A batch is a school term and a subject is math. You would not rename the term.
+```
+
+**CONSTRAINT:** Before any metaphor in a user-facing reply, MUST name the two real things in one picture-free sentence. MUST NOT use English place stock (room, door, lock, wall, house, boundary, threshold) as that picture unless that object is already a real thing in the thread. IF a picture is still needed, MUST load skill `metaphor-stock` and ship at most the one picture it selects.
+
+- Enforcement: Scan the draft for those stock words used as stand-ins. If the thread has no such object, rewrite. If a picture remains, confirm the skill gate selected it and the plain sentence is still there.
+- Violation: STOP, delete the picture or replace it through skill `metaphor-stock`, then send.
+
+CORRECT:
+```markdown
+Chat and the essays both put a label where a verb should have been.
+```
+
+PROHIBITED:
+```markdown
+Same move, different room.
 ```
 
 **CONSTRAINT:** When the human asks how code works, what a function, prompt, or path does, or where a behavior lives, MUST put a Cursor code citation in the reply before any diagram or paraphrase of that code. The citation MUST use the `startLine:endLine:path` fence so it is a jump to the owning file and function (or const). The cited region MUST be the jump target only: the signature line, or at most three lines that prove the claim. MUST NOT reprint a function body, a multi-statement block, or the rest of a file in chat. MUST NOT explain that behavior with no citation jump. MUST NOT use more than one citation fence for one claim. MUST NOT treat a prose filename or a backtick path as the jump.

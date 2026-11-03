@@ -33,6 +33,7 @@ SKILLS=(
   ask-polypus
   hypermedia-update-contract
   intent-first
+  metaphor-stock
   consultant
   slapstick
   ai-readiness-persona
