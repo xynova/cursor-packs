@@ -198,7 +198,9 @@ jobs:
 
       - name: Skip notice
         if: steps.decide.outputs.skip == 'true'
-        run: echo "Skipping auto release: ${{ steps.decide.outputs.reason }}"
+        env:
+          REASON: ${{ steps.decide.outputs.reason }}
+        run: echo "Skipping auto release - ${REASON}"
 
       - uses: actions/setup-go@v5
         if: steps.decide.outputs.skip != 'true'

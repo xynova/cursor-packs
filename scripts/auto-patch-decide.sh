@@ -9,7 +9,8 @@
 #   GITHUB_OUTPUT — GitHub Actions step output (fallback)
 #   EVENT_NAME    — push (default), workflow_dispatch, or web (manual bump)
 #   MANUAL_BUMP   — patch|minor|major when manual
-#   HEAD_MSG      — tip commit subject ([skip release])
+#   HEAD_MSG      tip commit message; only its subject line is checked for
+#                 [skip release], so a body may mention the marker safely
 #
 # Edge cases:
 #   - .cursor/packs/shared gitlink-only bumps are harness-only (no product tag).
@@ -39,7 +40,11 @@ is_manual_event() {
   esac
 }
 
-if [[ "${HEAD_MSG:-}" == *"[skip release]"* ]]; then
+# Only the subject line counts: GitHub passes the full message, and a body that
+# explains the skip marker must not trigger it.
+head_subject="${HEAD_MSG:-}"
+head_subject="${head_subject%%$'\n'*}"
+if [[ "${head_subject}" == *"[skip release]"* ]]; then
   write_out "skip=true"
   write_out "reason=commit contains [skip release]"
   exit 0
