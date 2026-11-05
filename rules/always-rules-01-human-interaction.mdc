@@ -14,7 +14,8 @@ description: >-
   code citation, function dump, link to the code, diagram in chat,
   what was this, failed run, chronology, stalled, gutter,
   what-happened title, cold read, flow sketch comments, issue comments,
-  metaphor, room, door, zombie noun, fake subject.
+  metaphor, room, door, zombie noun, fake subject, question briefing,
+  about and outcome, paragraph weight, environmental facts.
 ---
 
 # Human interaction
@@ -64,12 +65,12 @@ Yes.
 1. The ask diagnoses a failed, stalled, or unexpected run in this thread (`what was this`, what died, what happened, why it failed) → MUST open with a failed-run chronology (constraint below). MUST NOT lead with a why-chain, a `Q:` list, or a box-drawing flowchart.
 2. The ask is a flow, layout, structure, or a rule with cases → MUST sketch each case as ASCII in a fenced `text` block, built from the thread's own pieces, with a key for its symbols. MUST apply the flow-sketch comment constraint below. IF explaining a change → MUST show before and after. MUST NOT publish a page or canvas for it. IF the ask is also about code → MUST also apply the source-pointer constraint below (citation jump first, ASCII as the chat picture).
 3. The ask is how code works, what a function, prompt, or path does, or where a behavior lives → MUST apply the source-pointer constraint below. MUST NOT write a wall of text with no citation jump. MUST NOT paste a function body in chat.
-4. Else → ordinary skim layout. IF a code-behavior claim appears → MUST still apply the source-pointer constraint.
+4. Else → ordinary skim layout. IF a code-behavior claim appears → MUST still apply the source-pointer constraint. IF that skim reply asks the human a question and is longer than two or three sentences → MUST also apply the Question briefing constraint below.
 
 When answer type is 2 or 3, skill `explain-implementation` owns the shape (numbered steps; a diagram when the ask is a flow or the flow is muddy). Code jumps in that pass still follow the source-pointer constraint below.
 
-- Enforcement: Before send on ordinary Q&A, name the shape privately. If the ask diagnoses a run and the draft has no time-order chronology with numbered `!!1` what-happened titles, rewrite. If the human asked about a flow and the draft has no ASCII fence, or the fence has fail branches with no `!!N` comments, rewrite. If they asked how code works and there is no Cursor citation jump, or the draft reprints a function body, rewrite.
-- Violation: STOP, add the chronology, jump, and/or sketch, cut the function dump, then send.
+- Enforcement: Before send on ordinary Q&A, name the shape privately. If the ask diagnoses a run and the draft has no time-order chronology with numbered `!!1` what-happened titles, rewrite. If the human asked about a flow and the draft has no ASCII fence, or the fence has fail branches with no `!!N` comments, rewrite. If they asked how code works and there is no Cursor citation jump, or the draft reprints a function body, rewrite. If the skim reply asks a question, is longer than two or three sentences, and has no about-and-outcome opener, rewrite.
+- Violation: STOP, add the chronology, jump, sketch, and/or briefing, cut the function dump, then send.
 
 CORRECT (flow):
 ```text
@@ -486,8 +487,109 @@ A short reply MAY be two or three sentences with no skim headings. A longer repl
 
 When the reply asks the human a question, MUST put it last, under a plain `### Question` heading with a blank line above and below. MUST NOT put an icon on `Question`.
 
+## Question briefing
+
+**CONSTRAINT:** When answer type is ordinary sentences, reply shape is ordinary skim, the reply asks the human a question, and the reply is longer than two or three sentences, MUST brief that ask before `### Question`. MUST NOT dump nearby objects at equal depth. MUST NOT apply this briefing on failed-run chronology, flow-sketch, or source-pointer shapes, or on explain-implementation channels.
+
+MUST open with what this reply is about (the decision on the table) and the expected outcome of yes, in cold-read nouns a reader who has only this message can follow. MUST NOT open with how to read the message, a section menu, or `Skip unless`.
+
+Then sections, in this order, with silent jobs (MUST NOT print the job names `Related`, `Proof`, or `Environment`):
+
+1. Related to the Question (facts that change the yes/no)
+2. Proof that earns a related claim, omitted when the related section already holds that fact
+3. Environment that is not this ask, omitted when there is none
+4. `### Question`
+
+Headings MUST be cold-read claims: a reader who has only this message MUST know the job from the heading plus its first sentence. MUST NOT use a nickname (`the list`, `sharing`, `the completeness check`, `this close`) until the same message has named the thing in spoken English. MUST NOT use a heading that only names a bin (`The rest is not this session`) or an object tour (`Two PRs are waiting`).
+
+Before placing each fact, complete this gate in working memory:
+
+```text
+Candidate: [fact]
+Bears on the Question yes/no: YES: [quote] / NO
+Proves a related claim already made: YES: [quote] / NO
+Nearby work that is not this ask: YES: [quote] / NO
+Decision: opener | related | proof | environment | cut
+```
+
+IF opener → the decision on the table, or what yes produces. MUST NOT restate the Question sentence.
+IF related → a heading that names the job.
+IF proof → only when a related claim needs a second fact.
+IF environment → after related and proof; the heading MUST say this work is not the ask.
+IF cut → omit.
+
+Before sending each paragraph or heading, complete this gate in working memory:
+
+```text
+Candidate: [paragraph or heading]
+Already said by a heading or the opener: YES: [quote] / NO
+Changes what the human knows or can do for this Question: YES: [quote] / NO
+A reader who has only this message can name the job: YES: [quote the nouns] / NO
+Decision: keep | cut | rewrite
+```
+
+IF the heading already said it → cut or rewrite so the body adds a second fact.
+IF it does not change the yes/no or what yes commits → cut.
+IF a cold reader cannot name the job → rewrite with the real nouns.
+MUST NOT keep a paragraph that only classifies, teaches the genre, or repeats the Question.
+
+- Enforcement: Before send on a long skim reply that asks a question, confirm the opener names about and outcome, section jobs run related then proof then environment then Question, every heading is a cold-read claim, both gates ran, and the draft has no `Skip unless`, no printed job names, and no nickname before its picture. If the headings tour nearby objects, or the first paragraph is how to read the message, rewrite.
+- Violation: STOP, rewrite the briefing, then send.
+
 CORRECT:
 ```markdown
+This reply asks whether to close the export ticket's change list.
+
+If you say yes, the next session starts and closes that list. Then we can check whether the billing spec is complete enough to build from.
+
+### 📋 The export list is the changes billing needs so the exporter can run
+
+It goes to billing's maintainers. You read it on 2026-10-27 and said that was enough sharing.
+
+### 📦 Two pull requests from other work are sitting nearby
+
+They are not the change-list close. Their branches are in the `tmp/` worktrees. I have not reviewed either.
+
+- **#38** fixes tests so the app quits past unsaved files.
+- **#39** reads HTML previews aloud.
+
+### Question
+
+Should I start the session that closes that list?
+```
+
+PROHIBITED (object tour, no about/outcome, nicknames):
+```markdown
+### The change list looks ready to close
+
+It already has a full answer. You read it. Only its status still says open.
+
+### After that, the final completeness check
+
+Once it closes, the milestone is done.
+
+### Two PRs are waiting outside this work
+
+I have not reviewed either.
+
+### Question
+
+Should I start the session for decision point 12?
+```
+
+PROHIBITED (reading instructions, genre talk, heading echo):
+```markdown
+### The rest is not this session
+
+Skip unless you need the board around it. This is a close, not research. The session records the close in the log.
+```
+
+CORRECT (long skim that asks to proceed):
+```markdown
+This reply asks whether to draft how errors wrap as they travel up the pack.
+
+Yes means I write that draft in the pack.
+
 ### 🧩 The wrap lives at the failing call
 
 The pack already wraps errors at the failing call, but it never says what happens as that error travels up through **client, service, and CLI**.
