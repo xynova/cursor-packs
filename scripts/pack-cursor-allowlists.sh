@@ -27,6 +27,7 @@ SKILLS=(
   author-ai-copilots
   ai-readiness
   image-to-webp
+  upscale-image
   process-compose-docker
   operator-config
   explain-implementation

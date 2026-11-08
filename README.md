@@ -50,6 +50,7 @@ Allow-lists: `scripts/pack-cursor-allowlists.sh`.
 | `skills/intent-first/`, `skills/consultant/`, `skills/ai-readiness-persona/` | Gated chat kernels (plugin); `personas/*.persona.md` stubs for legacy symlinks |
 | `skills/metaphor-stock/` | Pick one metaphor after naming the two things; reject room/door stock |
 | `skills/image-to-webp/` | Portable PNG/HEIC→WebP via cwebp; ask/install tools only after user agrees |
+| `skills/upscale-image/` | Upscale pictures for Retina screens with Real-ESRGAN, measured against the shown width; compares two models by crop, skips text and screenshots, hands off to image-to-webp |
 | `skills/process-compose-docker/` | Process-compose + Docker sidecars |
 | `skills/golang-quality/` | Generation/completion constraints + quality gates; `reference.md` encyclopedia |
 | `skills/review-code-staged/` | Staged Go review (mechanical 1–5 / consultant A–C; Stage 5 = generation gates) |
