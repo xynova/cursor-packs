@@ -15,7 +15,8 @@ description: >-
   what was this, failed run, chronology, stalled, gutter,
   what-happened title, cold read, flow sketch comments, issue comments,
   metaphor, room, door, zombie noun, fake subject, question briefing,
-  about and outcome, paragraph weight, environmental facts.
+  about and outcome, paragraph weight, environmental facts,
+  ascii tree, +--, x--, ⬇️ next, ✅ own, ❌ drop, double spine.
 ---
 
 # Human interaction
@@ -78,13 +79,15 @@ Classify attach runs Essence, then Judge.
 
     message
        |
-       v
+    ⬇️  next
   Essence chat --> parse WHY/KIND
        |
-       v
+    ⬇️  next
   Judge / Author
 
-Key: boxes are seats in seats.go. Arrows are Operate order.
+Key: down the page is Operate order.
+  |     spine
+  ⬇️ next
 ```
 
 PROHIBITED (prose wall):
@@ -96,6 +99,10 @@ Essence is a chat string that gets parsed and then the judge scores it and then 
 
 **CONSTRAINT:** An ASCII flow, layout, or rule-with-cases sketch MUST use the same comment grammar as the failed-run chronology. Extra detail on unmarked nodes MUST sit under those nodes. Fail, reject, or skip branches MUST use `!!N` blocks. MUST NOT use a `;` code comment as the gloss. MUST NOT leave a fail `x--` with no `!!` block. MUST NOT invent timestamps on a design walk that is not a timed run.
 
+**CONSTRAINT:** The sketch MUST be a tree in a fenced `text` block with three aligned columns: spine/fork, colored icon, text. MUST join the spine with `|`. MUST mark next with `⬇️` and the word `next`. MUST mark a keep/own child with `+--` in the spine column and `✅` `own` in the icon column. MUST mark a fail/reject/skip child with `x--` in the spine column and `❌` `drop` in the icon column. On a fork row, `+--` or `x--` MUST replace `|` (same column). MUST NOT write `|` and `+--` (or `|` and `x--`) on the same row. MUST NOT use a lone `v` as the next-step mark. MUST NOT put a leading `|` on every row including fork rows (that draws a second spine, so the fork never touches the line). Continuation comments MUST keep `|` in the spine column and indent the words under the text column.
+
+A `text` fence is one ink. MUST NOT use HTML, `<pre>`, or `<span>` to color the fence. MUST use `⬇️` `✅` `❌` as the colored marks (emoji still paints inside a fence). Emoji occupy about two cells; MUST keep them in the icon column, not inside the `|` / `+--` / `x--` column.
+
 Before drawing each node or branch, complete this gate in working memory:
 
 ```text
@@ -104,9 +111,9 @@ Fail, reject, or skip in this sketch: YES: [quote] / NO
 Decision: !!N block | unmarked comment under node
 ```
 
-IF NO → unmarked node. Comment lines sit under it. MUST NOT mark a happy-path pass as `!!`.
+IF NO → unmarked node. Comment lines sit under it. MUST NOT mark a happy-path pass as `!!`. IF it is a keep/own child of the node above → `+--` `✅` `own`. IF it is only the next step on the same walk → `⬇️` `next`.
 
-IF YES → N is the count of fail branches so far, starting at 1. The block MUST be exactly:
+IF YES → N is the count of fail branches so far, starting at 1. The fork row MUST be `x--` `❌` `drop`. The block MUST be exactly:
 
 ```text
  !!N <what-happened title>
@@ -117,49 +124,45 @@ IF YES → N is the count of fail branches so far, starting at 1. The block MUST
 
 The what-happened title MUST be a cold-read sentence: a reader who has only the sketch MUST know what went wrong. The when line MUST name this pass or this branch (not a fake clock). The cost lines MUST say why it hurts and what was lost. Title, when, and cost MUST stay on this `!!` only.
 
-MUST NOT name another `!!N` block in this block. A Key MUST name unmarked comments, `!!1` `!!2` … when any fail branch is present, and that the line after `!!N` is the what-happened title.
+MUST NOT name another `!!N` block in this block. A Key MUST name `|`, `+--`, `x--`, `⬇️` `next`, `✅` `own`, `❌` `drop`, unmarked comments, `!!1` `!!2` … when any fail branch is present, and that the line after `!!N` is the what-happened title.
 
-- Enforcement: Before send on a flow sketch, confirm comment lines sit under unmarked nodes, every fail/reject/skip branch is `!!1` `!!2` … with title plus when plus cost, no `;` gloss, and the Key names the numbers. If the draft has only node labels, or an `x--` with no `!!`, rewrite.
-- Violation: STOP, add the comments, then send.
+- Enforcement: Before send on a flow sketch, confirm three columns, `⬇️` not `v`, fork marks replace `|` on that row, no `|  +--` double spine, comment lines sit under unmarked nodes, every fail/reject/skip branch is `x--` plus `!!1` `!!2` … with title plus when plus cost, no `;` gloss, and the Key names the symbols. If the draft has only node labels, a lone `v`, an `x--` with no `!!`, or a leading `|` on a `+--` row, rewrite.
+- Violation: STOP, redraw the tree, then send.
 
 CORRECT:
 ```text
 input
  the work the walk starts with
-       |
-       v
+ |
+⬇️  next
  first pass
  do only the opening job
-       |
-       x-- later job spent here --> fail
-        !!1 The opening spent a later job
-        this pass already used the close
-        later passes had no new job left
-       |
-       v
- middle pass
- each step is a different job
-       |
-       x-- same claim, new venue --> fail
-        !!2 Two steps did the same job
-        this pass restacked the opening claim
-        the temperature never changed
-       |
-       v
+ |
+ +--  ✅  own   keep going
+ |          each step is a different job
+ |
+ x--  ❌  drop  later job spent here
+ |          !!1 The opening spent a later job
+ |              this pass already used the close
+ |              later passes had no new job left
+ |
+⬇️  next
  last pass
  the ending, using the middle's cost
-       |
-       x-- fourth copy of the opening --> fail
-        !!3 The ending proved the start again
-        this pass restated the first claim
-        the ending never arrived
+ |
+ x--  ❌  drop  fourth copy of the opening
+ |          !!2 The ending proved the start again
+ |              this pass restated the first claim
+ |              the ending never arrived
 
 Key: down the page is one walk.
-     unmarked lines under a node are comments.
-     x is a fail.
-     !!1 !!2 !!3 are those fails, in walk order.
-     The line after !!N is the what-happened title.
-     The next lines are when, then the cost.
+  |     spine
+  +--   own-branch fork (replaces | on that row)
+  x--   drop-branch fork (replaces | on that row)
+  ⬇️ next   ✅ own   ❌ drop
+  unmarked lines under a node are comments.
+  !!1 !!2 are those drops, in walk order.
+  The line after !!N is the what-happened title.
 ```
 
 PROHIBITED (`;` gloss, no `!!` on the fail):
@@ -174,9 +177,16 @@ PROHIBITED (fail branch with no what-happened title):
        x-- same claim, new venue --> fail
 ```
 
+PROHIBITED (`v` as next, double spine so the fork never touches):
+```text
+       |
+       v
+ |  +--  own branch
+```
+
 ## Failed-run chronology
 
-**CONSTRAINT:** A diagnostic reply about a failed, stalled, or unexpected run MUST open with one ASCII chronology of that run in a fenced `text` block. Time MUST run down the page. Event lines MUST stay short. Groups MUST join with `|` and `v` arrows. Extra detail on unmarked join or complete nodes (score, outcome) MUST sit under those nodes. A Key MUST name time direction, how many walks, `!!1` `!!2` …, and the what-happened title.
+**CONSTRAINT:** A diagnostic reply about a failed, stalled, or unexpected run MUST open with one ASCII chronology of that run in a fenced `text` block. Time MUST run down the page. Event lines MUST stay short. Groups MUST join with `|` and `⬇️` next marks. MUST NOT use a lone `v` as the next-step mark. Extra detail on unmarked join or complete nodes (score, outcome) MUST sit under those nodes. A Key MUST name time direction, how many walks, `⬇️` next, `!!1` `!!2` …, and the what-happened title. A chronology is one time spine; MUST NOT insert `+--` keep-forks unless the run actually split. Issue rows stay on that spine with `!!N` (use `x--` `❌` `drop` only when the run forked).
 
 MUST keep every timestamp from the run. MUST NOT drop routine steps. MUST NOT use `+---+` / `#===#` boxes. MUST NOT prefix beats with `Q:`. MUST NOT replace the sketch with prose. MUST NOT add issue paragraphs after the sketch; the `!!` blocks in the sketch ARE the explanation.
 
@@ -214,51 +224,53 @@ Decision: keep | rewrite title | MIX
 
 IF the title needs the rest of the chat to make sense → rewrite title. IF MIX → split so this block names only this issue.
 
-- Enforcement: Before send on a diagnostic ask, confirm an ASCII fence exists, time runs down the page, arrows are present, routine timestamps remain, every issue is `!!1` `!!2` … in time order with a what-happened title plus when plus cost, the Key names the numbers, and no issue paragraphs follow the fence. If the draft is a `Q:` list, a box flowchart, a timestamp log with no arrows, jargon comments, or mixed prose under the sketch, rewrite.
+- Enforcement: Before send on a diagnostic ask, confirm an ASCII fence exists, time runs down the page, `⬇️` next marks are present (no lone `v`), routine timestamps remain, every issue is `!!1` `!!2` … in time order with a what-happened title plus when plus cost, the Key names the numbers, and no issue paragraphs follow the fence. If the draft is a `Q:` list, a box flowchart, a timestamp log with no `⬇️`, jargon comments, or mixed prose under the sketch, rewrite.
 - Violation: STOP, redraw as this chronology, then send.
 
 CORRECT:
 ```text
      12:01  first attempt starts
         |
-        v
+     ⬇️  next
      12:03  opening 7.6
      12:05  middle 8.3
         |
-        v
+     ⬇️  next
      12:07  joins the pieces
             score 7.8, good enough, extra model not called
             this attempt finished
         |
-        v
+     ⬇️  next
  !!1 It started a second full run
      12:07  starts the whole job again from the opening
             The first attempt had already finished.
             Starting over here was not requested.
         |
-        v
+     ⬇️  next
      12:08  opening 7.8
      12:14  joins the pieces
         |
-        v
+     ⬇️  next
  !!2 The second draft failed its quality check
      12:15  a second model is called
             This draft reused a slogan the checks forbid.
             That check is the only reason the extra model ran.
         |
-        v
+     ⬇️  next
  !!3 The draft was thrown away
      12:18  the extra model hits the clock still failing to write code
             It never gave a yes or a rewrite.
             So nothing was kept.
 
 Key: down the page is time. Two full attempts.
-     !!1 !!2 !!3 are issues, in time order.
-     The line after !!N is the what-happened title.
-     The next lines are when, then the cost.
+  |     spine
+  ⬇️ next
+  !!1 !!2 !!3 are issues, in time order.
+  The line after !!N is the what-happened title.
+  The next lines are when, then the cost.
 ```
 
-PROHIBITED (timestamp log, no arrows):
+PROHIBITED (timestamp log, no ⬇️ next):
 ```text
 12:01  job starts
 12:07  NEW walk
@@ -367,14 +379,23 @@ func PlanAssembly(ctx context.Context, evidence *Evidence) (*Plan, error) {
 
 ```text
 evidence
-       |
-       v
+ |
+⬇️  next
  PlanAssembly --> Complete
-       |
-       +-- PASS --> ship
-       x-- error --> fail closed
+ |
+ +--  ✅  own   ship
+ |
+ x--  ❌  drop  error
+ |          !!1 The nested call failed closed
+ |              this pass Complete returned an error
+ |              nothing shipped
 
 Key: PlanAssembly is the gate. Complete is the nested model call.
+  |     spine
+  +--   own-branch fork
+  x--   drop-branch fork
+  ⬇️ next   ✅ own   ❌ drop
+  !!1 is that drop. The line after !!1 is the what-happened title.
 ```
 ````
 
@@ -409,14 +430,16 @@ Before:  always-on git rules in the prompt
 After:   first edit injects the same rules, then a retry writes
 
   first Edit on main
-         |
-         v
+ |
+⬇️  next
    hook denies once  -->  model reads git-gates
-         |
-         v
+ |
+⬇️  next
    retry Edit proceeds
 
 Key: Edit is the write tool. Deny is PreToolUse once per repo.
+  |     spine
+  ⬇️ next
 ```
 
 PROHIBITED:
