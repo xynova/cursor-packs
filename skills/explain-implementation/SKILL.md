@@ -272,7 +272,8 @@ The channels are the reply. They are not a preamble.
 - MUST: IF that diagram is a fenced `text` ASCII flow → MUST apply rule
   `always-rules-01-human-interaction` flow-sketch comments (comments under
   unmarked nodes; `!!N` what-happened title, when, and cost on every fail,
-  reject, or skip branch). MUST NOT use a `;` gloss. MUST NOT leave an `x--`
+  reject, or skip branch; `⬇️` next not a lone `v`; `+--` / `x--` replace `|`
+  on the fork row). MUST NOT use a `;` gloss. MUST NOT leave an `x--`
   fail with no `!!` block.
 - MUST: keep the explain scannable in a few seconds.
 - MUST: keep each step concrete enough that a cold reader knows what happens without decoding jargon (split packed phrases into two steps when needed).
@@ -470,7 +471,7 @@ flowchart TD
       Pass: At most one short objective and one short outcome; body is steps and/or one small diagram
       Fail: STOP, convert to numbered steps (and/or tiny diagram)
 - [ ] **ASCII flow comments:** If Explanation includes a fenced `text` flow, fail branches use `!!N`
-      Method: Scan the fence for `x--` / fail / skip; confirm `!!1` blocks and comments under unmarked nodes
+      Method: Scan the fence for `x--` / fail / skip; confirm `!!1` blocks, `⬇️` not `v`, no `|  +--` double spine, and comments under unmarked nodes
       Pass: No `;` gloss; every fail branch has title, when, and cost; Key names the numbers
       Fail: STOP, apply always-rules-01 flow-sketch comments, then send
 - [ ] **Enough:** Cold reader gets why it mattered, what changed, and how it fits
