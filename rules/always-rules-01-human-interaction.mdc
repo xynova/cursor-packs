@@ -15,6 +15,7 @@ description: >-
   what was this, failed run, chronology, stalled, gutter,
   what-happened title, cold read, flow sketch comments, issue comments,
   metaphor, room, door, zombie noun, fake subject, question briefing,
+  plain text explanation, quote the lines, what does this passage mean,
   about and outcome, paragraph weight, environmental facts,
   ascii tree, +--, x--, ⬇️ next, ✅ own, ❌ drop, double spine.
 ---
@@ -66,12 +67,13 @@ Yes.
 1. The ask diagnoses a failed, stalled, or unexpected run in this thread (`what was this`, what died, what happened, why it failed) → MUST open with a failed-run chronology (constraint below). MUST NOT lead with a why-chain, a `Q:` list, or a box-drawing flowchart.
 2. The ask is a flow, layout, structure, or a rule with cases → MUST sketch each case as ASCII in a fenced `text` block, built from the thread's own pieces, with a key for its symbols. MUST apply the flow-sketch comment constraint below. IF explaining a change → MUST show before and after. MUST NOT publish a page or canvas for it. IF the ask is also about code → MUST also apply the source-pointer constraint below (citation jump first, ASCII as the chat picture).
 3. The ask is how code works, what a function, prompt, or path does, or where a behavior lives → MUST apply the source-pointer constraint below. MUST NOT write a wall of text with no citation jump. MUST NOT paste a function body in chat.
-4. Else → ordinary skim layout. IF a code-behavior claim appears → MUST still apply the source-pointer constraint. IF that skim reply asks the human a question and is longer than two or three sentences → MUST also apply the Question briefing constraint below.
+4. The ask is what a passage, sentence, paragraph, or draft means, or the reply explains prose the human can read → MUST apply the plain text explanation constraint below. MUST NOT use skim headings for that reply.
+5. Else → ordinary skim layout. IF a code-behavior claim appears → MUST still apply the source-pointer constraint. IF that skim reply asks the human a question and is longer than two or three sentences → MUST also apply the Question briefing constraint below.
 
 When answer type is 2 or 3, skill `explain-implementation` owns the shape (numbered steps; a diagram when the ask is a flow or the flow is muddy). Code jumps in that pass still follow the source-pointer constraint below.
 
-- Enforcement: Before send on ordinary Q&A, name the shape privately. If the ask diagnoses a run and the draft has no time-order chronology with numbered `!!1` what-happened titles, rewrite. If the human asked about a flow and the draft has no ASCII fence, or the fence has fail branches with no `!!N` comments, rewrite. If they asked how code works and there is no Cursor citation jump, or the draft reprints a function body, rewrite. If the skim reply asks a question, is longer than two or three sentences, and has no about-and-outcome opener, rewrite.
-- Violation: STOP, add the chronology, jump, sketch, and/or briefing, cut the function dump, then send.
+- Enforcement: Before send on ordinary Q&A, name the shape privately. If the ask diagnoses a run and the draft has no time-order chronology with numbered `!!1` what-happened titles, rewrite. If the human asked about a flow and the draft has no ASCII fence, or the fence has fail branches with no `!!N` comments, rewrite. If they asked how code works and there is no Cursor citation jump, or the draft reprints a function body, rewrite. If they asked what prose means and the draft has no quote of the lines, or it uses a nickname the human did not use, rewrite. If the skim reply asks a question, is longer than two or three sentences, and has no about-and-outcome opener, rewrite.
+- Violation: STOP, add the chronology, jump, sketch, quote, and/or briefing, cut the function dump and the nickname, then send.
 
 CORRECT (flow):
 ```text
@@ -93,6 +95,35 @@ Key: down the page is Operate order.
 PROHIBITED (prose wall):
 ```markdown
 Essence is a chat string that gets parsed and then the judge scores it and then the author drafts a leaf and then clusters form...
+```
+
+## Plain text explanation
+
+**CONSTRAINT:** When explaining prose the human can read, MUST write ordinary sentences. MUST open with one or two sentences that say what the passage is. MUST quote the lines being talked about, then say in one sentence what those lines are. IF the passage has another part → MUST quote that part, then say in one sentence what it is. MUST end by saying which part is the problem and which part is fine. MUST NOT invent a nickname for a pattern. MUST NOT use a label the human did not already use. MUST NOT use skim headings, icons, or bold idea labels in this reply.
+
+- Enforcement: Before send, confirm each claim follows a quote or names words that are in the passage. If a label is absent from the passage and from the human's message, rewrite. If the draft has `###` headings, rewrite.
+- Violation: STOP, quote the lines, say what they are in plain words, then send.
+
+CORRECT:
+```markdown
+The last regenerate wrote this hook as one paragraph. It mixed two kinds of sentences.
+
+First it listed who repeats the school story:
+
+> Parents often describe school as the place where children learn to behave. Teachers say it, principals say it, and most adults repeat it.
+
+That is a roll call of groups. That is what failed the check.
+
+Then it wrote one classroom moment:
+
+> A teacher watches a pupil raise a hand, wait for a turn, and sit through the lesson without a fuss.
+
+That second part is fine on its own. The problem is the roll call in front of it.
+```
+
+PROHIBITED:
+```markdown
+The chorus is the group list. The keep scene is the later lines.
 ```
 
 ## Flow sketch comments
