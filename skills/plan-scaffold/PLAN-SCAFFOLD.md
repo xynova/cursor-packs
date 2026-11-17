@@ -6,10 +6,58 @@
 
 ## Quick Start
 
-1. Copy this file to `.cursor/plans/<feature-name>-plan.md`
-2. Fill in each section using the prompts
-3. Use the **Glue Analysis Checklist** to catch wiring issues
-4. Review with the **Plan Quality Gates** before implementation
+1. Load skill `plan-scaffold` (rule `plan-scaffold` LOAD or CONTINUE).
+2. Pass 1: write `## Sketch` into the plan artifact (not chat-only).
+3. Pass 2: run slots **S1-S16** (FILL or `N/A` with reason). Use this file as the encyclopedia for how to fill each slot. Do not copy this entire file or the YouTube example into the plan.
+4. Pass 3: run coherence gates (sketch vs stages, no chat-history refs).
+5. Write once (`CreatePlan` or `.cursor/plans/<feature>-plan.md`), then `plan-auditor` when a path exists and writes are allowed.
+
+### Slot map (S1-S16)
+
+| Slot | Name | Always FILL? |
+|------|------|--------------|
+| S1 | Sketch | yes |
+| S2 | Reference implementation | FILL or N/A |
+| S3 | Registry | FILL or N/A |
+| S4 | Dependency injection | FILL or N/A |
+| S5 | Factories | FILL or N/A |
+| S6 | Config keys | FILL or N/A |
+| S7 | Migrations | FILL or N/A |
+| S8 | CLI wiring | FILL or N/A |
+| S9 | Resumability | FILL or N/A |
+| S10 | Multi-repo boundaries | FILL or N/A |
+| S11 | Language quality | FILL or N/A |
+| S12 | Data flow | FILL or N/A |
+| S13 | Glue trace | FILL or N/A (required if S3/S4/S5/S8 FILL) |
+| S14 | Executor stages (seven fields each) | yes |
+| S15 | Error handling | FILL or N/A |
+| S16 | Verification commands | yes |
+
+### Sketch template (S1)
+
+```markdown
+## Sketch
+
+- What we're building: [one sentence]
+- Why: [failure this plan removes]
+- One approach: [single design]
+- Out of scope: [exclusions]
+- Open forks: none
+```
+
+### Slot gate (each S2-S16)
+
+```text
+Candidate: S<n> <name>
+Applies: YES: [quote] / NO: [quote]
+Decision: FILL | N/A
+If FILL: facts for the plan body
+If N/A: reason quoting NO evidence
+```
+
+### Coherence (Pass 3)
+
+Before marking the plan done: every Sketch bullet has an owning stage or FILL slot; every stage Goal is entailed by Sketch or a FILL slot; no "as discussed"; risks under `## Coherence` have a stage, Out of scope, or `accept:`.
 
 ---
 
@@ -422,11 +470,14 @@ PROHIBITED:
 ## Plan Review Checklist (Use Before Implementation)
 
 ### Completeness
+- [ ] `## Sketch` is present with What, Why, One approach, Out of scope, Open forks
+- [ ] Slots S1-S16 each have FILL facts or an `N/A` reason (S1, S14, S16 never N/A)
 - [ ] Every phase has concrete tasks (not just "implement X")
 - [ ] Every executor stage has Goal, Paths, Out of scope, Commands, Pass, Fail closed, and Resume
 - [ ] A new agent could run one stage from that stage's text alone (no chat history)
-- [ ] Reference implementation is cited with file:lines
-- [ ] Data flow diagram traces CLI → DB with actual method names
+- [ ] Reference implementation is cited with file:lines (S2 when FILL)
+- [ ] Data flow diagram traces CLI → DB with actual method names (S12 when FILL)
+- [ ] Coherence: no stage Goal invents a capability absent from Sketch and FILL slots
 
 ### The Glue (Critical)
 - [ ] **Registry population**: If using registry, there's an explicit "register in container" task in Phase D
@@ -997,14 +1048,14 @@ func NewContainer(shared *SharedContainer) (*Container, error) {
 
 ## Usage: How to Create a Plan
 
-1. **Copy this file** to `.cursor/plans/[feature-name]-plan.md`
-2. **Fill in Overview & Context**: What/why/reference
-3. **Complete Architectural Analysis (section 2)**: Answer every glue question
-4. **Draw data flow**: CLI → service → client → registry → repo → DB
-5. **Fill in Glue Analysis Template**: Registration sequence and verification
-6. **Create phase checklists**: Copy standard phases, add feature-specific tasks
-7. **Review with Plan Review Checklist**: Verify glue, completeness, error handling
-8. **Get feedback**: Ask AI to review using this scaffold
+1. **Load** skill `plan-scaffold` (three-pass conductor in `SKILL.md`).
+2. **Sketch** (S1): lock approach and out of scope in the artifact.
+3. **Slots S2-S16**: for each slot, run FILL | N/A; pull section prompts from this encyclopedia only for FILL slots.
+4. **Stages (S14)**: one executor stage per FILL implementation work; seven fields per stage.
+5. **Coherence (Pass 3)**: sketch vs stages; fix FAIL before write.
+6. **Write once**: `CreatePlan` or `.cursor/plans/[feature-name]-plan.md`.
+7. **Audit**: invoke `plan-auditor` when a path exists and writes are allowed.
+8. **Review**: Plan Review Checklist below before implementation Build.
 
 ---
 

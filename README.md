@@ -58,8 +58,9 @@ Allow-lists: `scripts/pack-cursor-allowlists.sh`.
 | `skills/setup-go-binary-license/` | Signed `license.lic` Gate for a shipped Go CLI/daemon (`-tags release`) |
 | `skills/manage-go-releases/` | Auto-patch / skip docs-chore / pin consumers to `v*` (agent release practice) |
 | `skills/dspy-*` | DSPy / strop-adjacent cross-product skills |
-| `skills/plan-scaffold/` | Implementation plan meta-framework and executor stage contract |
-| `agents/plan-auditor.md` | Subagent that scores plan stages and may patch plan markdown only |
+| `skills/plan-scaffold/` | Three-pass plan conductor (sketch, slots S1-S16, coherence) plus PLAN-SCAFFOLD encyclopedia |
+| `rules/plan-scaffold.mdc` | Always-on loader for plan-scaffold (sketch is not a finished plan) |
+| `agents/plan-auditor.md` | Scores executor fields, slots S1-S16, sketch coherence; may patch plan markdown only |
 | `lefthook/` | Shared Lefthook config (default-branch refuse, go format, pre-push packs pin when legacy-linked) |
 | `AGENTS.md` + `ai-copilots/` | Operator harness when this repo is the workspace root |
 | `rules/*.mdc` | Short Cursor rules (always-on kernel + loaders) |

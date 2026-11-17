@@ -1,0 +1,24 @@
+---
+description: >-
+  Loads skill plan-scaffold before an implementation plan is marked done,
+  including Plan mode and CreatePlan. A sketch is not a finished plan.
+  "Make this technically comprehensive" continues the current plan at the
+  scaffold pass. Triggers: create a plan, implementation plan, Plan mode,
+  CreatePlan, technically comprehensive.
+alwaysApply: true
+---
+
+# Plan scaffold
+
+**CONSTRAINT:** Before creating, revising, or marking done an implementation plan, MUST complete the load gate, then Read and follow skill `plan-scaffold`.
+
+- LOAD when the user asked for an implementation plan, or Plan mode / `CreatePlan` is producing one.
+- CONTINUE when the user asked to make the current plan technically comprehensive: start at scaffold slots on that same artifact.
+- SKIP when the user named a different skill, or asked to implement an already chosen plan, or asked an ordinary question.
+- MUST NOT list host product skill names in this rule.
+- MUST NOT mark the plan done after the sketch.
+- MUST NOT wait for a second prompt before the scaffold and coherence passes.
+- MUST NOT call `CreatePlan` until sketch, slots, and coherence are clean, and MUST NOT call it again on CONTINUE.
+
+Enforcement: quote the user sentence in the load gate; Decision is LOAD, CONTINUE, or SKIP.
+Violation: STOP. If a sketch was presented as the finished plan, continue at scaffold slots on that same artifact.
