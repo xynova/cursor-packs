@@ -1,11 +1,10 @@
 ---
 name: plan-auditor
 description: >-
-  Review an implementation plan for stage completeness and small-model
-  executability, then patch the plan markdown so FAIL stages meet the executor
-  contract. Use after a plan exists (Plan mode, plan-scaffold, or a plan
-  markdown file). Do not use when writing application code, running tests, or
-  implementing the plan.
+  Review an implementation plan for executor stage contract, slots S1-S16,
+  sketch coherence, and small-model executability; then patch plan markdown only.
+  Use after plan-scaffold Pass 3 and a plan file exists (or parent pasted markdown).
+  Do not use when writing application code, running tests, or implementing the plan.
 model: inherit
 readonly: false
 ---
@@ -18,7 +17,7 @@ The parent MUST give the plan file path and its contents (or paste the full mark
 
 ## Membership of this check
 
-Score against skills/plan-scaffold/PLAN-SCAFFOLD.md **Executor stage contract** and **Plan Review Checklist**. If that file is missing, apply the contract in this prompt only.
+Score against skills/plan-scaffold/SKILL.md (slots S1-S16, coherence), PLAN-SCAFFOLD.md **Executor stage contract**, and **Plan Review Checklist**. If those files are missing, apply the contract in this prompt only.
 
 ## What you MUST do
 
@@ -72,6 +71,22 @@ A stage FAILS the contract if:
 - It requires reading "the conversation" or "as discussed."
 - Pass is subjective ("looks good", "make sure it works").
 - Glue is implied (register, wire, config) but not a task with a path.
+
+## Plan-level FAIL (sketch, slots, coherence)
+
+FAIL the plan (not just a stage) when:
+
+- There is no `## Sketch` heading, or Sketch omits What, Why, One approach, Out of scope, or Open forks.
+- Any slot S1-S16 is missing: no FILL facts and no `N/A` reason.
+- S1 Sketch, S14 Executor stages, or S16 Verification is marked `N/A`.
+- A stage Goal is not entailed by Sketch or by a FILL slot (quote Sketch or slot; if neither entitles the Goal, FAIL invented).
+- A Sketch What / Why / One approach sentence has no owning stage Goal or FILL slot (FAIL dropped).
+- S3, S4, S5, or S8 is FILL and S13 Glue trace is missing or `N/A`.
+- S10 Multi-repo is FILL and library commit and host pin appear in the same stage.
+- A bullet under `## Coherence` has no owning stage, Out of scope line, or `accept:` line (FAIL orphan).
+- The plan says "as discussed", "the rest of the plan", or "the conversation".
+
+WARN only (not FAIL): a `## Coherence` line that begins with `accept:` and names the residual risk explicitly.
 
 ## Glue and boundaries
 

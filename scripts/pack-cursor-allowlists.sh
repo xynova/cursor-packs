@@ -68,6 +68,7 @@ RULES=(
   explain-implementation.mdc
   ask-polypus.mdc
   hypermedia-update-contract.mdc
+  plan-scaffold.mdc
 )
 PERSONAS=(
   intent-first.persona.md
