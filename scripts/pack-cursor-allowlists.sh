@@ -35,6 +35,9 @@ SKILLS=(
   hypermedia-update-contract
   intent-first
   metaphor-stock
+  product-persona
+  product-journey
+  product-configuration
   consultant
   slapstick
   ai-readiness-persona

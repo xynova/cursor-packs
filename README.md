@@ -49,6 +49,9 @@ Allow-lists: `scripts/pack-cursor-allowlists.sh`.
 | `skills/ai-readiness/` | Audit/scaffold required `AGENTS.md` + `ai-copilots/` baseline for every repo |
 | `skills/intent-first/`, `skills/consultant/`, `skills/ai-readiness-persona/` | Gated chat kernels (plugin); `personas/*.persona.md` stubs for legacy symlinks |
 | `skills/metaphor-stock/` | Pick one metaphor after naming the two things; reject room/door stock |
+| `skills/product-persona/` | Hypothesis persona: goal, context, behavior, trigger, success, anti-persona |
+| `skills/product-journey/` | End-to-end journey from first hearing through help, bugs, and upgrade |
+| `skills/product-configuration/` | Short setup: one job per screen, defaults on, first success before extra choices |
 | `skills/image-to-webp/` | Portable PNG/HEIC→WebP via cwebp; ask/install tools only after user agrees |
 | `skills/upscale-image/` | Upscale pictures for Retina screens with Real-ESRGAN, measured against the shown width; compares two models by crop, skips text and screenshots, hands off to image-to-webp |
 | `skills/process-compose-docker/` | Process-compose + Docker sidecars |
