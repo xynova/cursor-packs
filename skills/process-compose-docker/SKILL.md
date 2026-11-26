@@ -214,12 +214,13 @@ exec wgo -file .go ./scripts/serve-inner.sh
 # Watches content/, tmp/, and unrelated workspace trees before listening
 ```
 
-**CONSTRAINT:** When the applicability gate passes, every HTTP listen process in process-compose MUST expose a cheap readiness URL (no auth, no template render, no DB when avoidable) and MUST set `readiness_probe` to `curl -sf` that URL. Non-Go HTTP binaries (for example a static site server) skip compile and still get a probe.
+**CONSTRAINT:** When the applicability gate passes, every HTTP listen process in process-compose MUST expose a cheap readiness URL (no auth, no template render, no DB when avoidable) and MUST set `readiness_probe` to `curl -sf` that URL. Non-Go HTTP binaries (for example a static site server) skip compile and still get a probe. IF the process's backing store can scale to zero or suspend on idle → MUST also follow skill `sleeper-database-readiness` (the probed handler MUST NOT query that store).
 
 - MUST: mirror probe timing (`initial_delay_seconds`, `period_seconds`, `timeout_seconds`) across services in the same stack
 - MUST NOT: rely on TUI Running alone; `-` HEALTH is not proof the port is listening
-- Enforcement: count `readiness_probe` blocks vs HTTP processes in `process-compose.yaml`
-- Violation: STOP, add `/readyz` or `/health` handler and probe, re-verify
+- MUST NOT: `Ping` a scale-to-zero database from `/readyz` to keep compose green
+- Enforcement: count `readiness_probe` blocks vs HTTP processes in `process-compose.yaml`; if a sleeper store is in play, grep the probed handler for `Ping`
+- Violation: STOP, add `/readyz` or `/health` handler and probe, re-verify; remove sleeper queries from the probed path
 
 CORRECT:
 ```yaml
