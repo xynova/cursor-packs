@@ -52,6 +52,7 @@ Allow-lists: `scripts/pack-cursor-allowlists.sh`.
 | `skills/image-to-webp/` | Portable PNG/HEIC→WebP via cwebp; ask/install tools only after user agrees |
 | `skills/upscale-image/` | Upscale pictures for Retina screens with Real-ESRGAN, measured against the shown width; compares two models by crop, skips text and screenshots, hands off to image-to-webp |
 | `skills/process-compose-docker/` | Process-compose + Docker sidecars |
+| `skills/sleeper-database-readiness/` | Scale-to-zero DB: cheap /readyz, idle pool close, wake on real traffic |
 | `skills/golang-quality/` | Generation/completion constraints + quality gates; `reference.md` encyclopedia |
 | `skills/review-code-staged/` | Staged Go review (mechanical 1–5 / consultant A–C; Stage 5 = generation gates) |
 | `skills/setup-goreleaser/` | Scaffold GoReleaser v2 + GitHub Release workflow |

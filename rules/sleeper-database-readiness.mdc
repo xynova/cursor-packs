@@ -1,0 +1,25 @@
+---
+description: >-
+  Scale-to-zero / suspend-on-idle databases (Neon, similar Postgres): cheap
+  /readyz must not query the store; pools must close idle conns before the
+  sleeper window; wake only on real application traffic. Load skill
+  sleeper-database-readiness. Triggers: readyz, healthz, Neon, CU-hours,
+  scale-to-zero, pgxpool Ping, idle catalog, process-compose probe.
+globs: "**/process-compose*.{yaml,yml},**/scripts/serve*.sh,**/*proxy*/serve.go,**/*readyz*"
+alwaysApply: false
+---
+
+# Sleeper database readiness
+
+**Skill:** skill `sleeper-database-readiness` (MUST Read and follow when this rule loads).
+
+## MUST
+
+- `/readyz` / `/healthz` / compose `readiness_probe` succeed when the process is listening
+- Sleeper-backed pools use MinConns 0, MinIdleConns 0, MaxConnIdleTime below the vendor suspend window
+- Product routes (catalog, session, membership) remain the wake path
+
+## MUST NOT
+
+- `Ping` / `SELECT 1` a sleeper pool from a health or readiness handler
+- Hold MinConns or idle keep-alives that exist only to keep the store hot

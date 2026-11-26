@@ -21,6 +21,7 @@ alwaysApply: false
 - Stop stacks without `-v` / `--volumes` / `docker volume rm` on the default down path
 - Keep durable sidecar state on named volumes
 - When the repo has `process-compose.yaml` or `scripts/pc-up.sh` plus `serve` / `serve-down`: prebuild Go services to a named binary before `process-compose up`, exec that binary to listen, set `readiness_probe` on HTTP processes (see skill `process-compose-docker`)
+- When a probed process talks to a scale-to-zero / suspend-on-idle database: load skill `sleeper-database-readiness` (probe MUST NOT query that store)
 - MUST skip compile when the named binary is newer than sources (skip-if-fresh prebuild; see skill `process-compose-docker`)
 
 ## MUST NOT

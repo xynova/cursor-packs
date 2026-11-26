@@ -29,6 +29,7 @@ SKILLS=(
   image-to-webp
   upscale-image
   process-compose-docker
+  sleeper-database-readiness
   operator-config
   explain-implementation
   ask-polypus
@@ -64,6 +65,7 @@ RULES=(
   repository-boundaries.mdc
   unowned-libraries.mdc
   process-compose-docker.mdc
+  sleeper-database-readiness.mdc
   operator-config.mdc
   explain-implementation.mdc
   ask-polypus.mdc
