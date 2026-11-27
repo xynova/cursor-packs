@@ -1,105 +1,102 @@
 ---
-name: product-configuration
+name: product-journey
 description: >-
-  Design a short product setup: one job per screen, defaults already on, and
-  a first success before extra choices. Load when designing onboarding,
-  first-run, connect, or configuration. The person comes from product-persona.
-  The place of setup in the journey comes from product-journey.
+  Map an end-to-end customer journey from first hearing through help, bugs,
+  and upgrade. Load when designing a customer journey, a press path, packaging,
+  or life after install. The persona comes from product-persona. Setup screens
+  come from product-configuration.
 ---
 
-# Product configuration
+# Product journey
 
 ## When to load
 
-Load when the human asks how setup, onboarding, first-run, or connect should work.
+Load when the human asks for a customer journey, a path from first hearing to living with the product, or what happens after someone already has it.
 
-The person is already a hypothesis from `product-persona`. The journey already has a configuration span from `product-journey`. This skill decides the screens inside that span.
+Load `product-persona` first and put that hypothesis above the map. Load `product-configuration` for the setup screens. This skill orders the walk. It does not invent the person or the screen copy.
 
 ## Core constraints
 
-**CONSTRAINT:** Configuration MUST be the whole setup, from install through the first success. MUST NOT treat the sign-in button as the whole setup.
+**CONSTRAINT:** The map MUST start when the person first hears about the product. MUST NOT start at install.
 
-- Enforcement: the written setup names install, the consent or disclosure, and the first success as one sequence.
-- Violation: STOP, add the missing screens, re-verify
+- Enforcement: the first stage name is hearing, a public sentence, or an equivalent first contact. Install is a later stage.
+- Violation: STOP, add the earlier stages, re-verify
 
 CORRECT:
 ```text
-Install, with no folder question.
-One disclosure, then the browser.
-The first result is already on screen.
+1. They hear about it
+2. They read the public sentence
+3. They install
 ```
 
 PROHIBITED:
 ```text
-Configuration is the Connect button.
+1. They install
+2. They connect
 ```
 
-**CONSTRAINT:** Each screen MUST have one job. A screen with two jobs MUST be split.
+**CONSTRAINT:** The map MUST include, after install, a first success, return use, asking for help, submitting a bug, and upgrading. Help, bugs, and upgrade MUST be available on any day after install, not only as a final chapter.
+
+- Enforcement: the written map names those five. The help, bug, and upgrade lines say they can happen in any order after install.
+- Violation: STOP, add the missing stage, re-verify
+
+**CONSTRAINT:** Each stage MUST say who acts, the person or the company, and what the person sees.
 
 ```text
-Candidate: [screen]
-Jobs on this screen: [list]
-Count is 1: YES / NO
-Decision: KEEP | SPLIT
-If SPLIT: the two screens and the single job of each
+Candidate: [stage]
+Who acts: person | company
+What the person sees: [one sentence] / MISSING
+Decision: KEEP | REWRITE
+If REWRITE: the missing who, or the missing sight
 ```
 
-- Enforcement: every screen in the setup has a KEEP or SPLIT gate before it is written.
-- Violation: STOP, split the screen, re-verify
-
-**CONSTRAINT:** Defaults MUST already be chosen for folder, model, and file when the product can choose them. The person MUST NOT be asked for those before the first success.
-
-- Enforcement: the first-success screen states that those choices were already made. Any earlier screen that asks for them is absent.
-- Violation: STOP, move the question to after the first success, re-verify
+- Enforcement: every stage has both fields before it is written into the map.
+- Violation: STOP, run the gate, re-verify
 
 CORRECT:
 ```text
-The first result uses the default batch. A different batch is offered after that result is on screen.
+They read the public sentence. The company writes it. The person sees who it is for and what the first result looks like.
 ```
 
 PROHIBITED:
 ```text
-Before the first result, pick a folder, a model, and a config file.
+Press release.
 ```
 
-**CONSTRAINT:** After an external consent, the person MUST return to a screen where the new thing is already listed. MUST NOT land in a settings form.
+**CONSTRAINT:** Two install mechanisms MUST be one stage with two forks. MUST NOT be two journeys or two personas.
 
-- Enforcement: the return screen names the connected item as already present.
-- Violation: STOP, rewrite the return, re-verify
+- Enforcement: Mac and Windows, or store and direct download, sit under one install stage and again under one upgrade stage.
+- Violation: STOP, merge the forks, re-verify
 
-**CONSTRAINT:** A second account, device, or address MUST reuse the same action, and MUST wait until the first success is on screen.
+**CONSTRAINT:** When the product stores a credential, the install MUST be a normal program on the machine so the operating system can hold that secret. MUST NOT put the secret only inside a container unless the human already chose that and named where the secret lives.
 
-- Enforcement: the second item is the same control, placed after the first success.
-- Violation: STOP, move it, re-verify
+- Enforcement: if a credential is in the product facts, the install stage names the OS store or the place the human named.
+- Violation: STOP, name the store, re-verify
 
-**CONSTRAINT:** One disclosure or system prompt MAY sit immediately before external consent. It MUST state what stays on the machine and what the request sends out. It MUST NOT be a tour.
+**CONSTRAINT:** The public sentence MUST say what leaves the person's machine when the product sends their data to the company. MUST NOT say the data never leaves if a request sends it.
 
-- Enforcement: count prompts before the browser or system sheet. More than one is a fail.
-- Violation: STOP, keep one prompt, re-verify
+- Enforcement: quote the product's outbound data. The public-sentence stage matches that quote.
+- Violation: STOP, rewrite the sentence, re-verify
 
 ## Steps
 
-1. **Mark the span** as install through first success.
-2. **Run the screen gate** so each screen has one job.
-3. **Put defaults under the first success.** Move extra choices after it.
-4. **Write the return** so the new item is already listed.
-5. **Place the second item** on the same control, after that success.
+1. **Place the persona** from `product-persona` above the map. If it is missing, stop and load that skill.
+2. **List the stages** from first hearing through upgrade, including help and bugs.
+3. **Run the stage gate** on each stage.
+4. **Fork install and upgrade** when more than one package exists.
+5. **Point setup** at `product-configuration` instead of expanding every screen here.
 
 ## Pre-completion checklist
 
-- [ ] **Whole setup:** install, consent, and first success are one sequence
-      Method: read the sequence
-      Pass: all three are present
-      Fail: only a login button → STOP, add the rest
-- [ ] **One job:** no screen asks for two decisions
-      Method: read each screen's gate
-      Pass: every gate is KEEP with one job, or SPLIT is already applied
-      Fail: a screen still has two jobs → STOP, split it
-- [ ] **Defaults first:** folder, model, and file questions are after the first success, or the product cannot default them and the human said so
-      Method: read the screens before first success
-      Pass: those questions are absent there
-      Fail: a setup form precedes the result → STOP, move it
-- [ ] **Return state:** the new item is already listed
-      Method: read the screen after consent
-      Pass: the item is present
-      Fail: a settings form → STOP, show the item
+- [ ] **Starts early:** the first stage is hearing or the public sentence
+      Method: read stage 1
+      Pass: install is not stage 1
+      Fail: the map opens on install → STOP, add the front
+- [ ] **Life after install:** help, bugs, and upgrade are on the map and can happen any day after install
+      Method: read the later stages
+      Pass: all three are present and not a locked ending
+      Fail: one is missing or only at the end → STOP, add it
+- [ ] **One install stage:** package forks share a stage
+      Method: count install stages
+      Pass: one install stage, one upgrade stage
+      Fail: a journey per operating system → STOP, merge
